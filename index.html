@@ -305,7 +305,7 @@
     }
 
     async function incarcaUtilizatori() {
-      const { data, error } = await db.from("profiluri").select("id, nume, roluri, activ, creat_la, email, calitate, detalii, completat")
+      const { data, error } = await db.from("profiluri").select("id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat")
         .order("activ", { ascending: true }).order("creat_la", { ascending: false });
       if (error) return mesajPanou("Nu s-a putut încărca lista. Încearcă din nou.");
       const lista = $("lista");
@@ -317,13 +317,14 @@
       const eu = u.id === euId;
       const euAdmin = euRoluri.includes("administrator");
       const roluriU = u.roluri || [];
+      const protejat = !!u.protejat && roluriU.includes("administrator"); // cont de administrator protejat
       const blocat = (eu && !euAdmin) || (!euAdmin && roluriU.includes("administrator")); // directorul nu gestionează administratori
       const rand = document.createElement("div"); rand.className = "user";
 
       const top = document.createElement("div"); top.className = "top";
       const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = u.nume + (eu ? " (tu)" : "");
       const bd = document.createElement("span"); bd.className = "badge" + (u.activ ? "" : " wait");
-      bd.textContent = u.activ ? "Activ" : "În așteptare";
+      bd.textContent = protejat ? "🔒 Protejat" : (u.activ ? "Activ" : "În așteptare");
       top.append(nm, bd);
 
       const em = document.createElement("div"); em.className = "em"; em.textContent = u.email || "";
@@ -339,7 +340,7 @@
         const et = document.createElement("label");
         const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = k;
         cb.checked = u.activ ? roluriU.includes(k) : (roluriU.includes(k) || k === u.calitate);
-        if (blocat || (k === "administrator" && !euAdmin)) cb.disabled = true;
+        if (blocat || (k === "administrator" && (!euAdmin || protejat))) cb.disabled = true;
         et.append(cb, document.createTextNode(ETICHETE[k]));
         grup.appendChild(et); casete.push(cb);
       });
@@ -350,14 +351,14 @@
       const dezactiv = document.createElement("button"); dezactiv.type = "button"; dezactiv.className = "off";
       dezactiv.textContent = "Dezactivează";
       if (blocat) { salvare.disabled = true; dezactiv.disabled = true; }
-      if (eu) dezactiv.disabled = true; // nu îți dezactivezi singur contul
+      if (eu || protejat) dezactiv.disabled = true; // conturile protejate și propriul cont nu se dezactivează
 
       async function salveaza(camp) {
         casete.forEach((c) => (c.disabled = true)); salvare.disabled = dezactiv.disabled = true;
         const { error } = await db.from("profiluri").update(camp).eq("id", u.id);
         if (error) {
           const m = error.message || "";
-          mesajPanou(/^(Trebuie|Doar|Nu îți)/.test(m) ? m : "Modificarea nu a reușit.");
+          mesajPanou(/^(Trebuie|Doar|Nu îți|Contul)/.test(m) ? m : "Modificarea nu a reușit.");
         } else {
           mesajPanou("Salvat: " + u.nume, true);
           if (eu && camp.roluri) aplicaRoluri(camp.roluri);
