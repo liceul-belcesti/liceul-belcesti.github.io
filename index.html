@@ -91,6 +91,9 @@
     .card .panel-msg { margin:0 0 14px; }
 
     /* ---------- Panou utilizatori ---------- */
+    .roluri { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:12px; }
+    .roluri label { display:flex; align-items:center; gap:8px; margin:0; font-weight:500; font-size:.95rem; min-height:36px; }
+    .roluri input { width:20px; height:20px; min-height:0; margin:0; padding:0; accent-color:var(--accent); }
     .user .em { margin-top:4px; color:var(--muted); font-size:.88rem; word-break:break-all; }
     .user .info { margin-top:4px; font-size:.88rem; }
     .back { width:auto; min-height:40px; margin:0 0 14px; padding:8px 14px; color:var(--text); background:transparent;
@@ -182,7 +185,7 @@
     <main id="panou" class="wrap hidden">
       <button id="inapoi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Utilizatori</h1>
-      <p class="who">Aprobă conturile noi, alege rolul și dezactivează conturile.</p>
+      <p class="who">Aprobă conturile noi, bifează rolurile fiecărui cont și dezactivează conturile.</p>
       <div id="panou-msg" class="panel-msg" role="alert"></div>
       <div id="lista"></div>
     </main>
@@ -193,30 +196,45 @@
   <script>
     const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
-    const ETICHETE = { administrator: "Administrator", profesor: "Profesor", parinte: "Părinte", elev: "Elev" };
+    const ETICHETE = {
+      administrator: "Administrator", director: "Director", secretariat: "Secretariat", contabilitate: "Contabilitate",
+      profesor: "Profesor", parinte: "Părinte", elev: "Elev"
+    };
     const MESAJ_ASTEPTARE = "Contul tău a fost creat și așteaptă aprobarea administratorului. Vei putea intra după aprobare.";
     const MESAJ_FARA_ACCES = "Contul tău nu are acces la platformă. Contactează administratorul.";
 
-    // Modulele afișate pentru fiecare rol (deocamdată inactive; le activăm pe rând).
+    // Modulele platformei (deocamdată inactive, în afară de Utilizatori; le activăm pe rând).
     const MODULE = {
-      utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și schimbă roluri", activ: true },
+      utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și atribuie roluri", activ: true },
+      pontaj:   { ico: "🕒", t: "Pontaj", d: "Prezența lunară a personalului" },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală" },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul claselor și al profesorilor" },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii" },
       registru: { ico: "📁", t: "Registratură", d: "Documente și numere de înregistrare" },
       catalog:  { ico: "📘", t: "Situație școlară", d: "Note și absențe" }
     };
+    // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
+    // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      administrator: ["utilizatori", "anunturi", "orar", "altfel", "registru"],
+      director:      ["utilizatori", "pontaj", "anunturi", "orar", "altfel", "registru"],
+      secretariat:   ["pontaj", "anunturi", "orar", "registru"],
+      contabilitate: ["pontaj"],
       profesor:      ["anunturi", "orar", "altfel", "registru"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
 
-    function deseneazaModule(rol) {
+    function moduleleMele(roluri) {
+      const set = new Set();
+      roluri.forEach((r) => (r === "administrator" ? Object.keys(MODULE) : (PE_ROL[r] || [])).forEach((k) => set.add(k)));
+      if (!set.size) set.add("anunturi");
+      return Object.keys(MODULE).filter((k) => set.has(k));
+    }
+
+    function deseneazaModule(roluri) {
       const zona = $("module");
       zona.replaceChildren();
-      (PE_ROL[rol] || ["anunturi"]).forEach((cheie) => {
+      moduleleMele(roluri).forEach((cheie) => {
         const m = MODULE[cheie];
         const c = document.createElement("div");
         c.className = m.activ ? "tile on" : "tile off";
@@ -235,8 +253,9 @@
       });
     }
 
-    // ---------- Panou utilizatori (doar administrator; regulile din baza de date decid efectiv) ----------
+    // ---------- Panou utilizatori (administrator și director; regulile din baza de date decid efectiv) ----------
     let euId = null;
+    let euRoluri = [];
 
     function mesajPanou(text, ok) {
       $("panou-msg").textContent = text || "";
@@ -257,7 +276,7 @@
     }
 
     async function incarcaUtilizatori() {
-      const { data, error } = await db.from("profiluri").select("id, nume, rol, activ, creat_la, email, calitate, detalii, completat")
+      const { data, error } = await db.from("profiluri").select("id, nume, roluri, activ, creat_la, email, calitate, detalii, completat")
         .order("activ", { ascending: true }).order("creat_la", { ascending: false });
       if (error) return mesajPanou("Nu s-a putut încărca lista. Încearcă din nou.");
       const lista = $("lista");
@@ -267,6 +286,9 @@
 
     function randUtilizator(u) {
       const eu = u.id === euId;
+      const euAdmin = euRoluri.includes("administrator");
+      const roluriU = u.roluri || [];
+      const blocat = eu || (!euAdmin && roluriU.includes("administrator")); // directorul nu gestionează administratori
       const rand = document.createElement("div"); rand.className = "user";
 
       const top = document.createElement("div"); top.className = "top";
@@ -281,35 +303,46 @@
         ? "Cere: " + (ETICHETE[u.calitate] || "—") + (u.detalii ? " · " + u.detalii : "")
         : (u.activ ? "" : "Nu a completat încă datele.");
 
-      const ctl = document.createElement("div"); ctl.className = "ctl";
-      const sel = document.createElement("select"); sel.setAttribute("aria-label", "Rol pentru " + u.nume);
+      // Casete pentru roluri: un cont poate avea mai multe.
+      const grup = document.createElement("div"); grup.className = "roluri";
+      const casete = [];
       Object.keys(ETICHETE).forEach((k) => {
-        const o = document.createElement("option"); o.value = k; o.textContent = ETICHETE[k];
-        if (k === (u.activ ? u.rol : (u.calitate || u.rol))) o.selected = true;
-        sel.appendChild(o);
+        const et = document.createElement("label");
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = k;
+        cb.checked = u.activ ? roluriU.includes(k) : (roluriU.includes(k) || k === u.calitate);
+        if (blocat || (k === "administrator" && !euAdmin)) cb.disabled = true;
+        et.append(cb, document.createTextNode(ETICHETE[k]));
+        grup.appendChild(et); casete.push(cb);
       });
-      const btn = document.createElement("button"); btn.type = "button";
-      btn.className = u.activ ? "off" : ""; btn.textContent = u.activ ? "Dezactivează" : "Aprobă contul";
-      if (eu) { sel.disabled = true; btn.disabled = true; }
 
-      async function salveaza(camp, valoare) {
-        sel.disabled = btn.disabled = true;
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const salvare = document.createElement("button"); salvare.type = "button";
+      salvare.textContent = u.activ ? "Salvează rolurile" : "Aprobă contul";
+      const dezactiv = document.createElement("button"); dezactiv.type = "button"; dezactiv.className = "off";
+      dezactiv.textContent = "Dezactivează";
+      if (blocat) { salvare.disabled = true; dezactiv.disabled = true; }
+
+      async function salveaza(camp) {
+        casete.forEach((c) => (c.disabled = true)); salvare.disabled = dezactiv.disabled = true;
         const { error } = await db.from("profiluri").update(camp).eq("id", u.id);
         if (error) {
-          mesajPanou(/ultimul|cel puțin un administrator/.test(error.message || "")
-            ? "Trebuie să rămână cel puțin un administrator activ."
-            : "Modificarea nu a reușit.");
+          const m = error.message || "";
+          mesajPanou(/^(Trebuie|Doar|Nu îți)/.test(m) ? m : "Modificarea nu a reușit.");
         } else mesajPanou("Salvat: " + u.nume, true);
         incarcaUtilizatori(); // reîncarcă lista cu starea reală din baza de date
       }
-      // La un cont activ, schimbarea rolului se salvează imediat; la unul în așteptare, rolul se salvează odată cu aprobarea.
-      sel.addEventListener("change", () => { if (u.activ) salveaza({ rol: sel.value }); });
-      btn.addEventListener("click", () => salveaza(u.activ ? { activ: false } : { activ: true, rol: sel.value }));
+      const alese = () => casete.filter((c) => c.checked).map((c) => c.value);
+      salvare.addEventListener("click", () => {
+        const r = alese();
+        if (!r.length) return mesajPanou("Alege cel puțin un rol.");
+        salveaza(u.activ ? { roluri: r } : { activ: true, roluri: r });
+      });
+      dezactiv.addEventListener("click", () => salveaza({ activ: false }));
 
-      ctl.append(sel, btn);
+      if (u.activ) ctl.append(salvare, dezactiv); else ctl.append(salvare);
       rand.append(top, em);
       if (info.textContent) rand.append(info);
-      rand.append(ctl);
+      rand.append(grup, ctl);
       return rand;
     }
 
@@ -344,7 +377,7 @@
       if (!sesiune) return arataLogin();
       const { data, error } = await db
         .from("profiluri")
-        .select("nume, rol, activ, completat")
+        .select("nume, roluri, activ, completat")
         .eq("id", sesiune.user.id)
         .maybeSingle();
 
@@ -362,13 +395,14 @@
       }
       mesajRamas = "";
       euId = sesiune.user.id;
+      euRoluri = data.roluri || [];
       arataPrincipal();
       $("login").classList.add("hidden");
       $("acasa").classList.remove("hidden");
       $("prenume").textContent = (data.nume || "").split(" ")[0];
       $("cine").textContent = data.nume + " · " + sesiune.user.email;
-      $("rol").textContent = ETICHETE[data.rol] || data.rol;
-      deseneazaModule(data.rol);
+      $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
+      deseneazaModule(euRoluri);
     }
 
     const ETICHETA_DETALII = {
