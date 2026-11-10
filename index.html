@@ -91,6 +91,10 @@
     .card .panel-msg { margin:0 0 14px; }
 
     /* ---------- Panou utilizatori ---------- */
+    .switch { margin-top:14px; max-width:320px; }
+    .switch label { margin:0 0 6px; font-size:.85rem; color:var(--muted); font-weight:600; }
+    .switch select { width:100%; min-height:44px; padding:8px 12px; font:inherit; color:var(--text); background:var(--card);
+                     border:1.5px solid var(--line); border-radius:10px; }
     .roluri { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:12px; }
     .roluri label { display:flex; align-items:center; gap:8px; margin:0; font-weight:500; font-size:.95rem; min-height:36px; }
     .roluri input { width:20px; height:20px; min-height:0; margin:0; padding:0; accent-color:var(--accent); }
@@ -177,6 +181,10 @@
       <h1 class="hello">Bun venit, <span id="prenume"></span>!</h1>
       <p class="who"><span id="cine"></span></p>
       <span class="role" id="rol"></span>
+      <div id="comutator" class="switch hidden">
+        <label for="activ-ca">Vezi platforma ca:</label>
+        <select id="activ-ca"></select>
+      </div>
 
       <h3 class="sect">Modulele tale</h3>
       <div id="module" class="grid"></div>
@@ -202,6 +210,8 @@
     };
     const MESAJ_ASTEPTARE = "Contul tău a fost creat și așteaptă aprobarea administratorului. Vei putea intra după aprobare.";
     const MESAJ_FARA_ACCES = "Contul tău nu are acces la platformă. Contactează administratorul.";
+
+    let euRoluri = [];
 
     // Modulele platformei (deocamdată inactive, în afară de Utilizatori; le activăm pe rând).
     const MODULE = {
@@ -231,6 +241,26 @@
       return Object.keys(MODULE).filter((k) => set.has(k));
     }
 
+    // Comutator „Vezi platforma ca”: schimbă doar ce se vede în pagină; drepturile reale rămân cele din baza de date.
+    function pregatesteComutator() {
+      const sel = $("activ-ca");
+      let salvat = "";
+      try { salvat = localStorage.getItem("rolActiv") || ""; } catch (e) {}
+      if (!euRoluri.includes(salvat)) salvat = "";
+      sel.replaceChildren();
+      sel.add(new Option("Toate rolurile mele", ""));
+      euRoluri.forEach((r) => sel.add(new Option(ETICHETE[r] || r, r)));
+      sel.value = salvat;
+      $("comutator").classList.toggle("hidden", euRoluri.length < 2);
+      deseneazaModule(salvat ? [salvat] : euRoluri);
+    }
+
+    function aplicaRoluri(r) {
+      euRoluri = r;
+      $("rol").textContent = euRoluri.map((x) => ETICHETE[x] || x).join(" · ");
+      pregatesteComutator();
+    }
+
     function deseneazaModule(roluri) {
       const zona = $("module");
       zona.replaceChildren();
@@ -255,7 +285,6 @@
 
     // ---------- Panou utilizatori (administrator și director; regulile din baza de date decid efectiv) ----------
     let euId = null;
-    let euRoluri = [];
 
     function mesajPanou(text, ok) {
       $("panou-msg").textContent = text || "";
@@ -288,7 +317,7 @@
       const eu = u.id === euId;
       const euAdmin = euRoluri.includes("administrator");
       const roluriU = u.roluri || [];
-      const blocat = eu || (!euAdmin && roluriU.includes("administrator")); // directorul nu gestionează administratori
+      const blocat = (eu && !euAdmin) || (!euAdmin && roluriU.includes("administrator")); // directorul nu gestionează administratori
       const rand = document.createElement("div"); rand.className = "user";
 
       const top = document.createElement("div"); top.className = "top";
@@ -321,6 +350,7 @@
       const dezactiv = document.createElement("button"); dezactiv.type = "button"; dezactiv.className = "off";
       dezactiv.textContent = "Dezactivează";
       if (blocat) { salvare.disabled = true; dezactiv.disabled = true; }
+      if (eu) dezactiv.disabled = true; // nu îți dezactivezi singur contul
 
       async function salveaza(camp) {
         casete.forEach((c) => (c.disabled = true)); salvare.disabled = dezactiv.disabled = true;
@@ -328,7 +358,10 @@
         if (error) {
           const m = error.message || "";
           mesajPanou(/^(Trebuie|Doar|Nu îți)/.test(m) ? m : "Modificarea nu a reușit.");
-        } else mesajPanou("Salvat: " + u.nume, true);
+        } else {
+          mesajPanou("Salvat: " + u.nume, true);
+          if (eu && camp.roluri) aplicaRoluri(camp.roluri);
+        }
         incarcaUtilizatori(); // reîncarcă lista cu starea reală din baza de date
       }
       const alese = () => casete.filter((c) => c.checked).map((c) => c.value);
@@ -345,6 +378,13 @@
       rand.append(grup, ctl);
       return rand;
     }
+
+    $("activ-ca").addEventListener("change", () => {
+      const v = $("activ-ca").value;
+      try { localStorage.setItem("rolActiv", v); } catch (e) {}
+      deseneazaModule(v ? [v] : euRoluri);
+      arataPrincipal();
+    });
 
     $("inapoi").addEventListener("click", arataPrincipal);
 
@@ -402,7 +442,7 @@
       $("prenume").textContent = (data.nume || "").split(" ")[0];
       $("cine").textContent = data.nume + " · " + sesiune.user.email;
       $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
-      deseneazaModule(euRoluri);
+      pregatesteComutator();
     }
 
     const ETICHETA_DETALII = {
