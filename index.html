@@ -26,7 +26,10 @@
     button:disabled { opacity:.6; cursor:default; }
     .sep { display:flex; align-items:center; gap:10px; margin:18px 0 0; color:var(--muted); font-size:.85rem; }
     .sep::before, .sep::after { content:""; flex:1; height:1px; background:var(--line); }
-    .msg { min-height:1.4em; margin-top:14px; font-size:.92rem; color:var(--err); }
+    .msg { margin:0 0 18px; padding:14px 16px; font-size:1.15rem; font-weight:700; line-height:1.4;
+           color:var(--err); border:2px solid var(--err); border-radius:10px; }
+    .msg.info { color:var(--accent); border-color:var(--accent); }
+    .msg:empty { display:none; }
     .foot { margin-top:18px; font-size:.82rem; color:var(--muted); text-align:center; }
     .foot a { color:var(--muted); }
     .hidden { display:none; }
@@ -35,6 +38,7 @@
 <body>
   <main class="card">
     <section id="login">
+      <div id="msg" class="msg" role="alert"></div>
       <h1>Platforma școlii</h1>
       <p class="sub">Autentifică-te pentru a accesa platforma.</p>
 
@@ -48,7 +52,6 @@
         <input id="parola" type="password" autocomplete="current-password" required>
         <button id="btn" type="submit">Intră în cont</button>
       </form>
-      <div id="msg" class="msg" role="alert"></div>
       <p class="foot">
         <a href="confidentialitate.html">Confidențialitate</a> ·
         <a href="termeni.html">Termeni</a>
@@ -79,7 +82,9 @@
     function arataLogin(mesaj) {
       $("login").classList.remove("hidden");
       $("acasa").classList.add("hidden");
-      $("msg").textContent = mesaj || mesajRamas || "";
+      const m = mesaj || mesajRamas || "";
+      $("msg").textContent = m;
+      $("msg").className = "msg" + (m === MESAJ_ASTEPTARE ? " info" : "");
     }
 
     // Verifică în baza de date dacă utilizatorul are un profil activ.
@@ -108,6 +113,7 @@
       e.preventDefault();
       mesajRamas = "";
       $("msg").textContent = "";
+      $("msg").className = "msg";
       $("btn").disabled = true;
       const { error } = await db.auth.signInWithPassword({
         email: $("email").value.trim(),
@@ -121,6 +127,7 @@
     $("google").addEventListener("click", async () => {
       mesajRamas = "";
       $("msg").textContent = "";
+      $("msg").className = "msg";
       const { error } = await db.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: "https://liceul-belcesti.github.io/" }
