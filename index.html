@@ -22,8 +22,13 @@
     button { width:100%; margin-top:20px; padding:12px; font:inherit; font-weight:600; color:#fff;
              background:var(--accent); border:0; border-radius:8px; cursor:pointer; }
     button.secondary { background:transparent; color:var(--text); border:1px solid var(--line); }
+    button.google { margin-top:0; }
     button:disabled { opacity:.6; cursor:default; }
+    .sep { display:flex; align-items:center; gap:10px; margin:18px 0 0; color:var(--muted); font-size:.85rem; }
+    .sep::before, .sep::after { content:""; flex:1; height:1px; background:var(--line); }
     .msg { min-height:1.4em; margin-top:14px; font-size:.92rem; color:var(--err); }
+    .foot { margin-top:18px; font-size:.82rem; color:var(--muted); text-align:center; }
+    .foot a { color:var(--muted); }
     .hidden { display:none; }
   </style>
 </head>
@@ -31,7 +36,11 @@
   <main class="card">
     <section id="login">
       <h1>Platforma școlii</h1>
-      <p class="sub">Autentifică-te cu contul primit de la școală.</p>
+      <p class="sub">Autentifică-te pentru a accesa platforma.</p>
+
+      <button id="google" class="secondary google" type="button">Continuă cu Google</button>
+      <div class="sep">sau cu e-mail</div>
+
       <form id="form">
         <label for="email">E-mail</label>
         <input id="email" type="email" autocomplete="username" required>
@@ -40,6 +49,10 @@
         <button id="btn" type="submit">Intră în cont</button>
       </form>
       <div id="msg" class="msg" role="alert"></div>
+      <p class="foot">
+        <a href="confidentialitate.html">Confidențialitate</a> ·
+        <a href="termeni.html">Termeni</a>
+      </p>
     </section>
 
     <section id="acasa" class="hidden">
@@ -57,11 +70,16 @@
     const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
     const ETICHETE = { administrator: "Administrator", profesor: "Profesor", parinte: "Părinte", elev: "Elev" };
+    const MESAJ_ASTEPTARE = "Contul tău a fost creat și așteaptă aprobarea administratorului. Vei putea intra după aprobare.";
+    const MESAJ_FARA_ACCES = "Contul tău nu are acces la platformă. Contactează administratorul.";
+
+    // Mesajul rămâne afișat chiar dacă ieșirea din cont declanșează o nouă verificare.
+    let mesajRamas = "";
 
     function arataLogin(mesaj) {
       $("login").classList.remove("hidden");
       $("acasa").classList.add("hidden");
-      $("msg").textContent = mesaj || "";
+      $("msg").textContent = mesaj || mesajRamas || "";
     }
 
     // Verifică în baza de date dacă utilizatorul are un profil activ.
@@ -75,9 +93,11 @@
         .maybeSingle();
 
       if (error || !data || !data.activ) {
+        mesajRamas = (data && !data.activ) ? MESAJ_ASTEPTARE : MESAJ_FARA_ACCES;
         await db.auth.signOut();
-        return arataLogin("Contul tău nu are acces la platformă. Contactează administratorul.");
+        return arataLogin(mesajRamas);
       }
+      mesajRamas = "";
       $("login").classList.add("hidden");
       $("acasa").classList.remove("hidden");
       $("cine").textContent = data.nume + " (" + sesiune.user.email + ")";
@@ -86,6 +106,7 @@
 
     $("form").addEventListener("submit", async (e) => {
       e.preventDefault();
+      mesajRamas = "";
       $("msg").textContent = "";
       $("btn").disabled = true;
       const { error } = await db.auth.signInWithPassword({
@@ -97,7 +118,17 @@
       $("parola").value = "";
     });
 
-    $("iesire").addEventListener("click", () => db.auth.signOut());
+    $("google").addEventListener("click", async () => {
+      mesajRamas = "";
+      $("msg").textContent = "";
+      const { error } = await db.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: "https://liceul-belcesti.github.io/" }
+      });
+      if (error) $("msg").textContent = "Autentificarea cu Google nu a reușit. Încearcă din nou.";
+    });
+
+    $("iesire").addEventListener("click", () => { mesajRamas = ""; db.auth.signOut(); });
 
     // setTimeout: evită apelurile către Supabase direct în callback-ul de autentificare
     db.auth.onAuthStateChange((_event, sesiune) => setTimeout(() => verificaAcces(sesiune), 0));
