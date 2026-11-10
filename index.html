@@ -83,6 +83,26 @@
     .tile .soon { position:absolute; top:10px; right:10px; padding:2px 8px; border-radius:999px; font-size:.7rem; font-weight:700;
                   background:var(--teal-100); color:var(--accent); }
     .tile.off { opacity:.85; }
+    .tile.on { cursor:pointer; border-color:var(--accent); }
+    .tile.on:hover, .tile.on:focus-visible { box-shadow:var(--shadow); outline:none; transform:translateY(-1px); }
+
+    /* ---------- Panou utilizatori ---------- */
+    .back { width:auto; min-height:40px; margin:0 0 14px; padding:8px 14px; color:var(--text); background:transparent;
+            border:1.5px solid var(--line); }
+    .panel-msg { margin:12px 0; padding:12px 14px; border-radius:10px; font-weight:700; border:2px solid var(--err); color:var(--err); }
+    .panel-msg.ok { border-color:var(--accent); color:var(--accent); }
+    .panel-msg:empty { display:none; }
+    .user { background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
+    .user .top { display:flex; flex-wrap:wrap; align-items:center; gap:8px; justify-content:space-between; }
+    .user .nm { font-weight:700; word-break:break-word; }
+    .badge { padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; background:var(--teal-100); color:var(--accent); }
+    .badge.wait { background:#fff1d6; color:#8a5a00; }
+    @media (prefers-color-scheme: dark) { .badge.wait { background:#3a2c0a; color:#ffd27a; } }
+    .user .ctl { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+    .user select { flex:1 1 160px; min-height:44px; padding:8px 10px; font:inherit; color:var(--text); background:var(--card);
+                   border:1.5px solid var(--line); border-radius:10px; }
+    .user button { flex:1 1 140px; width:auto; margin:0; min-height:44px; }
+    .user button.off { background:transparent; color:var(--err); border:1.5px solid var(--err); }
   </style>
 </head>
 <body>
@@ -131,6 +151,14 @@
       <h3 class="sect">Modulele tale</h3>
       <div id="module" class="grid"></div>
     </main>
+
+    <main id="panou" class="wrap hidden">
+      <button id="inapoi" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Utilizatori</h1>
+      <p class="who">Aprobă conturile noi, alege rolul și dezactivează conturile.</p>
+      <div id="panou-msg" class="panel-msg" role="alert"></div>
+      <div id="lista"></div>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -144,7 +172,7 @@
 
     // Modulele afișate pentru fiecare rol (deocamdată inactive; le activăm pe rând).
     const MODULE = {
-      aprobare: { ico: "✅", t: "Aprobare conturi", d: "Conturi noi în așteptare" },
+      utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și schimbă roluri", activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală" },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul claselor și al profesorilor" },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii" },
@@ -152,7 +180,7 @@
       catalog:  { ico: "📘", t: "Situație școlară", d: "Note și absențe" }
     };
     const PE_ROL = {
-      administrator: ["aprobare", "anunturi", "orar", "altfel", "registru"],
+      administrator: ["utilizatori", "anunturi", "orar", "altfel", "registru"],
       profesor:      ["anunturi", "orar", "altfel", "registru"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
@@ -164,15 +192,91 @@
       (PE_ROL[rol] || ["anunturi"]).forEach((cheie) => {
         const m = MODULE[cheie];
         const c = document.createElement("div");
-        c.className = "tile off";
+        c.className = m.activ ? "tile on" : "tile off";
         const soon = document.createElement("span"); soon.className = "soon"; soon.textContent = "În curând";
+        if (m.activ) {
+          c.setAttribute("role", "button"); c.tabIndex = 0;
+          const deschide = () => deschideModul(cheie);
+          c.addEventListener("click", deschide);
+          c.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); deschide(); } });
+        }
         const ico = document.createElement("div"); ico.className = "ico"; ico.setAttribute("aria-hidden", "true"); ico.textContent = m.ico;
         const t = document.createElement("div"); t.className = "t"; t.textContent = m.t;
         const d = document.createElement("div"); d.className = "d"; d.textContent = m.d;
-        c.append(soon, ico, t, d);
+        if (m.activ) c.append(ico, t, d); else c.append(soon, ico, t, d);
         zona.appendChild(c);
       });
     }
+
+    // ---------- Panou utilizatori (doar administrator; regulile din baza de date decid efectiv) ----------
+    let euId = null;
+
+    function mesajPanou(text, ok) {
+      $("panou-msg").textContent = text || "";
+      $("panou-msg").className = "panel-msg" + (ok ? " ok" : "");
+    }
+
+    function arataPrincipal() {
+      $("panou").classList.add("hidden");
+      document.querySelector("#acasa > main.wrap").classList.remove("hidden");
+    }
+
+    function deschideModul(cheie) {
+      if (cheie !== "utilizatori") return;
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("panou").classList.remove("hidden");
+      mesajPanou("");
+      incarcaUtilizatori();
+    }
+
+    async function incarcaUtilizatori() {
+      const { data, error } = await db.from("profiluri").select("id, nume, rol, activ, creat_la")
+        .order("activ", { ascending: true }).order("creat_la", { ascending: false });
+      if (error) return mesajPanou("Nu s-a putut încărca lista. Încearcă din nou.");
+      const lista = $("lista");
+      lista.replaceChildren();
+      data.forEach((u) => lista.appendChild(randUtilizator(u)));
+    }
+
+    function randUtilizator(u) {
+      const eu = u.id === euId;
+      const rand = document.createElement("div"); rand.className = "user";
+
+      const top = document.createElement("div"); top.className = "top";
+      const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = u.nume + (eu ? " (tu)" : "");
+      const bd = document.createElement("span"); bd.className = "badge" + (u.activ ? "" : " wait");
+      bd.textContent = u.activ ? "Activ" : "În așteptare";
+      top.append(nm, bd);
+
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const sel = document.createElement("select"); sel.setAttribute("aria-label", "Rol pentru " + u.nume);
+      Object.keys(ETICHETE).forEach((k) => {
+        const o = document.createElement("option"); o.value = k; o.textContent = ETICHETE[k]; if (k === u.rol) o.selected = true;
+        sel.appendChild(o);
+      });
+      const btn = document.createElement("button"); btn.type = "button";
+      btn.className = u.activ ? "off" : ""; btn.textContent = u.activ ? "Dezactivează" : "Aprobă contul";
+      if (eu) { sel.disabled = true; btn.disabled = true; }
+
+      async function salveaza(camp, valoare) {
+        sel.disabled = btn.disabled = true;
+        const { error } = await db.from("profiluri").update(camp).eq("id", u.id);
+        if (error) {
+          mesajPanou(/ultimul|cel puțin un administrator/.test(error.message || "")
+            ? "Trebuie să rămână cel puțin un administrator activ."
+            : "Modificarea nu a reușit.");
+        } else mesajPanou("Salvat: " + u.nume, true);
+        incarcaUtilizatori(); // reîncarcă lista cu starea reală din baza de date
+      }
+      sel.addEventListener("change", () => salveaza({ rol: sel.value }));
+      btn.addEventListener("click", () => salveaza({ activ: !u.activ }));
+
+      ctl.append(sel, btn);
+      rand.append(top, ctl);
+      return rand;
+    }
+
+    $("inapoi").addEventListener("click", arataPrincipal);
 
     // Mesajul rămâne afișat chiar dacă ieșirea din cont declanșează o nouă verificare.
     let mesajRamas = "";
@@ -201,6 +305,8 @@
         return arataLogin(mesajRamas);
       }
       mesajRamas = "";
+      euId = sesiune.user.id;
+      arataPrincipal();
       $("login").classList.add("hidden");
       $("acasa").classList.remove("hidden");
       $("prenume").textContent = (data.nume || "").split(" ")[0];
