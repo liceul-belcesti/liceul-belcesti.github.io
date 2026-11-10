@@ -45,6 +45,7 @@
     <section id="acasa" class="hidden">
       <h1>Bun venit!</h1>
       <p class="sub">Ești autentificat ca <strong id="cine"></strong>.</p>
+      <p>Rol: <strong id="rol"></strong></p>
       <p>Aici vor apărea modulele platformei.</p>
       <button id="iesire" class="secondary" type="button">Ieși din cont</button>
     </section>
@@ -55,12 +56,32 @@
   <script>
     const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
+    const ETICHETE = { administrator: "Administrator", profesor: "Profesor", parinte: "Părinte", elev: "Elev" };
 
-    function arata(sesiune) {
-      const logat = !!sesiune;
-      $("login").classList.toggle("hidden", logat);
-      $("acasa").classList.toggle("hidden", !logat);
-      if (logat) $("cine").textContent = sesiune.user.email;
+    function arataLogin(mesaj) {
+      $("login").classList.remove("hidden");
+      $("acasa").classList.add("hidden");
+      $("msg").textContent = mesaj || "";
+    }
+
+    // Verifică în baza de date dacă utilizatorul are un profil activ.
+    // Regulile din Supabase (RLS) sunt cele care protejează datele; pagina doar afișează.
+    async function verificaAcces(sesiune) {
+      if (!sesiune) return arataLogin();
+      const { data, error } = await db
+        .from("profiluri")
+        .select("nume, rol, activ")
+        .eq("id", sesiune.user.id)
+        .maybeSingle();
+
+      if (error || !data || !data.activ) {
+        await db.auth.signOut();
+        return arataLogin("Contul tău nu are acces la platformă. Contactează administratorul.");
+      }
+      $("login").classList.add("hidden");
+      $("acasa").classList.remove("hidden");
+      $("cine").textContent = data.nume + " (" + sesiune.user.email + ")";
+      $("rol").textContent = ETICHETE[data.rol] || data.rol;
     }
 
     $("form").addEventListener("submit", async (e) => {
@@ -78,8 +99,8 @@
 
     $("iesire").addEventListener("click", () => db.auth.signOut());
 
-    db.auth.onAuthStateChange((_event, sesiune) => arata(sesiune));
-    db.auth.getSession().then(({ data }) => arata(data.session));
+    // setTimeout: evită apelurile către Supabase direct în callback-ul de autentificare
+    db.auth.onAuthStateChange((_event, sesiune) => setTimeout(() => verificaAcces(sesiune), 0));
   </script>
 </body>
 </html>
