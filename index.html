@@ -86,7 +86,13 @@
     .tile.on { cursor:pointer; border-color:var(--accent); }
     .tile.on:hover, .tile.on:focus-visible { box-shadow:var(--shadow); outline:none; transform:translateY(-1px); }
 
+    .card select { width:100%; min-height:48px; padding:11px 14px; font:inherit; color:var(--text); background:var(--card);
+                   border:1.5px solid var(--line); border-radius:10px; }
+    .card .panel-msg { margin:0 0 14px; }
+
     /* ---------- Panou utilizatori ---------- */
+    .user .em { margin-top:4px; color:var(--muted); font-size:.88rem; word-break:break-all; }
+    .user .info { margin-top:4px; font-size:.88rem; }
     .back { width:auto; min-height:40px; margin:0 0 14px; padding:8px 14px; color:var(--text); background:transparent;
             border:1.5px solid var(--line); }
     .panel-msg { margin:12px 0; padding:12px 14px; border-radius:10px; font-weight:700; border:2px solid var(--err); color:var(--err); }
@@ -114,7 +120,28 @@
       <p>Platforma școlii</p>
     </header>
 
-    <main class="card">
+    <main id="completare" class="card hidden">
+      <h2>Încă un pas</h2>
+      <p class="sub">Completează datele reale, ca administratorul să îți poată aproba contul.</p>
+      <div id="c-msg" class="panel-msg" role="alert"></div>
+      <form id="form-completare">
+        <label for="c-nume">Nume și prenume</label>
+        <input id="c-nume" type="text" autocomplete="name" maxlength="100" minlength="5" required>
+        <label for="c-calitate">Ești</label>
+        <select id="c-calitate" required>
+          <option value="">Alege...</option>
+          <option value="profesor">Profesor / personal al școlii</option>
+          <option value="parinte">Părinte</option>
+          <option value="elev">Elev</option>
+        </select>
+        <label for="c-detalii" id="c-detalii-et">Detalii</label>
+        <input id="c-detalii" type="text" maxlength="200">
+        <button id="c-btn" type="submit">Trimite pentru aprobare</button>
+        <button id="c-iesire" class="secondary" type="button">Renunț</button>
+      </form>
+    </main>
+
+    <main id="card-login" class="card">
       <div id="msg" class="msg" role="alert"></div>
       <h2>Autentificare</h2>
       <p class="sub">Intră în contul tău pentru a continua.</p>
@@ -230,7 +257,7 @@
     }
 
     async function incarcaUtilizatori() {
-      const { data, error } = await db.from("profiluri").select("id, nume, rol, activ, creat_la")
+      const { data, error } = await db.from("profiluri").select("id, nume, rol, activ, creat_la, email, calitate, detalii, completat")
         .order("activ", { ascending: true }).order("creat_la", { ascending: false });
       if (error) return mesajPanou("Nu s-a putut încărca lista. Încearcă din nou.");
       const lista = $("lista");
@@ -248,10 +275,17 @@
       bd.textContent = u.activ ? "Activ" : "În așteptare";
       top.append(nm, bd);
 
+      const em = document.createElement("div"); em.className = "em"; em.textContent = u.email || "";
+      const info = document.createElement("div"); info.className = "info";
+      info.textContent = u.calitate
+        ? "Cere: " + (ETICHETE[u.calitate] || "—") + (u.detalii ? " · " + u.detalii : "")
+        : (u.activ ? "" : "Nu a completat încă datele.");
+
       const ctl = document.createElement("div"); ctl.className = "ctl";
       const sel = document.createElement("select"); sel.setAttribute("aria-label", "Rol pentru " + u.nume);
       Object.keys(ETICHETE).forEach((k) => {
-        const o = document.createElement("option"); o.value = k; o.textContent = ETICHETE[k]; if (k === u.rol) o.selected = true;
+        const o = document.createElement("option"); o.value = k; o.textContent = ETICHETE[k];
+        if (k === (u.activ ? u.rol : (u.calitate || u.rol))) o.selected = true;
         sel.appendChild(o);
       });
       const btn = document.createElement("button"); btn.type = "button";
@@ -268,11 +302,14 @@
         } else mesajPanou("Salvat: " + u.nume, true);
         incarcaUtilizatori(); // reîncarcă lista cu starea reală din baza de date
       }
-      sel.addEventListener("change", () => salveaza({ rol: sel.value }));
-      btn.addEventListener("click", () => salveaza({ activ: !u.activ }));
+      // La un cont activ, schimbarea rolului se salvează imediat; la unul în așteptare, rolul se salvează odată cu aprobarea.
+      sel.addEventListener("change", () => { if (u.activ) salveaza({ rol: sel.value }); });
+      btn.addEventListener("click", () => salveaza(u.activ ? { activ: false } : { activ: true, rol: sel.value }));
 
       ctl.append(sel, btn);
-      rand.append(top, ctl);
+      rand.append(top, em);
+      if (info.textContent) rand.append(info);
+      rand.append(ctl);
       return rand;
     }
 
@@ -281,9 +318,21 @@
     // Mesajul rămâne afișat chiar dacă ieșirea din cont declanșează o nouă verificare.
     let mesajRamas = "";
 
+    function arataCompletare(data) {
+      $("login").classList.remove("hidden");
+      $("acasa").classList.add("hidden");
+      $("card-login").classList.add("hidden");
+      if ($("completare").classList.contains("hidden")) {
+        $("completare").classList.remove("hidden");
+        $("c-nume").value = (data.nume || "").includes("@") ? "" : (data.nume || "");
+      }
+    }
+
     function arataLogin(mesaj) {
       $("login").classList.remove("hidden");
       $("acasa").classList.add("hidden");
+      $("card-login").classList.remove("hidden");
+      $("completare").classList.add("hidden");
       const m = mesaj || mesajRamas || "";
       $("msg").textContent = m;
       $("msg").className = "msg" + (m === MESAJ_ASTEPTARE ? " info" : "");
@@ -295,12 +344,19 @@
       if (!sesiune) return arataLogin();
       const { data, error } = await db
         .from("profiluri")
-        .select("nume, rol, activ")
+        .select("nume, rol, activ, completat")
         .eq("id", sesiune.user.id)
         .maybeSingle();
 
-      if (error || !data || !data.activ) {
-        mesajRamas = (data && !data.activ) ? MESAJ_ASTEPTARE : MESAJ_FARA_ACCES;
+      if (error || !data) {
+        mesajRamas = MESAJ_FARA_ACCES;
+        await db.auth.signOut();
+        return arataLogin(mesajRamas);
+      }
+      if (!data.activ) {
+        // Cont nou: întâi cerem datele reale, apoi așteaptă aprobarea administratorului.
+        if (!data.completat) { mesajRamas = ""; return arataCompletare(data); }
+        mesajRamas = MESAJ_ASTEPTARE;
         await db.auth.signOut();
         return arataLogin(mesajRamas);
       }
@@ -314,6 +370,43 @@
       $("rol").textContent = ETICHETE[data.rol] || data.rol;
       deseneazaModule(data.rol);
     }
+
+    const ETICHETA_DETALII = {
+      profesor: "Funcția / disciplina (ex. profesor de geografie)",
+      parinte: "Numele copilului și clasa (ex. Popescu Ion, clasa a V-a A)",
+      elev: "Clasa (ex. a IX-a B)"
+    };
+    $("c-calitate").addEventListener("change", () => {
+      const c = $("c-calitate").value;
+      $("c-detalii-et").textContent = ETICHETA_DETALII[c] || "Detalii";
+      $("c-detalii").required = !!c;
+    });
+
+    $("form-completare").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("c-msg").textContent = "";
+      $("c-btn").disabled = true;
+      const { error } = await db.rpc("completeaza_profil", {
+        p_nume: $("c-nume").value,
+        p_calitate: $("c-calitate").value,
+        p_detalii: $("c-detalii").value
+      });
+      $("c-btn").disabled = false;
+      if (error) {
+        $("c-msg").textContent = "Datele nu au putut fi salvate. Scrie numele și prenumele complet și încearcă din nou.";
+        return;
+      }
+      $("form-completare").reset();
+      mesajRamas = MESAJ_ASTEPTARE;
+      await db.auth.signOut();
+      arataLogin(mesajRamas);
+    });
+
+    $("c-iesire").addEventListener("click", async () => {
+      mesajRamas = "";
+      await db.auth.signOut();
+      arataLogin();
+    });
 
     $("form").addEventListener("submit", async (e) => {
       e.preventDefault();
