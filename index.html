@@ -130,6 +130,17 @@
 
     $("iesire").addEventListener("click", () => { mesajRamas = ""; db.auth.signOut(); });
 
+    // Dacă Google/Supabase întorc o eroare în adresă, o arătăm clar și curățăm adresa.
+    (function () {
+      const text = location.search + "&" + location.hash.replace(/^#/, "");
+      if (/error(_code)?=/.test(text)) {
+        mesajRamas = /signup_disabled/.test(text)
+          ? "Crearea de conturi noi nu este deschisă momentan. Contactează administratorul școlii."
+          : "Autentificarea nu a reușit. Încearcă din nou sau contactează administratorul.";
+        history.replaceState(null, "", location.pathname);
+      }
+    })();
+
     // setTimeout: evită apelurile către Supabase direct în callback-ul de autentificare
     db.auth.onAuthStateChange((_event, sesiune) => setTimeout(() => verificaAcces(sesiune), 0));
   </script>
