@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b7f8a">
-  <title>Platforma școlii</title>
+  <title>Spațiul digital al școlii</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <style>
     :root {
@@ -40,6 +40,16 @@
     .brand p { margin:6px 0 0; opacity:.85; font-size:.95rem; }
     .card { width:100%; max-width:400px; background:var(--card); border-radius:18px; padding:26px 22px; box-shadow:var(--shadow); }
     .card h2 { margin:0 0 4px; font-size:1.2rem; }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:0 0 18px; padding:4px; background:var(--bg); border-radius:12px; }
+    .tabs button { margin:0; min-height:44px; background:transparent; color:var(--muted); border:0; }
+    .tabs button[aria-selected="true"] { background:var(--card); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.18); }
+    .pasi { margin:0 0 18px; padding-left:22px; color:var(--muted); font-size:.92rem; line-height:1.45; }
+    .pasi li { margin-bottom:6px; }
+    .pasi em { font-style:normal; font-weight:600; color:var(--text); }
+    .how { margin:0 0 18px; }
+    .how p { margin:0 0 8px; color:var(--muted); font-size:.92rem; line-height:1.45; }
+    .how strong { color:var(--text); }
+    .how em { font-style:normal; font-weight:600; color:var(--text); }
     .card p.sub { margin:0 0 18px; color:var(--muted); font-size:.95rem; }
     label { display:block; font-size:.9rem; margin:14px 0 6px; font-weight:600; }
     input { width:100%; min-height:48px; padding:11px 14px; font:inherit; color:var(--text); background:transparent;
@@ -129,7 +139,7 @@
       <div class="logo">
         <img src="sigla.webp" width="800" height="533" alt="Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești">
       </div>
-      <h1>Platforma școlii</h1>
+      <h1>Spațiul digital al școlii</h1>
     </header>
 
     <main id="completare" class="card hidden">
@@ -155,19 +165,37 @@
 
     <main id="card-login" class="card">
       <div id="msg" class="msg" role="alert"></div>
-      <h2>Autentificare</h2>
-      <p class="sub">Intră în contul tău pentru a continua.</p>
+      <div class="tabs" role="tablist">
+        <button id="tab-intra" type="button" role="tab" aria-selected="true">Intră în cont</button>
+        <button id="tab-creeaza" type="button" role="tab" aria-selected="false">Creează cont</button>
+      </div>
 
-      <button id="google" class="secondary google" type="button">Continuă cu Google</button>
-      <div class="sep">sau cu e-mail</div>
+      <section id="panou-intra" role="tabpanel">
+        <div class="how">
+          <p>Ai deja cont? Alege <em>Continuă cu Google</em> sau intră cu e-mail și parolă.</p>
+        </div>
+        <button id="google" class="secondary google" type="button">Continuă cu Google</button>
+        <div class="sep">sau cu e-mail</div>
+        <form id="form">
+          <label for="email">E-mail</label>
+          <input id="email" type="email" autocomplete="username" inputmode="email" required>
+          <label for="parola">Parolă</label>
+          <input id="parola" type="password" autocomplete="current-password" required>
+          <button id="btn" type="submit">Intră în cont</button>
+        </form>
+      </section>
 
-      <form id="form">
-        <label for="email">E-mail</label>
-        <input id="email" type="email" autocomplete="username" inputmode="email" required>
-        <label for="parola">Parolă</label>
-        <input id="parola" type="password" autocomplete="current-password" required>
-        <button id="btn" type="submit">Intră în cont</button>
-      </form>
+      <section id="panou-creeaza" role="tabpanel" class="hidden">
+        <div class="how">
+          <p><strong>Prima dată aici?</strong> Îți creezi contul în trei pași:</p>
+        </div>
+        <ol class="pasi">
+          <li>Apasă <em>Creează cont cu Google</em>.</li>
+          <li>Completează numele tău real și funcția.</li>
+          <li>Așteaptă ca administratorul să îți aprobe contul. După aprobare poți intra.</li>
+        </ol>
+        <button id="google2" class="google" type="button">Creează cont cu Google</button>
+      </section>
     </main>
 
     <p class="legal">
@@ -503,7 +531,7 @@
       $("parola").value = "";
     });
 
-    $("google").addEventListener("click", async () => {
+    async function intraCuGoogle() {
       mesajRamas = "";
       $("msg").textContent = "";
       $("msg").className = "msg";
@@ -512,7 +540,22 @@
         options: { redirectTo: "https://liceul-belcesti.github.io/" }
       });
       if (error) $("msg").textContent = "Autentificarea cu Google nu a reușit. Încearcă din nou.";
-    });
+    }
+    $("google").addEventListener("click", intraCuGoogle);
+    $("google2").addEventListener("click", intraCuGoogle);
+
+    function alegeFila(fila) {
+      const intra = fila === "intra";
+      $("tab-intra").setAttribute("aria-selected", String(intra));
+      $("tab-creeaza").setAttribute("aria-selected", String(!intra));
+      $("panou-intra").classList.toggle("hidden", !intra);
+      $("panou-creeaza").classList.toggle("hidden", intra);
+      mesajRamas = "";
+      $("msg").textContent = "";
+      $("msg").className = "msg";
+    }
+    $("tab-intra").addEventListener("click", () => alegeFila("intra"));
+    $("tab-creeaza").addEventListener("click", () => alegeFila("creeaza"));
 
     $("iesire").addEventListener("click", () => { mesajRamas = ""; db.auth.signOut(); });
 
