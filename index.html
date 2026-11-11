@@ -439,6 +439,28 @@
         incarcaUtilizatori();
       });
       ctl.appendChild(re);
+      if (euAdmin) {
+        const def = document.createElement("button"); def.type = "button"; def.className = "off";
+        def.textContent = "Șterge definitiv";
+        if (u.protejat) def.disabled = true;
+        let armat = false, timer = null;
+        def.addEventListener("click", async () => {
+          if (!armat) {
+            armat = true; def.textContent = "Sigur? Nu se mai poate anula";
+            timer = setTimeout(() => { armat = false; def.textContent = "Șterge definitiv"; }, 5000);
+            return;
+          }
+          clearTimeout(timer);
+          def.disabled = re.disabled = true;
+          const { error } = await db.rpc("sterge_definitiv", { p_id: u.id });
+          if (error) {
+            const m = error.message || "";
+            mesajPanou(/^(Trebuie|Doar|Nu |Contul|Mută)/.test(m) ? m : "Ștergerea definitivă nu a reușit.");
+          } else mesajPanou("Cont șters definitiv: " + u.nume, true);
+          incarcaUtilizatori();
+        });
+        ctl.appendChild(def);
+      }
       r.append(top, em, sub, ctl);
       return r;
     }
