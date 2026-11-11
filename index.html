@@ -68,6 +68,9 @@
     .card h2 { margin:0 0 4px; font-size:1.2rem; }
     .tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:0 0 18px; padding:4px; background:var(--bg); border-radius:12px; }
     .tabs button { margin:0; min-height:44px; background:transparent; color:var(--muted); border:0; }
+    .tabs.t3 { grid-template-columns:1fr 1fr 1fr; }
+    .tabs.t3 button { padding:8px 4px; }
+    .user .sub { margin-top:6px; color:var(--muted); font-size:.86rem; }
     .tabs button[aria-selected="true"] { background:var(--card); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.18); }
     .pasi { margin:0 0 18px; padding-left:22px; color:var(--muted); font-size:.92rem; line-height:1.45; }
     .pasi li { margin-bottom:6px; }
@@ -253,6 +256,11 @@
       <button id="inapoi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Utilizatori</h1>
       <p class="who">Aprobă conturile noi, bifează rolurile fiecărui cont și dezactivează conturile.</p>
+      <div class="tabs t3" role="tablist" id="tab-panou">
+        <button type="button" role="tab" data-v="conturi" aria-selected="true">Conturi</button>
+        <button type="button" role="tab" data-v="sterse" aria-selected="false">Șterse</button>
+        <button type="button" role="tab" data-v="istoric" aria-selected="false">Istoric</button>
+      </div>
       <div id="panou-msg" class="panel-msg" role="alert"></div>
       <div id="lista"></div>
     </main>
@@ -360,17 +368,88 @@
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("panou").classList.remove("hidden");
       mesajPanou("");
+      vedere = "conturi";
+      $("tab-panou").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === "conturi" ? "true" : "false"));
       incarcaUtilizatori();
     }
 
+    let vedere = "conturi";
+    const dataRo = (t) => new Date(t).toLocaleString("ro-RO", { dateStyle: "short", timeStyle: "short" });
+
     async function incarcaUtilizatori() {
-      const { data, error } = await db.from("profiluri").select("id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat")
-        .order("activ", { ascending: true }).order("creat_la", { ascending: false });
-      if (error) return mesajPanou("Nu s-a putut încărca lista. Încearcă din nou.");
       const lista = $("lista");
+      const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de";
+      if (vedere === "istoric") {
+        const { data, error } = await db.from("istoric_conturi")
+          .select("la, cine_nume, cont_nume, cont_email, actiune, detalii").order("la", { ascending: false }).limit(150);
+        if (error) return mesajPanou("Nu s-a putut încărca istoricul. Încearcă din nou.");
+        lista.replaceChildren();
+        if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există încă nicio înregistrare."; lista.appendChild(p); }
+        data.forEach((h) => lista.appendChild(randIstoric(h)));
+        return;
+      }
+      let q = db.from("profiluri").select(campuri);
+      q = vedere === "sterse" ? q.not("sters_la", "is", null).order("sters_la", { ascending: false })
+        : q.is("sters_la", null).order("activ", { ascending: true }).order("creat_la", { ascending: false });
+      const { data, error } = await q;
+      if (error) return mesajPanou("Nu s-a putut încărca lista. Încearcă din nou.");
       lista.replaceChildren();
-      data.forEach((u) => lista.appendChild(randUtilizator(u)));
+      if (vedere === "sterse") {
+        if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există conturi șterse."; lista.appendChild(p); }
+        const nume = Object.fromEntries(data.map((x) => [x.id, x.nume]));
+        data.forEach((u) => lista.appendChild(randSters(u, nume)));
+      } else data.forEach((u) => lista.appendChild(randUtilizator(u)));
     }
+
+    function randIstoric(h) {
+      const r = document.createElement("div"); r.className = "user";
+      const top = document.createElement("div"); top.className = "top";
+      const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = h.actiune + ": " + (h.cont_nume || "—");
+      const bd = document.createElement("span"); bd.className = "badge"; bd.textContent = dataRo(h.la);
+      top.append(nm, bd);
+      const em = document.createElement("div"); em.className = "em"; em.textContent = h.cont_email || "";
+      const sub = document.createElement("div"); sub.className = "sub";
+      sub.textContent = (h.cine_nume ? "De către: " + h.cine_nume : "De către: sistem / cont nou") + (h.detalii ? " · " + h.detalii : "");
+      r.append(top, em, sub);
+      return r;
+    }
+
+    function randSters(u) {
+      const euAdmin = euRoluri.includes("administrator");
+      const blocat = !euAdmin && (u.roluri || []).includes("administrator");
+      const r = document.createElement("div"); r.className = "user";
+      const top = document.createElement("div"); top.className = "top";
+      const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = u.nume;
+      const bd = document.createElement("span"); bd.className = "badge wait"; bd.textContent = "Șters";
+      top.append(nm, bd);
+      const em = document.createElement("div"); em.className = "em"; em.textContent = u.email || "";
+      const sub = document.createElement("div"); sub.className = "sub";
+      sub.textContent = "Șters la " + dataRo(u.sters_la) + " · Roluri păstrate: " +
+        ((u.roluri || []).map((x) => ETICHETE[x] || x).join(", ") || "niciunul");
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const re = document.createElement("button"); re.type = "button"; re.textContent = "Reactivează contul";
+      if (blocat) re.disabled = true;
+      re.addEventListener("click", async () => {
+        re.disabled = true;
+        const { error } = await db.rpc("reactiveaza_cont", { p_id: u.id });
+        if (error) {
+          const m = error.message || "";
+          mesajPanou(/^(Trebuie|Doar|Nu |Contul)/.test(m) ? m : "Reactivarea nu a reușit.");
+        } else mesajPanou("Cont reactivat cu rolurile de dinainte: " + u.nume, true);
+        incarcaUtilizatori();
+      });
+      ctl.appendChild(re);
+      r.append(top, em, sub, ctl);
+      return r;
+    }
+
+    $("tab-panou").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button[data-v]"); if (!b) return;
+      vedere = b.dataset.v;
+      $("tab-panou").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+      mesajPanou("");
+      incarcaUtilizatori();
+    });
 
     function randUtilizator(u) {
       const eu = u.id === euId;
@@ -449,7 +528,7 @@
         if (error) {
           const m = error.message || "";
           mesajPanou(/^(Trebuie|Doar|Nu |Contul|Dezactivează)/.test(m) ? m : "Ștergerea nu a reușit.");
-        } else mesajPanou("Cont șters: " + u.nume, true);
+        } else mesajPanou("Cont mutat în „Șterse”: " + u.nume + ". Poate fi reactivat oricând.", true);
         incarcaUtilizatori();
       });
 
@@ -498,9 +577,15 @@
       if (!sesiune) return arataLogin();
       const { data, error } = await db
         .from("profiluri")
-        .select("nume, roluri, activ, completat")
+        .select("nume, roluri, activ, completat, sters_la")
         .eq("id", sesiune.user.id)
         .maybeSingle();
+
+      if (data && data.sters_la) {
+        mesajRamas = "Contul tău a fost șters. Contactează administratorul.";
+        await db.auth.signOut();
+        return arataLogin(mesajRamas);
+      }
 
       if (error || !data) {
         mesajRamas = MESAJ_FARA_ACCES;
