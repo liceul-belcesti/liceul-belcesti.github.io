@@ -78,6 +78,8 @@
     .tabs .pt { display:inline-block; margin-left:6px; min-width:20px; padding:0 6px; border-radius:10px; font-size:.75rem; color:#fff; background:var(--err); }
     .tabs.t3 { grid-template-columns:1fr 1fr 1fr; }
     .tabs.t3 button { padding:8px 4px; }
+    .golire { display:block; width:100%; min-height:44px; margin:0 0 12px; background:transparent; color:var(--err); border:1.5px solid var(--err); }
+    .sterge-rand { width:auto; min-height:36px; margin:10px 0 0; padding:4px 14px; background:transparent; color:var(--err); border:1.5px solid var(--err); font-size:.85rem; }
     .user .sub { margin-top:6px; color:var(--muted); font-size:.86rem; }
     .tabs button[aria-selected="true"] { background:var(--card); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.18); }
     .pasi { margin:0 0 18px; padding-left:22px; color:var(--muted); font-size:.92rem; line-height:1.45; }
@@ -417,10 +419,27 @@
       const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de";
       if (vedere === "istoric") {
         const { data, error } = await db.from("istoric_conturi")
-          .select("la, cine_nume, cont_nume, cont_email, actiune, detalii").order("la", { ascending: false }).limit(150);
+          .select("id, la, cine_nume, cont_nume, cont_email, actiune, detalii").order("la", { ascending: false }).limit(150);
         if (error) return mesajPanou("Nu s-a putut încărca istoricul. Încearcă din nou.");
         lista.replaceChildren();
-        if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există încă nicio înregistrare."; lista.appendChild(p); }
+        if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există nicio înregistrare."; lista.appendChild(p); }
+        else if (euRoluri.includes("administrator")) {
+          const gol = document.createElement("button"); gol.type = "button"; gol.className = "off golire";
+          gol.textContent = "Șterge tot istoricul";
+          let armat = false, timer = null;
+          gol.addEventListener("click", async () => {
+            if (!armat) {
+              armat = true; gol.textContent = "Sigur? Se șterge tot istoricul";
+              timer = setTimeout(() => { armat = false; gol.textContent = "Șterge tot istoricul"; }, 5000);
+              return;
+            }
+            clearTimeout(timer); gol.disabled = true;
+            const { error } = await db.rpc("sterge_istoric", {});
+            mesajPanou(error ? "Ștergerea nu a reușit." : "Istoricul a fost șters.", !error);
+            incarcaUtilizatori();
+          });
+          lista.appendChild(gol);
+        }
         data.forEach((h) => lista.appendChild(randIstoric(h)));
         return;
       }
@@ -448,6 +467,15 @@
       const sub = document.createElement("div"); sub.className = "sub";
       sub.textContent = (h.cine_nume ? "De către: " + h.cine_nume : "De către: sistem / cont nou") + (h.detalii ? " · " + h.detalii : "");
       r.append(top, em, sub);
+      if (euRoluri.includes("administrator")) {
+        const x = document.createElement("button"); x.type = "button"; x.className = "sterge-rand"; x.textContent = "Șterge";
+        x.addEventListener("click", async () => {
+          x.disabled = true;
+          const { error } = await db.rpc("sterge_istoric", { p_id: h.id });
+          if (error) mesajPanou("Ștergerea nu a reușit."); else r.remove();
+        });
+        r.appendChild(x);
+      }
       return r;
     }
 
