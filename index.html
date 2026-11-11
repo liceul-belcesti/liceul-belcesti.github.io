@@ -241,6 +241,29 @@
     #pontaj .panel-msg { margin:6px 0; padding:8px 10px; font-size:.85rem; }
     #pontaj .golire { min-height:34px; margin:0 0 6px; font-size:.8rem; }
     #pontaj .sterge-rand { min-height:30px; margin-top:6px; padding:2px 12px; }
+      #pontaj .ang-excel { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 6px; }
+    #pontaj .ang-excel.hidden { display:none; }
+    #pontaj .mic { display:inline-flex; align-items:center; width:auto; min-height:32px; margin:0; padding:4px 10px; font:inherit; font-size:.78rem; font-weight:700; text-decoration:none;
+                   color:var(--text); background:transparent; border:1.5px solid var(--line); border-radius:10px; cursor:pointer; }
+    #pontaj .mic.hidden { display:none; }
+    #pontaj .previz { border:2px solid var(--accent); border-radius:12px; padding:10px; margin:8px 0; background:var(--card); }
+    #pontaj .previz h3 { margin:0 0 4px; font-size:.95rem; }
+    #pontaj .previz p { margin:4px 0; }
+    #pontaj .previz details { margin:6px 0; }
+    #pontaj .previz summary { cursor:pointer; font-weight:700; }
+    #pontaj .previz details.prob summary { color:var(--err); }
+    #pontaj .previz ul { margin:4px 0 0; padding-left:18px; max-height:220px; overflow:auto; font-size:.8rem; }
+    #pontaj .previz .ctl { display:flex; gap:6px; margin-top:8px; }
+    #pontaj .previz .ctl button { flex:1; margin:0; min-height:36px; }
+      #pontaj .bloc-loc { border:2px solid var(--hero-a); border-radius:12px; overflow:hidden; margin:16px 0; background:var(--card); }
+    #pontaj .grup-loc { display:flex; justify-content:space-between; align-items:center; margin:0; padding:9px 12px; font-size:1rem; font-weight:800; color:#fff;
+                        background:linear-gradient(135deg, var(--hero-a), var(--hero-b)); }
+    #pontaj .grup-loc .nr-loc { font-size:.75rem; font-weight:600; opacity:.92; }
+    #pontaj .grup-cat { display:flex; justify-content:space-between; align-items:center; margin:0; padding:6px 12px; font-size:.72rem; font-weight:800; letter-spacing:.04em;
+                        text-transform:uppercase; color:var(--text); background:color-mix(in srgb, var(--hero-a) 14%, var(--card));
+                        border-top:1px solid var(--hero-a); border-left:5px solid var(--hero-a); }
+    #pontaj .bloc-loc .ang-rand { margin:0; border:0; border-top:1px solid var(--line); border-radius:0; padding:7px 12px; }
+    #pontaj .bloc-loc .grup-cat + .ang-rand { border-top:0; }
   </style>
 </head>
 <body>
@@ -366,6 +389,13 @@
         <select id="ang-loc"><option value="">Toate locurile</option><option>Centru</option><option>Tansa</option><option>Munteni</option></select>
       </div>
       <button id="ang-adauga" class="hidden" type="button">+ Adaugă angajat</button>
+      <div id="ang-excel" class="ang-excel hidden">
+        <a id="ang-sablon" class="mic" href="sablon-angajati.xlsx" download>⬇ Șablon gol</a>
+        <button id="ang-export" class="mic" type="button">⬇ Lista curentă</button>
+        <button id="ang-import" class="mic" type="button">⬆ Importă din Excel</button>
+        <input id="ang-fisier" type="file" accept=".xlsx" hidden>
+      </div>
+      <div id="ang-previzualizare"></div>
       <div id="ang-form-loc"></div>
       <p id="ang-numar" class="who"></p>
       <div id="ang-lista"></div>
@@ -796,6 +826,10 @@
       $("an-inchide").classList.toggle("hidden", !a);
       $("an-nou-copie-et").textContent = "Copiază lista de angajați din " + (a ? a.denumire : "anul curent");
       $("ang-adauga").classList.toggle("hidden", !(tabP === "angajati" && poateEdita()));
+      $("ang-excel").classList.toggle("hidden", !(tabP === "angajati" && a));
+      $("ang-sablon").classList.toggle("hidden", !poateEdita());
+      $("ang-import").classList.toggle("hidden", !poateEdita());
+      if (tabP !== "angajati") $("ang-previzualizare").replaceChildren();
     }
 
     function incarcaTab() {
@@ -828,13 +862,16 @@
       LOCURI.filter((l) => !loc || l === loc).forEach((l) => {
         const dinLoc = vizibili.filter((a) => (a.norme || []).some((n) => n.loc === l));
         if (!dinLoc.length) return;
-        lista.appendChild(el("h3", "grup-loc", l));
+        const sec = el("section", "bloc-loc");
+        const cap = el("div", "grup-loc"); cap.append(el("span", "", l), el("span", "nr-loc", dinLoc.length + (dinLoc.length === 1 ? " persoană" : " persoane")));
+        sec.appendChild(cap);
         const cats = CATEGORII[l].slice();
         dinLoc.forEach((a) => a.norme.forEach((n) => { if (n.loc === l && !cats.includes(n.categorie)) cats.push(n.categorie); }));
         cats.forEach((c) => {
           const pers = dinLoc.filter((a) => a.norme.some((n) => n.loc === l && n.categorie === c));
           if (!pers.length) return;
-          lista.appendChild(el("div", "grup-cat", c));
+          const ch = el("div", "grup-cat"); ch.append(el("span", "", c), el("span", "", String(pers.length)));
+          sec.appendChild(ch);
           pers.forEach((a) => {
             const n = a.norme.find((x) => x.loc === l && x.categorie === c);
             const r = el("div", "ang-rand");
@@ -847,9 +884,10 @@
               r.addEventListener("click", () => formAngajat(a));
               r.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); formAngajat(a); } });
             } else r.classList.add("citire");
-            lista.appendChild(r);
+            sec.appendChild(r);
           });
         });
+        lista.appendChild(sec);
       });
     }
 
@@ -1081,6 +1119,132 @@
       mesajPontaj("");
       incarcaTab();
     });
+
+    // ---------- Import / export Excel pentru lista de angajați ----------
+    const nrm = (t) => String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    let xlsxPromise = null;
+    function incarcaXLSX() {
+      if (window.XLSX) return Promise.resolve(window.XLSX);
+      if (!xlsxPromise) xlsxPromise = new Promise((ok, nu) => {
+        const sc = document.createElement("script");
+        sc.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+        sc.onload = () => ok(window.XLSX); sc.onerror = () => { xlsxPromise = null; nu(new Error("xlsx")); };
+        document.head.appendChild(sc);
+      });
+      return xlsxPromise;
+    }
+
+    $("ang-export").addEventListener("click", async () => {
+      const a = anCurent(); if (!a) return;
+      try {
+        const X = await incarcaXLSX();
+        const randuri = [["Nume și prenume", "Loc", "Categorie", "Funcție (opțional)"]];
+        angajati.filter((p) => !p.sters_la).forEach((p) => (p.norme || []).slice().sort((x, y) => x.ordine - y.ordine)
+          .forEach((n) => randuri.push([p.nume, n.loc, n.categorie, n.functie || ""])));
+        const ws = X.utils.aoa_to_sheet(randuri);
+        ws["!cols"] = [{ wch: 34 }, { wch: 14 }, { wch: 40 }, { wch: 26 }];
+        const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, "Angajați");
+        X.writeFile(wb, "angajati-" + a.denumire.replace("–", "-") + ".xlsx");
+      } catch (e) { mesajPontaj("Nu s-a putut crea fișierul Excel. Verifică conexiunea la internet."); }
+    });
+
+    $("ang-import").addEventListener("click", () => { $("ang-fisier").value = ""; $("ang-fisier").click(); });
+    $("ang-fisier").addEventListener("change", async () => {
+      const f = $("ang-fisier").files[0]; if (!f) return;
+      mesajPontaj("");
+      try {
+        const X = await incarcaXLSX();
+        const wb = X.read(await f.arrayBuffer(), { type: "array" });
+        const ws = wb.Sheets["Angajați"] || wb.Sheets[wb.SheetNames.find((n) => nrm(n) !== "instructiuni" && nrm(n) !== "liste") || wb.SheetNames[0]];
+        previzualizeaza(X.utils.sheet_to_json(ws, { header: 1, defval: "" }));
+      } catch (e) { mesajPontaj("Fișierul nu a putut fi citit. Folosește șablonul (.xlsx)."); }
+    });
+
+    function previzualizeaza(randuri) {
+      const zona = $("ang-previzualizare"); zona.replaceChildren();
+      const h = randuri.findIndex((r) => r.some((c) => nrm(c).startsWith("nume")));
+      if (h < 0) return mesajPontaj("Nu găsesc coloanele din șablon (Nume și prenume, Loc, Categorie). Folosește șablonul.");
+      const idx = (test) => randuri[h].findIndex((c) => test(nrm(c)));
+      const cn = idx((t) => t.startsWith("nume")), cl = idx((t) => t === "loc"), cc = idx((t) => t.startsWith("categor")), cf = idx((t) => t.startsWith("functi"));
+      if (cn < 0 || cl < 0 || cc < 0) return mesajPontaj("Lipsesc coloane din fișier. Folosește șablonul.");
+
+      const dupaNume = new Map();
+      angajati.forEach((p) => { const k = nrm(p.nume); if (!dupaNume.has(k)) dupaNume.set(k, []); dupaNume.get(k).push(p); });
+      const probleme = [], sarite = [], noi = new Map(), peExistenti = [];
+      for (let i = h + 1; i < randuri.length; i++) {
+        const r = randuri[i], nr = i + 1;
+        const nume = String(r[cn] || "").trim().replace(/\s+/g, " ");
+        const locT = String(r[cl] || "").trim(), catT = String(r[cc] || "").trim(), functie = cf >= 0 ? String(r[cf] || "").trim() : "";
+        if (!nume && !locT && !catT && !functie) continue;
+        const loc = LOCURI.find((l) => nrm(l) === nrm(locT));
+        const cat = loc ? CATEGORII[loc].find((c) => nrm(c) === nrm(catT)) : null;
+        if (nume.length < 3 || nume.length > 100) { probleme.push("Rândul " + nr + ": numele lipsește sau e prea scurt."); continue; }
+        if (!loc) { probleme.push("Rândul " + nr + " (" + nume + "): locul „" + locT + "” nu e Centru, Tansa sau Munteni."); continue; }
+        if (!cat) { probleme.push("Rândul " + nr + " (" + nume + "): categoria „" + catT + "” nu există la " + loc + "."); continue; }
+        if (functie.length > 60) { probleme.push("Rândul " + nr + " (" + nume + "): funcția e prea lungă."); continue; }
+        const k = nrm(nume), gasiti = dupaNume.get(k) || [];
+        const activ = gasiti.find((p) => !p.sters_la);
+        if (activ) {
+          if ((activ.norme || []).some((n) => n.loc === loc && n.categorie === cat)) { sarite.push(nume + " · " + loc + " · " + cat + " (există deja)"); continue; }
+          if (peExistenti.some((x) => x.p === activ && x.loc === loc && x.categorie === cat)) { sarite.push(nume + " · " + loc + " · " + cat + " (dublură în fișier)"); continue; }
+          peExistenti.push({ p: activ, loc, categorie: cat, functie: functie || null });
+        } else if (gasiti.length) {
+          sarite.push(nume + " (este în „Șterși”: restaureaz-o de acolo)"); continue;
+        } else {
+          const n = noi.get(k) || { nume, norme: [] };
+          if (n.norme.some((x) => x.loc === loc && x.categorie === cat)) { sarite.push(nume + " · " + loc + " · " + cat + " (dublură în fișier)"); continue; }
+          n.norme.push({ loc, categorie: cat, functie: functie || null }); noi.set(k, n);
+        }
+      }
+      const noiArr = [...noi.values()];
+      const nNormeNoi = noiArr.reduce((t, x) => t + x.norme.length, 0) + peExistenti.length;
+      const box = el("div", "previz");
+      box.appendChild(el("h3", "", "Previzualizare import"));
+      box.appendChild(el("p", "", noiArr.length + " angajați noi · " + nNormeNoi + " norme noi · " + sarite.length + " sărite · " + probleme.length + " cu probleme"));
+      const detalii = (titlu, lista, cls) => {
+        if (!lista.length) return;
+        const d = el("details", cls || ""); d.open = cls === "prob";
+        d.appendChild(el("summary", "", titlu + " (" + lista.length + ")"));
+        const ul = el("ul"); lista.forEach((t) => ul.appendChild(el("li", "", t))); d.appendChild(ul); box.appendChild(d);
+      };
+      detalii("Probleme (nu se importă)", probleme, "prob");
+      detalii("Angajați noi", noiArr.map((x) => x.nume + " · " + x.norme.map((n) => n.loc + " " + n.categorie).join(", ")));
+      detalii("Norme noi pentru angajați existenți", peExistenti.map((x) => x.p.nume + " · " + x.loc + " · " + x.categorie));
+      detalii("Sărite", sarite);
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Confirmă importul"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.replaceChildren());
+      if (!noiArr.length && !peExistenti.length) { ok.disabled = true; box.appendChild(el("p", "who", "Nu e nimic de importat.")); }
+      ok.addEventListener("click", async () => {
+        ok.disabled = true; nu.disabled = true;
+        try {
+          const ordinePe = (p) => (p.norme || []).reduce((m, n) => Math.max(m, n.ordine || 0), 0);
+          const normeDeAdaugat = [];
+          peExistenti.forEach((x, i) => normeDeAdaugat.push({ angajat_id: x.p.id, loc: x.loc, categorie: x.categorie, functie: x.functie, ordine: ordinePe(x.p) + 1 + i }));
+          for (let i = 0; i < noiArr.length; i += 100) {
+            const bucata = noiArr.slice(i, i + 100);
+            const { data, error } = await db.from("angajati").insert(bucata.map((x) => ({ nume: x.nume, an_id: anId }))).select("id, nume");
+            if (error || !data || data.length !== bucata.length) throw error || new Error("ins");
+            data.forEach((rd, j) => { if (rd.nume !== bucata[j].nume) throw new Error("ordine"); bucata[j].norme.forEach((n, q) => normeDeAdaugat.push({ angajat_id: rd.id, loc: n.loc, categorie: n.categorie, functie: n.functie, ordine: q + 1 })); });
+          }
+          for (let i = 0; i < normeDeAdaugat.length; i += 100) {
+            const { error } = await db.from("norme").insert(normeDeAdaugat.slice(i, i + 100)); if (error) throw error;
+          }
+          zona.replaceChildren();
+          mesajPontaj("Import terminat: " + noiArr.length + " angajați noi și " + normeDeAdaugat.length + " norme adăugate.", true);
+          incarcaAngajati();
+        } catch (e) {
+          ok.disabled = false; nu.disabled = false;
+          mesajPontaj("Importul nu a reușit complet. Reîncarcă lista și verifică ce s-a adăugat.");
+          incarcaAngajati();
+        }
+      });
+      ctl.append(ok, nu); box.appendChild(ctl);
+      zona.appendChild(box);
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     $("ang-adauga").addEventListener("click", () => formAngajat(null));
     $("ang-cauta").addEventListener("input", deseneazaAngajati);
     $("ang-loc").addEventListener("change", deseneazaAngajati);
