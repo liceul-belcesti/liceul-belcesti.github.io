@@ -432,7 +432,28 @@
       });
       dezactiv.addEventListener("click", () => salveaza({ activ: false }));
 
-      if (u.activ) ctl.append(salvare, dezactiv); else ctl.append(salvare);
+      // Ștergerea completă: doar pentru conturi dezactivate sau în așteptare; confirmare la a doua apăsare.
+      const sterge = document.createElement("button"); sterge.type = "button"; sterge.className = "off";
+      sterge.textContent = "Șterge contul";
+      if (blocat || protejat) sterge.disabled = true;
+      let armat = false, timer = null;
+      sterge.addEventListener("click", async () => {
+        if (!armat) {
+          armat = true; sterge.textContent = "Sigur? Apasă din nou";
+          timer = setTimeout(() => { armat = false; sterge.textContent = "Șterge contul"; }, 5000);
+          return;
+        }
+        clearTimeout(timer);
+        casete.forEach((c) => (c.disabled = true)); salvare.disabled = sterge.disabled = true;
+        const { error } = await db.rpc("sterge_cont", { p_id: u.id });
+        if (error) {
+          const m = error.message || "";
+          mesajPanou(/^(Trebuie|Doar|Nu |Contul|Dezactivează)/.test(m) ? m : "Ștergerea nu a reușit.");
+        } else mesajPanou("Cont șters: " + u.nume, true);
+        incarcaUtilizatori();
+      });
+
+      if (u.activ) ctl.append(salvare, dezactiv); else ctl.append(salvare, sterge);
       rand.append(top, em);
       if (info.textContent) rand.append(info);
       rand.append(grup, ctl);
