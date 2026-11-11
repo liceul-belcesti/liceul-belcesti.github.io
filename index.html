@@ -68,6 +68,25 @@
     .card h2 { margin:0 0 4px; font-size:1.2rem; }
     .tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:0 0 18px; padding:4px; background:var(--bg); border-radius:12px; }
     .tabs button { margin:0; min-height:44px; background:transparent; color:var(--muted); border:0; }
+    .verif { margin:12px 0; padding:14px; border:2px solid var(--accent); border-radius:12px; font-weight:600; }
+    .verif button { margin-top:10px; }
+    .ang-filtre { display:grid; gap:10px; margin:14px 0 4px; }
+    .ang-filtre select, .ang-form select { width:100%; min-height:48px; padding:10px 12px; font:inherit; color:var(--text); background:var(--card);
+                         border:1.5px solid var(--line); border-radius:12px; }
+    .ang-inactivi { display:flex; align-items:center; gap:8px; margin:0; font-weight:500; }
+    .ang-inactivi input { width:auto; min-height:0; }
+    #ang-adauga { margin:12px 0; }
+    .norma { margin-top:4px; font-size:.92rem; }
+    .norma b { font-weight:700; }
+    .ang-form { background:var(--card); border:2px solid var(--accent); border-radius:14px; padding:14px; margin:12px 0; }
+    .ang-form .nr { display:grid; gap:8px; padding:10px; margin-top:10px; border:1.5px dashed var(--line); border-radius:12px; }
+    .ang-form .nr button { margin-top:0; min-height:40px; }
+    .ang-form .nr input { min-height:44px; }
+    .ang-form .ctl { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+    .ang-form .ctl button { margin-top:0; flex:1 1 140px; }
+    .ang-form button.off { background:transparent; color:var(--err); border:1.5px solid var(--err); }
+    .ang-form button.secondary { margin-top:12px; }
+    .ang-form .ctl button.secondary { margin-top:0; }
     .alerta { display:block; width:100%; margin:0 0 16px; padding:14px 16px; min-height:48px; text-align:left; font-weight:700;
               color:#fff; background:var(--err); border:0; border-radius:12px; cursor:pointer; }
     .alerta.hidden { display:none; }
@@ -264,6 +283,26 @@
       <div id="module" class="grid"></div>
     </main>
 
+    <main id="pontaj" class="wrap hidden">
+      <button id="inapoi-pontaj" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Pontaj · Angajați</h1>
+      <p class="who">Lista permanentă a angajaților, din care se va genera pontajul fiecărei luni. Un om poate avea mai multe norme (în locuri sau categorii diferite).</p>
+      <div id="pontaj-msg" class="panel-msg" role="alert"></div>
+      <div id="de-verificat" class="verif hidden">
+        <span id="de-verificat-txt"></span>
+        <button id="confirma-lista" type="button">Confirmă lista</button>
+      </div>
+      <div class="ang-filtre">
+        <input id="ang-cauta" type="search" placeholder="Caută după nume" autocomplete="off">
+        <select id="ang-loc"><option value="">Toate locurile</option><option>Centru</option><option>Tansa</option><option>Munteni</option></select>
+        <label class="ang-inactivi"><input id="ang-inactivi" type="checkbox"> Arată și inactivii</label>
+      </div>
+      <button id="ang-adauga" class="hidden" type="button">+ Adaugă angajat</button>
+      <div id="ang-form-loc"></div>
+      <p id="ang-numar" class="who"></p>
+      <div id="ang-lista"></div>
+    </main>
+
     <main id="panou" class="wrap hidden">
       <button id="inapoi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Utilizatori</h1>
@@ -295,7 +334,7 @@
     // Modulele platformei (deocamdată inactive, în afară de Utilizatori; le activăm pe rând).
     const MODULE = {
       utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și atribuie roluri", activ: true },
-      pontaj:   { ico: "🕒", t: "Pontaj", d: "Prezența lunară a personalului" },
+      pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală" },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul claselor și al profesorilor" },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii" },
@@ -396,12 +435,14 @@
 
     function arataPrincipal() {
       $("panou").classList.add("hidden");
+      $("pontaj").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
     $("alerta").addEventListener("click", () => deschideModul("utilizatori"));
 
     function deschideModul(cheie) {
+      if (cheie === "pontaj") return deschidePontaj();
       if (cheie !== "utilizatori") return;
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("panou").classList.remove("hidden");
@@ -625,6 +666,185 @@
       rand.append(grup, ctl);
       return rand;
     }
+
+    // ---------- Pontaj: lista permanentă de angajați și normele lor ----------
+    const LOCURI = ["Centru", "Tansa", "Munteni"];
+    const CATEGORII = {
+      Centru: ["Directori", "Educatoare", "Învățători", "Profesori", "Profesori discipline tehnice / ingineri", "Didactic auxiliar", "Nedidactic"],
+      Tansa: ["Educatoare", "Învățători", "Profesori", "Didactic auxiliar", "Nedidactic"],
+      Munteni: ["Educatoare", "Învățători", "Profesori", "Didactic auxiliar", "Nedidactic"]
+    };
+    let angajati = [];
+    const poateModificaAng = () => ["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r));
+    const colator = new Intl.Collator("ro");
+
+    function mesajPontaj(text, ok) {
+      $("pontaj-msg").textContent = text || "";
+      $("pontaj-msg").className = "panel-msg" + (ok ? " ok" : "");
+    }
+    function el(tag, cls, text) {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined) e.textContent = text;
+      return e;
+    }
+
+    function deschidePontaj() {
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("pontaj").classList.remove("hidden");
+      mesajPontaj("");
+      $("ang-form-loc").replaceChildren();
+      $("ang-adauga").classList.toggle("hidden", !poateModificaAng());
+      incarcaAngajati();
+    }
+
+    async function incarcaAngajati() {
+      const { data, error } = await db.from("angajati")
+        .select("id, nume, activ, verificat, norme(id, loc, categorie, functie, ordine)").order("nume");
+      if (error) return mesajPontaj("Nu s-a putut încărca lista de angajați. Încearcă din nou.");
+      angajati = data.sort((a, b) => colator.compare(a.nume, b.nume));
+      deseneazaAngajati();
+    }
+
+    function deseneazaAngajati() {
+      const q = $("ang-cauta").value.trim().toLowerCase();
+      const loc = $("ang-loc").value;
+      const inactivi = $("ang-inactivi").checked;
+      const nv = angajati.filter((a) => !a.verificat).length;
+      $("de-verificat").classList.toggle("hidden", !(nv > 0 && poateModificaAng()));
+      $("de-verificat-txt").textContent = nv + (nv === 1 ? " angajat importat din Excel așteaptă verificarea ta." : " angajați importați din Excel așteaptă verificarea ta.") + " Controlează numele și normele, corectează ce trebuie, apoi confirmă lista.";
+      const vizibili = angajati.filter((a) =>
+        (inactivi || a.activ) &&
+        (!q || a.nume.toLowerCase().includes(q)) &&
+        (!loc || (a.norme || []).some((n) => n.loc === loc)));
+      $("ang-numar").textContent = vizibili.length + (vizibili.length === 1 ? " persoană" : " persoane");
+      const lista = $("ang-lista"); lista.replaceChildren();
+      vizibili.forEach((a) => lista.appendChild(randAngajat(a)));
+    }
+
+    function randAngajat(a) {
+      const r = el("div", "user" + (a.verificat ? "" : " nou"));
+      const top = el("div", "top");
+      top.append(el("div", "nm", a.nume));
+      const stare = !a.activ ? "Inactiv" : (!a.verificat ? "De verificat" : "");
+      if (stare) top.append(el("span", "badge wait", stare));
+      r.appendChild(top);
+      (a.norme || []).slice().sort((x, y) => x.ordine - y.ordine).forEach((n) => {
+        const d = el("div", "norma");
+        d.append(el("b", "", n.loc), document.createTextNode(" · " + n.categorie + (n.functie ? " · " + n.functie : "")));
+        r.appendChild(d);
+      });
+      if (poateModificaAng()) {
+        const ctl = el("div", "ctl");
+        const mod = el("button", "", "Modifică"); mod.type = "button";
+        mod.addEventListener("click", () => formAngajat(a));
+        const act = el("button", "off", a.activ ? "Dezactivează" : "Reactivează"); act.type = "button";
+        act.addEventListener("click", async () => {
+          act.disabled = true;
+          const { error } = await db.from("angajati").update({ activ: !a.activ }).eq("id", a.id);
+          mesajPontaj(error ? "Modificarea nu a reușit." : (a.activ ? "Dezactivat: " : "Reactivat: ") + a.nume, !error);
+          incarcaAngajati();
+        });
+        ctl.append(mod, act); r.appendChild(ctl);
+      }
+      return r;
+    }
+
+    // Formular pentru adăugare / modificare: numele și una sau mai multe norme.
+    function formAngajat(a) {
+      const zona = $("ang-form-loc"); zona.replaceChildren();
+      const f = el("div", "ang-form");
+      f.appendChild(el("h3", "", a ? "Modifică angajatul" : "Adaugă angajat"));
+      const lab = el("label", "", "Nume și prenume"); lab.setAttribute("for", "ang-nume");
+      const nume = el("input"); nume.id = "ang-nume"; nume.maxLength = 100; nume.value = a ? a.nume : ""; nume.autocomplete = "off";
+      f.append(lab, nume);
+      f.appendChild(el("label", "", "Norme (loc, categorie, funcția dacă e cazul)"));
+      const norme = el("div"); f.appendChild(norme);
+      const stare = []; // fiecare normă: {id?, loc, categorie, functie, elim}
+
+      function adaugaNorma(n) {
+        const s = Object.assign({ loc: "Centru", categorie: "", functie: "" }, n || {});
+        stare.push(s);
+        const box = el("div", "nr");
+        const loc = el("select"); LOCURI.forEach((l) => loc.add(new Option(l, l))); loc.value = s.loc;
+        const cat = el("select");
+        const functie = el("input"); functie.placeholder = "Funcția, dacă e cazul (ex. secretar)"; functie.maxLength = 60; functie.value = s.functie || "";
+        function umple() {
+          cat.replaceChildren();
+          cat.add(new Option("Alege categoria", ""));
+          (CATEGORII[loc.value] || []).forEach((c) => cat.add(new Option(c, c)));
+          if (s.categorie && !(CATEGORII[loc.value] || []).includes(s.categorie)) cat.add(new Option(s.categorie, s.categorie));
+          cat.value = s.categorie;
+        }
+        umple();
+        loc.addEventListener("change", () => { s.loc = loc.value; if (!(CATEGORII[loc.value] || []).includes(s.categorie)) s.categorie = ""; umple(); });
+        cat.addEventListener("change", () => { s.categorie = cat.value; });
+        functie.addEventListener("input", () => { s.functie = functie.value; });
+        const scoate = el("button", "off", "Scoate norma"); scoate.type = "button";
+        scoate.addEventListener("click", () => { s.elim = true; box.remove(); });
+        box.append(loc, cat, functie, scoate);
+        norme.appendChild(box);
+      }
+      (a ? (a.norme || []).slice().sort((x, y) => x.ordine - y.ordine) : [{}]).forEach((n) => adaugaNorma(n.id ? { id: n.id, loc: n.loc, categorie: n.categorie, functie: n.functie || "" } : {}));
+
+      const plus = el("button", "secondary", "+ Adaugă o normă"); plus.type = "button";
+      plus.addEventListener("click", () => adaugaNorma());
+      f.appendChild(plus);
+      const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert"); f.appendChild(msg);
+      const ctl = el("div", "ctl");
+      const salv = el("button", "", "Salvează"); salv.type = "button";
+      const anul = el("button", "secondary", "Renunță"); anul.type = "button";
+      anul.addEventListener("click", () => zona.replaceChildren());
+      salv.addEventListener("click", async () => {
+        msg.className = "panel-msg"; msg.textContent = "";
+        const n = nume.value.trim().replace(/\s+/g, " ");
+        const active = stare.filter((s) => !s.elim);
+        if (n.length < 3) { msg.textContent = "Scrie numele și prenumele."; return; }
+        if (!active.length || active.some((s) => !s.categorie)) { msg.textContent = "Fiecare normă are nevoie de loc și categorie."; return; }
+        salv.disabled = true;
+        try {
+          let id = a && a.id;
+          if (a) {
+            const { error } = await db.from("angajati").update({ nume: n, verificat: true }).eq("id", id);
+            if (error) throw error;
+          } else {
+            const { data, error } = await db.from("angajati").insert({ nume: n }).select("id").single();
+            if (error) throw error;
+            id = data.id;
+          }
+          const scoase = stare.filter((s) => s.elim && s.id).map((s) => s.id);
+          if (scoase.length) { const { error } = await db.from("norme").delete().in("id", scoase); if (error) throw error; }
+          for (let i = 0; i < active.length; i++) {
+            const s = active[i];
+            const rand = { loc: s.loc, categorie: s.categorie, functie: (s.functie || "").trim() || null, ordine: i + 1 };
+            const { error } = s.id ? await db.from("norme").update(rand).eq("id", s.id) : await db.from("norme").insert(Object.assign({ angajat_id: id }, rand));
+            if (error) throw error;
+          }
+          zona.replaceChildren();
+          mesajPontaj("Salvat: " + n, true);
+          incarcaAngajati();
+        } catch (e) {
+          salv.disabled = false;
+          msg.textContent = "Nu s-a putut salva. Încearcă din nou.";
+        }
+      });
+      ctl.append(salv, anul); f.appendChild(ctl);
+      zona.appendChild(f);
+      f.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    $("ang-adauga").addEventListener("click", () => formAngajat(null));
+    $("ang-cauta").addEventListener("input", deseneazaAngajati);
+    $("ang-loc").addEventListener("change", deseneazaAngajati);
+    $("ang-inactivi").addEventListener("change", deseneazaAngajati);
+    $("inapoi-pontaj").addEventListener("click", arataPrincipal);
+    $("confirma-lista").addEventListener("click", async () => {
+      $("confirma-lista").disabled = true;
+      const { error } = await db.from("angajati").update({ verificat: true }).eq("verificat", false);
+      $("confirma-lista").disabled = false;
+      mesajPontaj(error ? "Confirmarea nu a reușit." : "Lista a fost confirmată.", !error);
+      incarcaAngajati();
+    });
 
     $("activ-ca").addEventListener("change", () => {
       const v = $("activ-ca").value;
