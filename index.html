@@ -68,6 +68,14 @@
     .card h2 { margin:0 0 4px; font-size:1.2rem; }
     .tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:0 0 18px; padding:4px; background:var(--bg); border-radius:12px; }
     .tabs button { margin:0; min-height:44px; background:transparent; color:var(--muted); border:0; }
+    .alerta { display:block; width:100%; margin:0 0 16px; padding:14px 16px; min-height:48px; text-align:left; font-weight:700;
+              color:#fff; background:var(--err); border:0; border-radius:12px; cursor:pointer; }
+    .alerta.hidden { display:none; }
+    .tile { position:relative; }
+    .cnt { position:absolute; top:10px; right:10px; min-width:26px; height:26px; padding:0 8px; border-radius:13px; display:inline-flex;
+           align-items:center; justify-content:center; font-size:.85rem; font-weight:800; color:#fff; background:var(--err); }
+    .user.nou { border-color:var(--err); border-width:2px; }
+    .tabs .pt { display:inline-block; margin-left:6px; min-width:20px; padding:0 6px; border-radius:10px; font-size:.75rem; color:#fff; background:var(--err); }
     .tabs.t3 { grid-template-columns:1fr 1fr 1fr; }
     .tabs.t3 button { padding:8px 4px; }
     .user .sub { margin-top:6px; color:var(--muted); font-size:.86rem; }
@@ -248,6 +256,8 @@
         <select id="activ-ca"></select>
       </div>
 
+      <button id="alerta" class="alerta hidden" type="button"></button>
+
       <h3 class="sect">Modulele tale</h3>
       <div id="module" class="grid"></div>
     </main>
@@ -308,6 +318,26 @@
       return Object.keys(MODULE).filter((k) => set.has(k));
     }
 
+    // Centralizare: conturile care au completat datele și așteaptă aprobarea (vizibil doar pentru cine gestionează utilizatori).
+    let inAsteptare = 0;
+    async function actualizeazaNotificari() {
+      const poate = euRoluri.includes("administrator") || euRoluri.includes("director");
+      let n = 0;
+      if (poate) {
+        const { count, error } = await db.from("profiluri").select("id", { count: "exact", head: true })
+          .eq("activ", false).eq("completat", true).is("sters_la", null);
+        if (!error) n = count || 0;
+      }
+      inAsteptare = n;
+      const a = $("alerta");
+      a.classList.toggle("hidden", n < 1);
+      a.textContent = n === 1 ? "🔔 1 cont nou așteaptă aprobarea. Apasă ca să îl vezi." : "🔔 " + n + " conturi noi așteaptă aprobarea. Apasă ca să le vezi.";
+      const sel = $("activ-ca");
+      deseneazaModule(sel && sel.value ? [sel.value] : euRoluri);
+      document.querySelectorAll("#tab-panou button[data-v=conturi] .pt").forEach((x) => x.remove());
+      if (n > 0) { const p = document.createElement("span"); p.className = "pt"; p.textContent = n; document.querySelector("#tab-panou button[data-v=conturi]").appendChild(p); }
+    }
+
     // Comutator „Vezi platforma ca”: schimbă doar ce se vede în pagină; drepturile reale rămân cele din baza de date.
     function pregatesteComutator() {
       const sel = $("activ-ca");
@@ -346,6 +376,10 @@
         const t = document.createElement("div"); t.className = "t"; t.textContent = m.t;
         const d = document.createElement("div"); d.className = "d"; d.textContent = m.d;
         if (m.activ) c.append(ico, t, d); else c.append(soon, ico, t, d);
+        if (cheie === "utilizatori" && inAsteptare > 0) {
+          const k = document.createElement("span"); k.className = "cnt"; k.textContent = inAsteptare;
+          k.setAttribute("aria-label", inAsteptare + " conturi de aprobat"); c.appendChild(k);
+        }
         zona.appendChild(c);
       });
     }
@@ -361,7 +395,9 @@
     function arataPrincipal() {
       $("panou").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
+      if (euId) actualizeazaNotificari();
     }
+    $("alerta").addEventListener("click", () => deschideModul("utilizatori"));
 
     function deschideModul(cheie) {
       if (cheie !== "utilizatori") return;
@@ -399,6 +435,7 @@
         const nume = Object.fromEntries(data.map((x) => [x.id, x.nume]));
         data.forEach((u) => lista.appendChild(randSters(u, nume)));
       } else data.forEach((u) => lista.appendChild(randUtilizator(u)));
+      actualizeazaNotificari();
     }
 
     function randIstoric(h) {
@@ -479,18 +516,18 @@
       const roluriU = u.roluri || [];
       const protejat = !!u.protejat && roluriU.includes("administrator"); // cont de administrator protejat
       const blocat = (eu && !euAdmin) || (!euAdmin && roluriU.includes("administrator")); // directorul nu gestionează administratori
-      const rand = document.createElement("div"); rand.className = "user";
+      const rand = document.createElement("div"); rand.className = "user" + (!u.activ && u.completat ? " nou" : "");
 
       const top = document.createElement("div"); top.className = "top";
       const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = u.nume + (eu ? " (tu)" : "");
       const bd = document.createElement("span"); bd.className = "badge" + (u.activ ? "" : " wait");
-      bd.textContent = protejat ? "🔒 Protejat" : (u.activ ? "Activ" : "În așteptare");
+      bd.textContent = protejat ? "🔒 Protejat" : (u.activ ? "Activ" : (u.completat ? "🔔 Nou · de aprobat" : "În așteptare"));
       top.append(nm, bd);
 
       const em = document.createElement("div"); em.className = "em"; em.textContent = u.email || "";
       const info = document.createElement("div"); info.className = "info";
       info.textContent = u.calitate
-        ? "Cere: " + (ETICHETE[u.calitate] || "—") + (u.detalii ? " · " + u.detalii : "")
+        ? "Cere: " + (ETICHETE[u.calitate] || "—") + (u.detalii ? " · " + u.detalii : "") + (u.activ ? "" : " · cont creat " + dataRo(u.creat_la))
         : (u.activ ? "" : "Nu a completat încă datele.");
 
       // Casete pentru roluri: un cont poate avea mai multe.
