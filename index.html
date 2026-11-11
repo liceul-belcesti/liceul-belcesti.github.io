@@ -204,6 +204,43 @@
                    border:1.5px solid var(--line); border-radius:10px; }
     .user button { flex:1 1 140px; width:auto; margin:0; min-height:44px; }
     .user button.off { background:transparent; color:var(--err); border:1.5px solid var(--err); }
+  
+    /* ---- Pontaj: varianta compactă ---- */
+    #pontaj { font-size:.875rem; }
+    #pontaj .hello { font-size:1.2rem; margin:0 0 2px; }
+    #pontaj .back { min-height:34px; margin:0 0 8px; padding:4px 12px; font-size:.85rem; }
+    #pontaj .an-bara { display:flex; align-items:center; gap:8px; margin:4px 0 8px; }
+    #pontaj .an-et { margin:0; font-size:.8rem; white-space:nowrap; color:var(--muted); }
+    #pontaj .an-bara select { min-height:38px; padding:4px 10px; font-size:.9rem; }
+    #pontaj .an-actiuni { gap:6px; margin:0 0 8px; }
+    #pontaj .an-actiuni button, #pontaj #ang-adauga { min-height:34px; padding:4px 10px; font-size:.8rem; margin:0; }
+    #pontaj #ang-adauga { width:auto; margin:6px 0; padding:6px 14px; }
+    #pontaj .tabs { margin:0 0 8px; padding:3px; gap:3px; }
+    #pontaj .tabs button { min-height:34px; margin:0; font-size:.85rem; }
+    #pontaj .ang-filtre { grid-template-columns:1.4fr 1fr; gap:6px; margin:0 0 4px; }
+    #pontaj .ang-filtre input, #pontaj .ang-filtre select { min-height:38px; padding:4px 10px; font-size:.875rem; }
+    #pontaj .who { margin:4px 0; font-size:.78rem; }
+    #pontaj .grup-loc { margin:12px 0 2px; font-size:.95rem; }
+    #pontaj .grup-cat { margin:8px 0 3px; font-size:.68rem; }
+    #pontaj .ang-rand { min-height:34px; padding:6px 10px; margin-bottom:3px; border-radius:8px; font-size:.875rem; }
+    #pontaj .ang-info { font-size:.75rem; }
+    #pontaj .user { padding:8px 10px; margin-bottom:5px; border-radius:10px; }
+    #pontaj .user button { min-height:34px; font-size:.8rem; }
+    #pontaj .user .ctl { margin-top:6px; gap:6px; }
+    #pontaj .norma { font-size:.8rem; margin-top:2px; }
+    #pontaj .ang-form { padding:10px; margin:6px 0; }
+    #pontaj .ang-form h3 { margin:0 0 4px; font-size:.95rem; }
+    #pontaj .ang-form label { margin:8px 0 3px; font-size:.78rem; }
+    #pontaj .ang-form input, #pontaj .ang-form select { min-height:38px; padding:4px 10px; font-size:.875rem; }
+    #pontaj .ang-form .nr { gap:5px; margin-top:6px; }
+    #pontaj .ang-form .nr input { min-height:38px; }
+    #pontaj .ang-form .nr button.x { width:48px; min-height:38px; }
+    #pontaj .ang-form button { min-height:36px; font-size:.82rem; margin-top:8px; }
+    #pontaj .ang-form .ctl button { margin-top:0; }
+    #pontaj .verif { margin:6px 0; padding:8px 10px; }
+    #pontaj .panel-msg { margin:6px 0; padding:8px 10px; font-size:.85rem; }
+    #pontaj .golire { min-height:34px; margin:0 0 6px; font-size:.8rem; }
+    #pontaj .sterge-rand { min-height:30px; margin-top:6px; padding:2px 12px; }
   </style>
 </head>
 <body>
@@ -464,7 +501,10 @@
       $("panou-msg").className = "panel-msg" + (ok ? " ok" : "");
     }
 
-    function arataPrincipal() {
+    // Ține minte unde ești (modulul deschis), ca la reîncărcarea paginii să nu te întoarcă la început.
+    function memoreazaVedere(v) { try { if (v) sessionStorage.setItem("vedere", v); else sessionStorage.removeItem("vedere"); } catch (e) {} }
+    function arataPrincipal(pastreaza) {
+      if (pastreaza !== true) memoreazaVedere("");
       $("panou").classList.add("hidden");
       $("pontaj").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
@@ -473,8 +513,9 @@
     $("alerta").addEventListener("click", () => deschideModul("utilizatori"));
 
     function deschideModul(cheie) {
+      if (cheie !== "pontaj" && cheie !== "utilizatori") return;
+      memoreazaVedere(cheie);
       if (cheie === "pontaj") return deschidePontaj();
-      if (cheie !== "utilizatori") return;
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("panou").classList.remove("hidden");
       mesajPanou("");
@@ -1106,15 +1147,20 @@
         return arataLogin(mesajRamas);
       }
       mesajRamas = "";
+      // Reverificări (revenire în filă, reînnoirea sesiunii): dacă ești deja înăuntru, nu te mutăm din ecranul curent.
+      const deja = euId === sesiune.user.id && !$("acasa").classList.contains("hidden");
       euId = sesiune.user.id;
       euRoluri = data.roluri || [];
-      arataPrincipal();
+      if (deja) return;
+      arataPrincipal(true);
       $("login").classList.add("hidden");
       $("acasa").classList.remove("hidden");
       $("prenume").textContent = (data.nume || "").split(" ")[0];
       $("cine").textContent = data.nume + " · " + sesiune.user.email;
       $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
       pregatesteComutator();
+      let v = ""; try { v = sessionStorage.getItem("vedere") || ""; } catch (e) {}
+      if (v && moduleleMele(euRoluri).includes(v) && MODULE[v] && MODULE[v].activ) deschideModul(v);
     }
 
     const ETICHETA_DETALII = {
@@ -1149,6 +1195,7 @@
     });
 
     $("c-iesire").addEventListener("click", async () => {
+      memoreazaVedere("");
       mesajRamas = "";
       await db.auth.signOut();
       arataLogin();
@@ -1195,7 +1242,7 @@
     $("tab-intra").addEventListener("click", () => alegeFila("intra"));
     $("tab-creeaza").addEventListener("click", () => alegeFila("creeaza"));
 
-    $("iesire").addEventListener("click", () => { mesajRamas = ""; db.auth.signOut(); });
+    $("iesire").addEventListener("click", () => { mesajRamas = ""; memoreazaVedere(""); euId = null; db.auth.signOut(); });
 
     // Dacă Google/Supabase întorc o eroare în adresă, o arătăm clar și curățăm adresa.
     (function () {
