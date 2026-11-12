@@ -214,6 +214,16 @@
     #pontaj .back { min-height:34px; margin:0 0 8px; padding:4px 12px; font-size:.85rem; }
     #pontaj .tit-rand { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 4px; }
     #pontaj .tit-rand h1 { margin:0; }
+    #pontaj .tit-btn { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+    #pontaj #btn-pco { width:auto; min-height:38px; margin:0; padding:6px 12px; font-size:.9rem; }
+    #pontaj .pco-rand { display:grid; grid-template-columns:1fr auto; gap:6px 10px; align-items:center; padding:8px 12px; margin-bottom:4px; background:var(--card); border:1.5px solid var(--line); border-radius:10px; }
+    #pontaj .pco-rand .pn { font-weight:700; font-size:.9rem; }
+    #pontaj .pco-rand .pl { font-size:.72rem; color:var(--muted); font-weight:500; }
+    #pontaj .pco-val { display:flex; gap:6px; }
+    #pontaj .pco-val label { display:flex; flex-direction:column; margin:0; font-size:.65rem; font-weight:700; color:var(--muted); text-transform:uppercase; }
+    #pontaj .pco-val input { width:68px; min-height:36px; padding:2px 6px; font-size:.9rem; text-align:right; }
+    #pontaj .pco-rand.activ { border-color:var(--accent); }
+    #pontaj #pco-cauta { min-height:38px; padding:4px 10px; font-size:.875rem; margin:4px 0; }
     #pontaj #btn-admin { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; }
     #pontaj .an-bara { display:flex; align-items:center; gap:8px; margin:4px 0 8px; }
     #pontaj .an-et { margin:0; font-size:.8rem; white-space:nowrap; color:var(--muted); }
@@ -379,7 +389,10 @@
       <button id="inapoi-pontaj" class="back" type="button">← Înapoi</button>
       <div class="tit-rand">
         <h1 class="hello">Pontaj</h1>
-        <button id="btn-admin" type="button">⚙ Administrare</button>
+        <div class="tit-btn">
+          <button id="btn-pco" class="secondary" type="button">Plata cu ora</button>
+          <button id="btn-admin" type="button">⚙ Administrare</button>
+        </div>
       </div>
       <div class="an-bara">
         <label for="an-select" class="an-et">Anul școlar</label>
@@ -388,6 +401,23 @@
       <div id="pont-principal">
         <div id="pont-msg-principal" class="verif">Foaia lunară de pontaj urmează să fie adăugată aici.</div>
         <p class="who">Angajați, program, ani școlari și calendarul zilelor libere sunt în „Administrare”, sus.</p>
+      </div>
+      <div id="plata-ora" class="hidden">
+        <button id="inapoi-pco" class="back" type="button">← Pontaj</button>
+        <h3 class="sect">Plata cu ora</h3>
+        <div class="an-bara">
+          <label for="pco-tabel" class="an-et">Tabel</label>
+          <select id="pco-tabel"></select>
+        </div>
+        <div id="pco-info" class="verif hidden"></div>
+        <div id="pco-actiuni" class="an-actiuni">
+          <button id="pco-nou" class="secondary" type="button">+ Tabel nou de la…</button>
+          <button id="pco-sterge" class="secondary hidden" type="button">Șterge tabelul</button>
+        </div>
+        <div id="pco-form-loc"></div>
+        <input id="pco-cauta" type="search" placeholder="Caută după nume" autocomplete="off">
+        <p id="pco-numar" class="who"></p>
+        <div id="pco-lista"></div>
       </div>
       <div id="administrare" class="hidden">
       <button id="inapoi-admin" class="back" type="button">← Pontaj</button>
@@ -836,7 +866,8 @@
       $("an-actiuni").classList.toggle("hidden", !poateAni());
       $("administrare").classList.add("hidden");
       $("pont-principal").classList.remove("hidden");
-      $("btn-admin").classList.remove("hidden");
+      $("btn-admin").classList.remove("hidden"); $("btn-pco").classList.remove("hidden");
+      $("plata-ora").classList.add("hidden");
       await incarcaAni();
     }
 
@@ -1130,6 +1161,7 @@
       try { localStorage.setItem("anPontaj", anId); } catch (e) {}
       mesajPontaj("");
       actualizeazaAn(); incarcaTab();
+      if (!$("plata-ora").classList.contains("hidden")) incarcaPCO();
     });
     $("an-nou").addEventListener("click", () => {
       const f = $("an-nou-form"); f.classList.toggle("hidden");
@@ -1259,6 +1291,172 @@
       zona.appendChild(box);
       box.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+
+    // ---------- Plata cu ora (PCO, DT, PIP pe săptămână, cu tabele „valabil de la”) ----------
+    let pcoTabele = [], pcoTabelId = null, pcoPersoane = [], pcoValori = {};
+    const LUNI_RO = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+    const dataScurta = (t) => t.slice(8, 10) + "." + t.slice(5, 7) + "." + t.slice(0, 4);
+    const lunaLunga = (t) => "1 " + LUNI_RO[Number(t.slice(5, 7)) - 1] + " " + t.slice(0, 4);
+    const DISC_TEHNICE = "Profesori discipline tehnice / ingineri";
+    const pcoUltim = () => pcoTabele.length ? pcoTabele[pcoTabele.length - 1] : null;
+    const pcoEditabil = () => poateEdita() && pcoTabelId && pcoUltim() && pcoUltim().id === pcoTabelId;
+
+    $("btn-pco").addEventListener("click", () => {
+      $("pont-principal").classList.add("hidden");
+      $("btn-admin").classList.add("hidden"); $("btn-pco").classList.add("hidden");
+      $("plata-ora").classList.remove("hidden");
+      mesajPontaj("");
+      incarcaPCO();
+    });
+    $("inapoi-pco").addEventListener("click", () => {
+      $("plata-ora").classList.add("hidden");
+      $("btn-admin").classList.remove("hidden"); $("btn-pco").classList.remove("hidden");
+      $("pont-principal").classList.remove("hidden");
+      $("pco-form-loc").replaceChildren();
+      mesajPontaj("");
+    });
+
+    async function incarcaPCO(alege) {
+      $("pco-form-loc").replaceChildren();
+      $("pco-lista").replaceChildren(); $("pco-numar").textContent = "";
+      if (!anId) return;
+      const [t, p] = await Promise.all([
+        db.from("pco_tabele").select("id, valabil_de").eq("an_id", anId).order("valabil_de"),
+        db.from("angajati").select("id, nume, norme(loc, categorie, ordine)").eq("an_id", anId).is("sters_la", null).order("nume")
+      ]);
+      if (t.error || p.error) return mesajPontaj("Nu s-au putut încărca datele. Încearcă din nou.");
+      pcoTabele = t.data;
+      pcoPersoane = p.data.sort((a, b) => colator.compare(a.nume, b.nume));
+      const azi = iso(new Date());
+      const inVigoare = [...pcoTabele].reverse().find((x) => x.valabil_de <= azi);
+      pcoTabelId = (pcoTabele.find((x) => x.id === alege) || pcoTabele.find((x) => x.id === pcoTabelId) || inVigoare || pcoTabele[0] || {}).id || null;
+      const sel = $("pco-tabel"); sel.replaceChildren();
+      pcoTabele.forEach((x) => sel.add(new Option("Valabil de la " + dataScurta(x.valabil_de) + (inVigoare && inVigoare.id === x.id ? " · în vigoare" : x.valabil_de > azi ? " · viitor" : " · istoric"), x.id)));
+      if (pcoTabelId) sel.value = pcoTabelId;
+      sel.classList.toggle("hidden", !pcoTabele.length);
+      $("pco-nou").classList.toggle("hidden", !poateEdita());
+      await incarcaValoriPCO();
+    }
+
+    async function incarcaValoriPCO() {
+      pcoValori = {};
+      if (pcoTabelId) {
+        const { data, error } = await db.from("pco_valori").select("angajat_id, pco, dt, pip").eq("tabel_id", pcoTabelId);
+        if (error) return mesajPontaj("Nu s-au putut încărca valorile. Încearcă din nou.");
+        data.forEach((v) => { pcoValori[v.angajat_id] = v; });
+      }
+      const info = $("pco-info");
+      const ult = pcoTabelId && pcoUltim() && pcoUltim().id === pcoTabelId;
+      info.classList.toggle("hidden", !pcoTabelId || ult);
+      if (pcoTabelId && !ult) info.textContent = "Tabel vechi: se poate doar consulta. Se folosește pentru lunile dinaintea următorului tabel.";
+      $("pco-sterge").classList.toggle("hidden", !(pcoEditabil()));
+      if (!pcoTabele.length) {
+        $("pco-lista").appendChild(el("p", "who", "Nu există niciun tabel pentru acest an școlar." + (poateEdita() ? " Creează primul tabel, de la 1 septembrie." : "")));
+        return;
+      }
+      deseneazaPCO();
+    }
+
+    function deseneazaPCO() {
+      const lista = $("pco-lista"); lista.replaceChildren();
+      const q = nrm($("pco-cauta").value);
+      const edit = pcoEditabil();
+      let cu = 0;
+      pcoPersoane.forEach((p) => { const v = pcoValori[p.id]; if (v && (+v.pco || +v.dt || +v.pip)) cu++; });
+      $("pco-numar").textContent = cu + " din " + pcoPersoane.length + " persoane au plata cu ora în acest tabel · total lunar = ore pe săptămână × zile lucrate × 0,2 (se calculează în foaia lunară)";
+      pcoPersoane.filter((p) => !q || nrm(p.nume).includes(q)).forEach((p) => {
+        const v = pcoValori[p.id] || { pco: 0, dt: 0, pip: 0 };
+        const tehnic = (p.norme || []).some((n) => n.categorie === DISC_TEHNICE);
+        const r = el("div", "pco-rand" + (+v.pco || +v.dt || +v.pip ? " activ" : ""));
+        const st = el("div", "");
+        st.appendChild(el("div", "pn", p.nume));
+        const locuri = [...new Set((p.norme || []).map((n) => n.loc))].join(" · ");
+        st.appendChild(el("div", "pl", locuri));
+        r.appendChild(st);
+        const vb = el("div", "pco-val");
+        const campuri = [["pco", "PCO"]]; if (tehnic) campuri.push(["dt", "DT"], ["pip", "PIP"]);
+        const inputs = {};
+        campuri.forEach(([k, et]) => {
+          const l = el("label", "", et);
+          const i = document.createElement("input");
+          i.type = "number"; i.step = "0.01"; i.min = "0"; i.max = "60"; i.inputMode = "decimal";
+          i.value = +v[k] ? String(+v[k]) : ""; i.disabled = !edit; i.placeholder = "0";
+          inputs[k] = i; l.appendChild(i); vb.appendChild(l);
+        });
+        r.appendChild(vb);
+        const salveaza = async () => {
+          const n = (k) => { const x = inputs[k] ? Number(String(inputs[k].value).replace(",", ".")) : 0; return Number.isFinite(x) ? x : NaN; };
+          const nou = { pco: n("pco"), dt: n("dt"), pip: n("pip") };
+          if ([nou.pco, nou.dt, nou.pip].some((x) => isNaN(x) || x < 0 || x > 60)) return mesajPontaj("Scrie un număr între 0 și 60.");
+          const vechi = pcoValori[p.id] || { pco: 0, dt: 0, pip: 0 };
+          if (+vechi.pco === nou.pco && +vechi.dt === nou.dt && +vechi.pip === nou.pip) return;
+          const { error } = await db.from("pco_valori").upsert({ tabel_id: pcoTabelId, angajat_id: p.id, ...nou }, { onConflict: "tabel_id,angajat_id" });
+          if (error) return mesajPontaj("Nu s-a putut salva. Încearcă din nou.");
+          pcoValori[p.id] = { angajat_id: p.id, ...nou };
+          r.classList.toggle("activ", !!(nou.pco || nou.dt || nou.pip));
+          mesajPontaj("Salvat: " + p.nume, true);
+          let c = 0; pcoPersoane.forEach((x) => { const y = pcoValori[x.id]; if (y && (+y.pco || +y.dt || +y.pip)) c++; });
+          $("pco-numar").textContent = $("pco-numar").textContent.replace(/^\d+ din/, c + " din");
+        };
+        Object.values(inputs).forEach((i) => i.addEventListener("change", salveaza));
+        lista.appendChild(r);
+      });
+    }
+
+    $("pco-tabel").addEventListener("change", () => { pcoTabelId = $("pco-tabel").value; mesajPontaj(""); $("pco-form-loc").replaceChildren(); incarcaValoriPCO(); });
+    $("pco-cauta").addEventListener("input", () => { if (pcoTabele.length) deseneazaPCO(); });
+
+    $("pco-nou").addEventListener("click", () => {
+      const a = anCurent(); if (!a) return;
+      const y1 = Number(a.denumire.slice(0, 4));
+      const zona = $("pco-form-loc"); zona.replaceChildren();
+      const ult = pcoUltim();
+      const opt = [];
+      for (let k = 0; k < 12; k++) {
+        const m = ((8 + k) % 12), an = y1 + (8 + k >= 12 ? 1 : 0);
+        const t = an + "-" + String(m + 1).padStart(2, "0") + "-01";
+        if (!ult || t > ult.valabil_de) opt.push(t);
+      }
+      const box = el("div", "ang-form");
+      box.appendChild(el("h3", "", ult ? "Tabel nou de la…" : "Primul tabel al anului"));
+      if (!opt.length) { box.appendChild(el("p", "who", "Nu mai există luni după ultimul tabel în acest an școlar.")); }
+      const sel = document.createElement("select");
+      opt.forEach((t) => sel.add(new Option(lunaLunga(t), t)));
+      if (opt.length) {
+        box.appendChild(el("label", "", "Valabil de la"));
+        box.appendChild(sel);
+        box.appendChild(el("p", "who", ult ? "Pornește de la o copie a tabelului actual; modifici doar ce s-a schimbat. Tabelul de până acum rămâne neschimbat și se folosește pentru lunile de dinainte." : "Tabelul se aplică de la această lună până apare un tabel nou."));
+      }
+      const ctl = el("div", "ctl");
+      if (opt.length) {
+        const ok = el("button", "", "Creează"); ok.type = "button";
+        ok.addEventListener("click", async () => {
+          ok.disabled = true;
+          const { data, error } = await db.rpc("creeaza_tabel_pco", { p_an: anId, p_data: sel.value });
+          ok.disabled = false;
+          if (error) return mesajPontaj("Tabelul nu a putut fi creat. Verifică data și încearcă din nou.");
+          mesajPontaj("Tabelul nou a fost creat.", true);
+          incarcaPCO(data);
+        });
+        ctl.appendChild(ok);
+      }
+      const nu = el("button", "secondary", opt.length ? "Renunță" : "Închide"); nu.type = "button";
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ctl.appendChild(nu); box.appendChild(ctl);
+      zona.appendChild(box);
+    });
+
+    (() => {
+      const b = $("pco-sterge"); let armat = false, timer = null;
+      b.addEventListener("click", async () => {
+        if (!armat) { armat = true; b.textContent = "Sigur? Se șterge tabelul"; timer = setTimeout(() => { armat = false; b.textContent = "Șterge tabelul"; }, 5000); return; }
+        clearTimeout(timer); armat = false; b.textContent = "Șterge tabelul"; b.disabled = true;
+        const { error } = await db.from("pco_tabele").delete().eq("id", pcoTabelId);
+        b.disabled = false;
+        mesajPontaj(error ? "Tabelul nu a putut fi șters." : "Tabelul a fost șters.", !error);
+        pcoTabelId = null; incarcaPCO();
+      });
+    })();
 
     // ---------- Import / export Excel pentru lista de angajați ----------
     const nrm = (t) => String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -1403,14 +1601,14 @@
     $("inapoi-pontaj").addEventListener("click", arataPrincipal);
     $("btn-admin").addEventListener("click", () => {
       $("pont-principal").classList.add("hidden");
-      $("btn-admin").classList.add("hidden");
+      $("btn-admin").classList.add("hidden"); $("btn-pco").classList.add("hidden");
       $("administrare").classList.remove("hidden");
       mesajPontaj("");
       incarcaTab();
     });
     $("inapoi-admin").addEventListener("click", () => {
       $("administrare").classList.add("hidden");
-      $("btn-admin").classList.remove("hidden");
+      $("btn-admin").classList.remove("hidden"); $("btn-pco").classList.remove("hidden");
       $("pont-principal").classList.remove("hidden");
       $("ang-form-loc").replaceChildren();
       mesajPontaj("");
