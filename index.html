@@ -1528,7 +1528,7 @@
         });
         tb.appendChild(body); sc.appendChild(tb); sec.appendChild(sc); cont.appendChild(sec);
       });
-      const lis = [...foaie.libere.values()].filter((x) => { const w = dinIso(x.data).getUTCDay(); return w !== 0 && w !== 6; });
+      const lis = [...foaie.libere.values()].filter((x) => { const w = dinIso(x.data).getUTCDay(); return w !== 0 && w !== 6; }).sort((p, q) => (p.data < q.data ? -1 : 1));
       $("foaie-libere").textContent = lis.length ? "Zile libere în această lună: " + lis.map((x) => Number(x.data.slice(8, 10)) + " " + LUNI_RO[Number(x.data.slice(5, 7)) - 1] + " – " + x.motiv).join("; ") + "." : "";
       $("foaie-numar").textContent = nrRanduri + (nrRanduri === 1 ? " rând" : " rânduri") + (foaie.stare === "inchis" ? " · luna este închisă" : "") + (foaie.faraPco ? " · nu există tabel de plata cu ora valabil în această lună" : "") + (!edit && foaie.stare !== "inchis" && poatePontaj() ? " · anul școlar este închis" : "");
       [...cont.querySelectorAll(".foaie-scroll")].forEach((x, i) => { if (poz[i]) { x.scrollLeft = poz[i][0]; x.scrollTop = poz[i][1]; } });
