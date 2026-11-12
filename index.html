@@ -1035,7 +1035,7 @@
             const info = [n.functie, alt.length ? "și la " + [...new Set(alt)].join(", ") : ""].filter(Boolean).join(" · ");
             const dr = el("span", "ang-dr");
             if (info) dr.append(el("span", "ang-info", info));
-            dr.append(n.doar_pco ? el("span", "ang-prog", "doar plata cu ora") : el("span", arePrograma(n) ? "ang-prog" : "ang-prog lipsa", arePrograma(n) ? programText(n) : "fără program"));
+            dr.append(n.doar_pco ? el("span", "ang-prog", "doar plata cu ora" + (arePrograma(n) ? " · " + programText(n) : "")) : el("span", arePrograma(n) ? "ang-prog" : "ang-prog lipsa", arePrograma(n) ? programText(n) : "fără program"));
             r.append(dr);
             if (poateEdita()) {
               r.tabIndex = 0; r.setAttribute("role", "button");
@@ -1165,10 +1165,9 @@
         const scoate = el("button", "off x", "✕"); scoate.type = "button"; scoate.setAttribute("aria-label", "Scoate norma");
         scoate.addEventListener("click", () => { s.elim = true; box.remove(); });
         const doar = el("label", "doar"); const doarCb = document.createElement("input"); doarCb.type = "checkbox"; doarCb.checked = !!s.doar_pco;
-        doar.append(doarCb, document.createTextNode(" Doar plata cu ora (fără program: se plătește după orele efectuate)"));
+        doar.append(doarCb, document.createTextNode(" Doar plata cu ora (orele din program se trec la plata cu ora, nu la total)"));
         const prog = el("div", "prog");
-        prog.classList.toggle("hidden", !!s.doar_pco);
-        doarCb.addEventListener("change", () => { s.doar_pco = doarCb.checked; prog.classList.toggle("hidden", doarCb.checked); });
+                doarCb.addEventListener("change", () => { s.doar_pco = doarCb.checked; });
         prog.appendChild(el("span", "prog-et", "Program (ore)"));
         s.ore.forEach((v, zi) => {
           const w = el("label", "zi"); w.appendChild(el("span", "", ETZ[zi]));
@@ -1214,7 +1213,7 @@
           if (scoase.length) { const { error } = await db.from("norme").delete().in("id", scoase); if (error) throw error; }
           for (let i = 0; i < active.length; i++) {
             const s = active[i];
-            const ore = !s.doar_pco && s.ore.some((v) => v !== null) ? s.ore.map((v) => (v === null ? 0 : v)) : [null, null, null, null, null];
+            const ore = s.ore.some((v) => v !== null) ? s.ore.map((v) => (v === null ? 0 : v)) : [null, null, null, null, null];
             const rand = { loc: s.loc, categorie: s.categorie, functie: (s.functie || "").trim() || null, ordine: i + 1, doar_pco: !!s.doar_pco };
             ZILE.forEach((z, zi) => { rand["ore_" + z] = ore[zi]; });
             const { error } = s.id ? await db.from("norme").update(rand).eq("id", s.id) : await db.from("norme").insert(Object.assign({ angajat_id: id }, rand));
@@ -1524,7 +1523,6 @@
       if (dow === 0 || dow === 6) return null;
       const lib = foaie.libere.get(t);
       if (lib) return lib.tip === "legala" ? null : "L";
-      if (n.doar_pco) return null;
       const v = n["ore_" + ZILE[dow - 1]];
       return v === null || v === undefined ? null : String(v);
     }
