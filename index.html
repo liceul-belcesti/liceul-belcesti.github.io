@@ -1848,6 +1848,10 @@
       const cutie = el("div", "cutie lat");
       cutie.appendChild(el("h3", "", "Concediu pentru mai mulți angajați"));
       cutie.appendChild(el("div", "who", "Începând cu " + dataLunga(t) + ". Bifezi categoriile, apoi debifezi pe cine nu este în concediu."));
+      cutie.appendChild(el("label", "", "Acțiune"));
+      const actiune = document.createElement("select");
+      actiune.add(new Option("Setează codul alese", "pune")); actiune.add(new Option("Șterge codul pus greșit (zilele revin la automat)", "scoate"));
+      cutie.appendChild(actiune);
       const l1 = el("label", "", "Cod"); cutie.appendChild(l1);
       const cod = document.createElement("select");
       COD_ZIUA.filter((c) => c !== "PCO").forEach((c) => cod.add(new Option(c + " · " + COD_NUME[c], c)));
@@ -1882,7 +1886,7 @@
       actualizeaza();
       const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert"); cutie.appendChild(msg);
       const ctl = el("div", "ctl");
-      const ok = el("button", "", "Setează"); ok.type = "button";
+      const ok = el("button", "", "Aplică"); ok.type = "button";
       const nu = el("button", "secondary", "Renunță"); nu.type = "button";
       nu.addEventListener("click", () => zona.classList.add("hidden"));
       zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
@@ -1892,6 +1896,14 @@
         const zile = [];
         for (let d = dinIso(t); iso(d) <= pana.value; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(), z = iso(d); if (w !== 0 && w !== 6 && !foaie.libere.has(z)) zile.push(z); }
         if (!zile.length) { msg.textContent = "Intervalul ales nu are zile lucrătoare."; return; }
+        if (actiune.value === "scoate") {
+          const ids = alesi.flatMap((x) => x.ns.map((n) => n.id)); ok.disabled = true;
+          for (let i = 0; i < ids.length; i += 100) {
+            const { error } = await db.from("pontaj_manual").delete().in("norma_id", ids.slice(i, i + 100)).in("zi", zile).eq("valoare", cod.value);
+            if (error) { ok.disabled = false; msg.textContent = "Nu s-a putut șterge tot. Încearcă din nou."; incarcaFoaie(); return; }
+          }
+          zona.classList.add("hidden"); mesajPontaj(cod.value + " a fost șters pentru " + alesi.length + (alesi.length === 1 ? " persoană." : " persoane."), true); incarcaFoaie(); return;
+        }
         const rows = [];
         alesi.forEach((x) => x.ns.forEach((n) => zile.forEach((z) => { if (!(foaie.absente && foaie.absente.has(n.id + "|" + z))) rows.push({ norma_id: n.id, zi: z, valoare: cod.value }); })));
         ok.disabled = true;
