@@ -212,6 +212,9 @@
     #pontaj { font-size:.875rem; }
     #pontaj .hello { font-size:1.2rem; margin:0 0 2px; }
     #pontaj .back { min-height:34px; margin:0 0 8px; padding:4px 12px; font-size:.85rem; }
+    #pontaj .tit-rand { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 4px; }
+    #pontaj .tit-rand h1 { margin:0; }
+    #pontaj #btn-admin { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; }
     #pontaj .an-bara { display:flex; align-items:center; gap:8px; margin:4px 0 8px; }
     #pontaj .an-et { margin:0; font-size:.8rem; white-space:nowrap; color:var(--muted); }
     #pontaj .an-bara select { min-height:38px; padding:4px 10px; font-size:.9rem; }
@@ -258,13 +261,15 @@
     #pontaj .previz ul { margin:4px 0 0; padding-left:18px; max-height:220px; overflow:auto; font-size:.8rem; }
     #pontaj .previz .ctl { display:flex; gap:6px; margin-top:8px; }
     #pontaj .previz .ctl button { flex:1; margin:0; min-height:36px; }
-      #pontaj .bloc-loc { border:2px solid var(--hero-a); border-radius:12px; overflow:hidden; margin:16px 0; background:var(--card); }
-    #pontaj .grup-loc { display:flex; justify-content:space-between; align-items:center; margin:0; padding:9px 12px; font-size:1rem; font-weight:800; color:#fff;
-                        background:linear-gradient(135deg, var(--hero-a), var(--hero-b)); }
+    #pontaj .bloc-loc { --lc:var(--hero-a); --lc2:var(--hero-b); border:2px solid var(--lc); border-radius:12px; overflow:hidden; margin:26px 0 8px; background:var(--card); box-shadow:0 2px 8px rgba(0,0,0,.12); }
+    #pontaj .bloc-loc.l-Tansa { --lc:#b45309; --lc2:#d97706; }
+    #pontaj .bloc-loc.l-Munteni { --lc:#4338ca; --lc2:#6366f1; }
+    #pontaj .grup-loc { display:flex; justify-content:space-between; align-items:center; margin:0; padding:12px 14px; font-size:1.15rem; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:#fff;
+                        background:linear-gradient(135deg, var(--lc), var(--lc2)); }
     #pontaj .grup-loc .nr-loc { font-size:.75rem; font-weight:600; opacity:.92; }
-    #pontaj .grup-cat { display:flex; justify-content:space-between; align-items:center; margin:0; padding:6px 12px; font-size:.72rem; font-weight:800; letter-spacing:.04em;
-                        text-transform:uppercase; color:var(--text); background:color-mix(in srgb, var(--hero-a) 14%, var(--card));
-                        border-top:1px solid var(--hero-a); border-left:5px solid var(--hero-a); }
+    #pontaj .grup-cat { display:flex; justify-content:space-between; align-items:center; margin:0; padding:8px 12px; font-size:.8rem; font-weight:800; letter-spacing:.04em;
+                        text-transform:uppercase; color:var(--text); background:color-mix(in srgb, var(--lc, var(--hero-a)) 20%, var(--card));
+                        border-top:2px solid var(--lc, var(--hero-a)); border-left:6px solid var(--lc, var(--hero-a)); }
     #pontaj .bloc-loc .ang-rand { margin:0; border:0; border-top:1px solid var(--line); border-radius:0; padding:7px 12px; }
     #pontaj .bloc-loc .grup-cat + .ang-rand { border-top:0; }
       #pontaj .ang-dr { display:inline-flex; align-items:baseline; gap:10px; }
@@ -372,15 +377,17 @@
 
     <main id="pontaj" class="wrap hidden">
       <button id="inapoi-pontaj" class="back" type="button">← Înapoi</button>
-      <h1 class="hello">Pontaj</h1>
+      <div class="tit-rand">
+        <h1 class="hello">Pontaj</h1>
+        <button id="btn-admin" type="button">⚙ Administrare</button>
+      </div>
       <div class="an-bara">
         <label for="an-select" class="an-et">Anul școlar</label>
         <select id="an-select"></select>
       </div>
       <div id="pont-principal">
         <div id="pont-msg-principal" class="verif">Foaia lunară de pontaj urmează să fie adăugată aici.</div>
-        <button id="btn-admin" type="button">⚙ Administrare</button>
-        <p class="who">Angajați, program, ani școlari și calendarul zilelor libere.</p>
+        <p class="who">Angajați, program, ani școlari și calendarul zilelor libere sunt în „Administrare”, sus.</p>
       </div>
       <div id="administrare" class="hidden">
       <button id="inapoi-admin" class="back" type="button">← Pontaj</button>
@@ -829,6 +836,7 @@
       $("an-actiuni").classList.toggle("hidden", !poateAni());
       $("administrare").classList.add("hidden");
       $("pont-principal").classList.remove("hidden");
+      $("btn-admin").classList.remove("hidden");
       await incarcaAni();
     }
 
@@ -891,7 +899,7 @@
       LOCURI.filter((l) => !loc || l === loc).forEach((l) => {
         const dinLoc = vizibili.filter((a) => (a.norme || []).some((n) => n.loc === l));
         if (!dinLoc.length) return;
-        const sec = el("section", "bloc-loc");
+        const sec = el("section", "bloc-loc l-" + l);
         const cap = el("div", "grup-loc"); cap.append(el("span", "", l), el("span", "nr-loc", dinLoc.length + (dinLoc.length === 1 ? " persoană" : " persoane")));
         sec.appendChild(cap);
         const cats = CATEGORII[l].slice();
@@ -1395,12 +1403,14 @@
     $("inapoi-pontaj").addEventListener("click", arataPrincipal);
     $("btn-admin").addEventListener("click", () => {
       $("pont-principal").classList.add("hidden");
+      $("btn-admin").classList.add("hidden");
       $("administrare").classList.remove("hidden");
       mesajPontaj("");
       incarcaTab();
     });
     $("inapoi-admin").addEventListener("click", () => {
       $("administrare").classList.add("hidden");
+      $("btn-admin").classList.remove("hidden");
       $("pont-principal").classList.remove("hidden");
       $("ang-form-loc").replaceChildren();
       mesajPontaj("");
