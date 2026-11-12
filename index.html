@@ -1444,7 +1444,10 @@
         inloc.forEach((q) => {
           for (let d = dinIso(q.de_la < start ? start : q.de_la); iso(d) <= q.pana_la && iso(d) <= sfarsit; d.setUTCDate(d.getUTCDate() + 1)) {
             const w = d.getUTCDay(), z = iso(d);
-            if (w !== 0 && w !== 6 && !foaie.libere.has(z)) foaie.absente.set(q.norma_id + "|" + z, q.tip);
+            if (w !== 0 && w !== 6 && !foaie.libere.has(z)) {
+              const pers = ang.find((p) => (p.norme || []).some((n) => n.id === q.norma_id));
+              (pers ? pers.norme : [{ id: q.norma_id }]).forEach((n) => foaie.absente.set(n.id + "|" + z, q.tip));
+            }
           }
         });
         deseneazaFoaia();
@@ -1654,11 +1657,11 @@
       cutie.appendChild(el("h3", "", tip === "CM" ? "Adaugă concediu medical" : "Adaugă învoire"));
       cutie.appendChild(el("div", "who", "Luna " + numeLuna(foaie.start)));
       const camp = (et, nod) => { cutie.appendChild(el("label", "", et)); cutie.appendChild(nod); return nod; };
-      const norme = []; foaie.ang.forEach((p) => (p.norme || []).forEach((n) => norme.push({ p, n })));
-      norme.sort((a, b) => a.p.nume.localeCompare(b.p.nume, "ro") || a.n.ordine - b.n.ordine);
+      const norme = []; foaie.ang.forEach((p) => { const ns = (p.norme || []).slice().sort((a, b) => a.ordine - b.ordine); if (ns.length) norme.push({ p, n: ns[0] }); });
+      norme.sort((a, b) => a.p.nume.localeCompare(b.p.nume, "ro"));
       const cine = camp("Cine lipsește", document.createElement("select"));
       cine.add(new Option("Alege…", ""));
-      norme.forEach((r) => cine.add(new Option(r.p.nume + " · " + r.n.loc + (r.n.functie ? " · " + r.n.functie : ""), r.n.id)));
+      norme.forEach((r) => cine.add(new Option(r.p.nume, r.n.id)));
       const de = camp("De la", document.createElement("input")); de.type = "date"; de.min = foaie.start; de.max = foaie.start.slice(0, 8) + String(foaie.nz).padStart(2, "0"); de.value = de.min;
       const pana = camp("Până la (în aceeași lună; dacă merge mai departe, adaugi separat luna următoare)", document.createElement("input")); pana.type = "date"; pana.min = de.min; pana.max = de.max; pana.value = de.min;
       const inl = camp("Înlocuitor", document.createElement("select"));
@@ -1689,7 +1692,7 @@
         const oreZi = {};
         for (let d = dinIso(de.value); iso(d) <= pana.value; d.setUTCDate(d.getUTCDate() + 1)) {
           const w = d.getUTCDay(), z = iso(d); if (w === 0 || w === 6 || foaie.libere.has(z)) continue;
-          const o = fix ? Number(fix) : r.n["ore_" + ZILE[w - 1]];
+          const o = fix ? Number(fix) : (r.p.norme || []).reduce((t, n) => t + (Number(n["ore_" + ZILE[w - 1]]) || 0), 0);
           if (o) oreZi[z] = Number(o);
         }
         if (!Object.keys(oreZi).length) { msg.textContent = "Cel înlocuit nu are ore în program în aceste zile. Scrie tu orele pe zi."; return; }
