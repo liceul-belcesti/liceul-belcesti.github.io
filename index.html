@@ -239,6 +239,7 @@
     #pontaj table.foaie-t th, #pontaj table.foaie-t td { color:#000 !important; }
     #pontaj .sub-inloc { padding:10px 14px 6px; font-weight:800; font-size:.9rem; background:var(--card); border-top:2px solid #8a959b; }
     #pontaj table.foaie-t td.nm.inl { white-space:normal; line-height:1.15; font-size:.78rem; }
+    #pontaj button.stergeinloc { width:100%; height:100%; min-height:30px; margin:0; padding:0; border:0; background:transparent; color:var(--err); font-size:1rem; font-weight:800; cursor:pointer; }
     #inloc-btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
     #inloc-btns button { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.88rem; }
     #pontaj table.foaie-t td.tot:empty { background:var(--card); }
@@ -1590,7 +1591,8 @@
           c.appendChild(el("div", "", String(z.d))); c.appendChild(el("div", "lz", LIT_ZI[z.dow])); hr.appendChild(c);
         });
         const ct = el("th", "tot-cap"); ct.appendChild(el("span", "vt", "Total ore lucrate")); hr.appendChild(ct);
-        for (let k = 1; k < nrTot; k++) hr.appendChild(el("th", "tot-cap"));
+        for (let k = 1; k < nrTot - 1; k++) hr.appendChild(el("th", "tot-cap"));
+        if (nrTot > 1) { const cs = el("th", "tot-cap"); cs.appendChild(el("span", "vt", edit && poateModificaAng() ? "Șterge" : "")); hr.appendChild(cs); }
         th.appendChild(hr); tb.appendChild(th);
         const body = el("tbody"); let nr = 0;
         lista.forEach((q) => {
@@ -1609,11 +1611,42 @@
             tr.appendChild(td);
           });
           tr.appendChild(el("td", "tot", total ? String(total) : ""));
-          for (let k = 1; k < nrTot; k++) tr.appendChild(el("td", "tot"));
+          for (let k = 1; k < nrTot - 1; k++) tr.appendChild(el("td", "tot"));
+          if (nrTot > 1) {
+            const cs = el("td", "tot");
+            if (edit && poateModificaAng()) {
+              const b = el("button", "stergeinloc", "✕"); b.type = "button"; b.title = "Șterge"; b.setAttribute("aria-label", "Șterge " + TIP_INLOC[tip].toLowerCase() + " pentru " + r.p.nume);
+              b.addEventListener("click", () => confirmaStergereInlocuire(q, inl, r.p.nume));
+              cs.appendChild(b);
+            }
+            tr.appendChild(cs);
+          }
           body.appendChild(tr);
         });
         tb.appendChild(body); sc.appendChild(tb); sec.appendChild(sc);
       });
+    }
+
+    function confirmaStergereInlocuire(q, inl, absent) {
+      const zona = $("cel-editor"); zona.replaceChildren();
+      const cutie = el("div", "cutie");
+      cutie.appendChild(el("h3", "", "Ștergi " + (q.tip === "CM" ? "concediul medical" : "învoirea") + "?"));
+      cutie.appendChild(el("div", "who", absent + " · înlocuitor: " + inl + " · " + dataScurta(q.de_la) + " – " + dataScurta(q.pana_la)));
+      cutie.appendChild(el("p", "who", "Zilele celui absent revin la programul normal, iar orele înlocuitorului dispar din foaie."));
+      const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert"); cutie.appendChild(msg);
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Da, șterge"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.classList.add("hidden"));
+      zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
+      ok.addEventListener("click", async () => {
+        ok.disabled = true;
+        const { error } = await db.from("pontaj_inlocuiri").update({ sters_la: new Date().toISOString() }).eq("id", q.id);
+        if (error) { ok.disabled = false; msg.textContent = "Nu s-a putut șterge. Încearcă din nou."; return; }
+        zona.classList.add("hidden"); mesajPontaj("A fost șters.", true); incarcaFoaie();
+      });
+      ctl.append(ok, nu); cutie.appendChild(ctl);
+      zona.appendChild(cutie); zona.classList.remove("hidden");
     }
 
     function deschideOreInlocuire(q, t, inl, absent) {
