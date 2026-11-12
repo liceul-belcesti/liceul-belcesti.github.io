@@ -214,6 +214,36 @@
     #pontaj .back { min-height:34px; margin:0 0 8px; padding:4px 12px; font-size:.85rem; }
     #pontaj .tit-rand { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 4px; }
     #pontaj .tit-rand h1 { margin:0; }
+    #pontaj .luna-bara { display:grid; grid-template-columns:44px 1fr 44px; gap:6px; margin:4px 0 6px; }
+    #pontaj .luna-bara button { margin:0; min-height:40px; padding:0; font-size:1.3rem; }
+    #pontaj .luna-bara select { min-height:40px; padding:4px 10px; font-size:.95rem; font-weight:700; }
+    #pontaj .legenda { margin:4px 0 8px; font-size:.8rem; color:var(--muted); }
+    #pontaj .legenda summary { cursor:pointer; font-weight:700; color:var(--text); }
+    #pontaj .legenda p { margin:6px 0; }
+    #pontaj .foaie-scroll { overflow:auto; max-height:78vh; -webkit-overflow-scrolling:touch; }
+    #pontaj table.foaie-t { border-collapse:separate; border-spacing:0; font-size:.72rem; font-variant-numeric:tabular-nums; }
+    #pontaj table.foaie-t th, #pontaj table.foaie-t td { border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-width:27px; width:27px; height:28px; padding:0; text-align:center; background:var(--card); color:var(--text); }
+    #pontaj table.foaie-t thead th { position:sticky; top:0; z-index:2; font-size:.65rem; font-weight:800; background:color-mix(in srgb, var(--lc, var(--hero-a)) 14%, var(--card)); line-height:1.1; }
+    #pontaj table.foaie-t th.nm, #pontaj table.foaie-t td.nm { position:sticky; left:0; z-index:1; min-width:128px; width:128px; max-width:128px; text-align:left; padding:0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.75rem; font-weight:600; }
+    #pontaj table.foaie-t thead th.nm { z-index:3; }
+    #pontaj table.foaie-t td.we, #pontaj table.foaie-t th.we { background:color-mix(in srgb, var(--muted) 18%, var(--card)); }
+    #pontaj table.foaie-t td.lib { background:color-mix(in srgb, var(--err) 14%, var(--card)); }
+    #pontaj table.foaie-t td.zi { cursor:pointer; }
+    #pontaj table.foaie-t td.zi.man { box-shadow:inset 0 0 0 2px var(--accent); font-weight:800; }
+    #pontaj table.foaie-t td.zi.cod { font-weight:800; color:var(--err); }
+    #pontaj table.foaie-t td.tot { min-width:34px; font-weight:800; background:color-mix(in srgb, var(--accent) 10%, var(--card)); }
+    #pontaj table.foaie-t tr.cat td { text-align:left; padding:0 8px; font-size:.7rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; background:color-mix(in srgb, var(--lc, var(--hero-a)) 20%, var(--card)); }
+    #pontaj table.foaie-t tr.cat td.nm { z-index:1; }
+    #pontaj table.foaie-t td.nm small { font-weight:500; color:var(--muted); }
+    #pontaj .cel-editor { position:fixed; inset:0; z-index:50; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45); }
+    #pontaj .cel-editor .cutie { width:100%; max-width:520px; max-height:88vh; overflow:auto; background:var(--card); color:var(--text); border-radius:16px 16px 0 0; padding:14px 14px 18px; }
+    #pontaj .cel-editor h3 { margin:0 0 2px; font-size:1rem; }
+    #pontaj .cel-editor .coduri { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+    #pontaj .cel-editor .coduri button { width:auto; min-height:36px; margin:0; padding:4px 12px; font-size:.85rem; }
+    #pontaj .cel-editor input, #pontaj .cel-editor select { min-height:40px; padding:4px 10px; font-size:.95rem; width:100%; }
+    #pontaj .cel-editor label { margin:8px 0 3px; font-size:.78rem; display:block; }
+    #pontaj .cel-editor .ctl { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    #pontaj .cel-editor .ctl button { flex:1 1 120px; margin:0; min-height:40px; }
     #pontaj .tit-btn { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     #pontaj #btn-pco { width:auto; min-height:38px; margin:0; padding:6px 12px; font-size:.9rem; }
     #pontaj .pco-rand { display:grid; grid-template-columns:1fr auto; gap:6px 10px; align-items:center; padding:8px 12px; margin-bottom:4px; background:var(--card); border:1.5px solid var(--line); border-radius:10px; }
@@ -400,9 +430,21 @@
         <label for="an-select" class="an-et">Anul școlar</label>
         <select id="an-select"></select>
       </div>
+      <div id="pontaj-msg" class="panel-msg" role="alert"></div>
       <div id="pont-principal">
-        <div id="pont-msg-principal" class="verif">Foaia lunară de pontaj urmează să fie adăugată aici.</div>
-        <p class="who">Angajați, program, ani școlari și calendarul zilelor libere sunt în „Administrare”, sus.</p>
+        <div class="luna-bara">
+          <button id="luna-prev" class="secondary" type="button" aria-label="Luna anterioară">‹</button>
+          <select id="luna-select" aria-label="Luna"></select>
+          <button id="luna-next" class="secondary" type="button" aria-label="Luna următoare">›</button>
+        </div>
+        <p id="luna-info" class="who"></p>
+        <details class="legenda"><summary>Coduri și calcul</summary>
+          <p>Cifră = ore lucrate (număr întreg). Coduri: <b>CO</b> concediu de odihnă · <b>CM</b> concediu medical · <b>BP</b> boală profesională · <b>AM</b> accident de muncă · <b>M</b> maternitate · <b>PRM</b> program redus maternitate · <b>PRB</b> program redus boală · <b>I</b> învoiri / concediu fără plată · <b>O</b> obligații cetățenești · <b>N</b> absențe nemotivate · <b>L</b> liber MEN · <b>PCO</b> plata cu ora.</p>
+          <p>Celulele cu chenar colorat sunt completate de tine; celelalte vin automat din program și calendar. Apasă pe o celulă ca s-o modifici.</p>
+          <p>pco / DT / PIP = ore pe săptămână × (zile lucrate × 0,2), rotunjit. Zile lucrate = zile lucrătoare fără sărbători și fără zilele cu concediu sau absență.</p>
+        </details>
+        <p id="foaie-numar" class="who"></p>
+        <div id="foaie"></div>
       </div>
       <div id="plata-ora" class="hidden">
         <button id="inapoi-pco" class="back" type="button">← Pontaj</button>
@@ -436,7 +478,6 @@
         <div class="ctl"><button id="an-nou-salveaza" type="button">Creează</button><button id="an-nou-renunta" class="secondary" type="button">Renunță</button></div>
       </div>
       <div id="an-inchis" class="verif hidden">Anul școlar este închis: se poate doar consulta.</div>
-      <div id="pontaj-msg" class="panel-msg" role="alert"></div>
       <div class="tabs t4" role="tablist" id="tab-pontaj">
         <button type="button" role="tab" data-v="angajati" aria-selected="true">Angajați</button>
         <button type="button" role="tab" data-v="sterse" aria-selected="false">Șterși</button>
@@ -459,6 +500,7 @@
       <p id="ang-numar" class="who"></p>
       <div id="ang-lista"></div>
       </div>
+      <div id="cel-editor" class="cel-editor hidden" role="dialog" aria-modal="true"></div>
     </main>
 
     <main id="panou" class="wrap hidden">
@@ -885,6 +927,7 @@
       if (anId) sel.value = anId;
       actualizeazaAn();
       incarcaTab();
+      incarcaFoaie();
     }
 
     function actualizeazaAn() {
@@ -1168,6 +1211,7 @@
       mesajPontaj("");
       actualizeazaAn(); incarcaTab();
       if (!$("plata-ora").classList.contains("hidden")) incarcaPCO();
+      incarcaFoaie();
     });
     $("an-nou").addEventListener("click", () => {
       const f = $("an-nou-form"); f.classList.toggle("hidden");
@@ -1298,6 +1342,213 @@
       box.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
+    // ---------- Foaia lunară de pontaj ----------
+    const COD_ZIUA = ["CO", "CM", "BP", "AM", "M", "PRM", "PRB", "I", "O", "N", "L", "PCO"];
+    const COD_ABSENTA = ["CO", "CM", "BP", "AM", "M", "I", "O", "N"];
+    const LIT_ZI = ["D", "L", "Ma", "Mi", "J", "V", "S"];
+    let lunaSel = null, foaie = null;
+    const poatePontaj = () => ["administrator", "director", "secretariat", "contabilitate"].some((r) => euRoluri.includes(r));
+    const foaieDeschisa = () => !!(foaie && poatePontaj() && anCurent() && !anCurent().inchis && foaie.stare !== "inchis");
+    const numeLuna = (t) => LUNI_RO[Number(t.slice(5, 7)) - 1] + " " + t.slice(0, 4);
+    const luniaPlatii = (t) => { const m = Number(t.slice(5, 7)), y = Number(t.slice(0, 4)); return m === 12 ? LUNI_RO[0] + " " + (y + 1) : LUNI_RO[m] + " " + y; };
+    function luniAn(a) {
+      const y1 = Number(a.denumire.slice(0, 4)), l = [];
+      for (let k = 0; k < 12; k++) { const m = (8 + k) % 12, an = y1 + (8 + k >= 12 ? 1 : 0); l.push(an + "-" + String(m + 1).padStart(2, "0") + "-01"); }
+      return l;
+    }
+    async function toate(fabrica) {
+      const out = [];
+      for (let de = 0; ; de += 1000) {
+        const { data, error } = await fabrica().range(de, de + 999);
+        if (error) throw error;
+        out.push(...data);
+        if (data.length < 1000) break;
+      }
+      return out;
+    }
+    function pregatesteLuni() {
+      const a = anCurent(); if (!a) return;
+      const luni = luniAn(a);
+      const sel = $("luna-select"); sel.replaceChildren();
+      luni.forEach((t) => sel.add(new Option(numeLuna(t), t)));
+      let salvat = ""; try { salvat = localStorage.getItem("lunaPontaj") || ""; } catch (e) {}
+      const azi = iso(new Date()).slice(0, 7) + "-01";
+      lunaSel = luni.includes(lunaSel) ? lunaSel : luni.includes(salvat) ? salvat : luni.includes(azi) ? azi : luni[0];
+      sel.value = lunaSel;
+    }
+    async function incarcaFoaie() {
+      const cont = $("foaie");
+      if (!anId || !anCurent()) { cont.replaceChildren(); return; }
+      pregatesteLuni();
+      const start = lunaSel;
+      const y = Number(start.slice(0, 4)), m = Number(start.slice(5, 7));
+      const nz = new Date(Date.UTC(y, m, 0)).getUTCDate();
+      const sfarsit = start.slice(0, 8) + String(nz).padStart(2, "0");
+      $("luna-info").textContent = "Luna " + numeLuna(start) + " · se plătește în " + luniaPlatii(start) + (m === 8 ? " (în anul școlar următor)" : "");
+      cont.replaceChildren(el("p", "who", "Se încarcă…"));
+      const cerere = ++cerereFoaie;
+      try {
+        const [ang, manual, libere, tabele, luniRand] = await Promise.all([
+          toate(() => db.from("angajati").select("id, nume, norme(id, loc, categorie, functie, ordine, doar_pco, ore_lu, ore_ma, ore_mi, ore_jo, ore_vi)").eq("an_id", anId).is("sters_la", null).order("nume")),
+          toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare").gte("zi", start).lte("zi", sfarsit).order("norma_id").order("zi")),
+          toate(() => db.from("zile_libere").select("data, motiv, tip").gte("data", start).lte("data", sfarsit).order("data")),
+          db.from("pco_tabele").select("id, valabil_de").eq("an_id", anId).lte("valabil_de", start).order("valabil_de", { ascending: false }).limit(1),
+          db.from("pontaj_luni").select("stare").eq("an_id", anId).eq("luna", start).limit(1)
+        ]);
+        if (tabele.error || luniRand.error) throw (tabele.error || luniRand.error);
+        const tab = tabele.data && tabele.data[0];
+        const pcoVal = tab ? await toate(() => db.from("pco_valori").select("angajat_id, loc, pco, dt, pip").eq("tabel_id", tab.id).order("angajat_id")) : [];
+        if (cerere !== cerereFoaie) return;
+        foaie = {
+          start, nz, ang,
+          manual: new Map(manual.map((x) => [x.norma_id + "|" + x.zi, x.valoare])),
+          libere: new Map(libere.map((x) => [x.data, x])),
+          pco: new Map(pcoVal.map((v) => [v.angajat_id + "|" + v.loc, v])),
+          stare: (luniRand.data && luniRand.data[0] && luniRand.data[0].stare) || "in_lucru",
+          faraPco: !tab
+        };
+        deseneazaFoaia();
+      } catch (e) {
+        if (cerere === cerereFoaie) cont.replaceChildren(el("p", "who", "Nu s-a putut încărca foaia. Încearcă din nou."));
+      }
+    }
+    let cerereFoaie = 0;
+
+    function valoareAutomata(n, t) {
+      const dow = dinIso(t).getUTCDay();
+      if (dow === 0 || dow === 6) return null;
+      const lib = foaie.libere.get(t);
+      if (lib) return lib.tip === "legala" ? null : "L";
+      if (n.doar_pco) return null;
+      const v = n["ore_" + ZILE[dow - 1]];
+      return v === null || v === undefined ? null : String(v);
+    }
+    const arataValoare = (n, t) => { const mv = foaie.manual.get(n.id + "|" + t); return mv !== undefined ? { v: mv, man: true } : { v: valoareAutomata(n, t), man: false }; };
+
+    function deseneazaFoaia() {
+      const cont = $("foaie");
+      const poz = [...cont.querySelectorAll(".foaie-scroll")].map((x) => [x.scrollLeft, x.scrollTop]);
+      cont.replaceChildren();
+      const { start, nz } = foaie;
+      const zile = []; for (let d = 1; d <= nz; d++) { const t = start.slice(0, 8) + String(d).padStart(2, "0"); zile.push({ d, t, dow: dinIso(t).getUTCDay() }); }
+      const randuri = [];
+      foaie.ang.forEach((p) => (p.norme || []).forEach((n) => randuri.push({ p, n })));
+      const primar = new Map();
+      randuri.forEach((r) => { const k = r.p.id + "|" + r.n.loc; const c = primar.get(k); if (!c || r.n.ordine < c.ordine) primar.set(k, r.n); });
+      const edit = foaieDeschisa();
+      const COL = ["Total ore", "Zile lucr.", "PCO", "DT", "PIP", "CO", "CM", "BP", "AM", "M", "I", "O", "N", "Nelucr."];
+      let nrRanduri = 0;
+      LOCURI.forEach((loc) => {
+        const dinLoc = randuri.filter((r) => r.n.loc === loc);
+        if (!dinLoc.length) return;
+        const sec = el("section", "bloc-loc l-" + loc);
+        sec.appendChild(el("div", "grup-loc", loc));
+        const sc = el("div", "foaie-scroll");
+        const tb = el("table", "foaie-t");
+        const th = el("thead"); const hr = el("tr");
+        hr.appendChild(el("th", "nm", "Nume și prenume"));
+        zile.forEach((z) => { const c = el("th", z.dow === 0 || z.dow === 6 ? "we" : ""); c.append(String(z.d), document.createElement("br"), LIT_ZI[z.dow]); hr.appendChild(c); });
+        COL.forEach((c) => hr.appendChild(el("th", "", c)));
+        th.appendChild(hr); tb.appendChild(th);
+        const body = el("tbody");
+        let nr = 0;
+        const categorii = [...new Set([...(CATEGORII[loc] || []), ...dinLoc.map((r) => r.n.categorie)])];
+        categorii.forEach((cat) => {
+          const grup = dinLoc.filter((r) => r.n.categorie === cat).sort((a, b) => colator.compare(a.p.nume, b.p.nume) || a.n.ordine - b.n.ordine);
+          if (!grup.length) return;
+          const cr = el("tr", "cat"); cr.appendChild(el("td", "nm", cat)); const cs = el("td", "", ""); cs.colSpan = zile.length + COL.length; cr.appendChild(cs); body.appendChild(cr);
+          grup.forEach((r) => {
+            nr++; nrRanduri++;
+            const tr = el("tr");
+            const nm = el("td", "nm", nr + ". " + r.p.nume);
+            if (r.n.functie) nm.appendChild(el("small", "", " · " + r.n.functie));
+            tr.appendChild(nm);
+            let total = 0, lucr = 0; const cod = {};
+            zile.forEach((z) => {
+              const { v, man } = arataValoare(r.n, z.t);
+              const lib = foaie.libere.has(z.t); const sapt = z.dow !== 0 && z.dow !== 6;
+              const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt ? " lib" : "") + (man ? " man" : "") + (v && !/^\d+$/.test(v) ? " cod" : ""), v || "");
+              if (v && /^\d+$/.test(v)) total += Number(v);
+              if (v && COD_ABSENTA.includes(v)) cod[v] = (cod[v] || 0) + 1;
+              if (sapt && !lib && !(v && COD_ABSENTA.includes(v))) lucr++;
+              if (edit) td.addEventListener("click", () => deschideEditor(r, z.t));
+              else td.style.cursor = "default";
+              tr.appendChild(td);
+            });
+            const pc = primar.get(r.p.id + "|" + r.n.loc) === r.n ? foaie.pco.get(r.p.id + "|" + r.n.loc) : null;
+            const luna = (x) => (pc && +x ? String(Math.round(Number((+x * lucr * 0.2).toFixed(6)))) : "");
+            const nelucr = COD_ABSENTA.reduce((t, c) => t + (cod[c] || 0), 0);
+            const val = [total || "", lucr, pc ? luna(pc.pco) : "", pc ? luna(pc.dt) : "", pc ? luna(pc.pip) : "", cod.CO || "", cod.CM || "", cod.BP || "", cod.AM || "", cod.M || "", cod.I || "", cod.O || "", cod.N || "", nelucr || ""];
+            val.forEach((x) => tr.appendChild(el("td", "tot", String(x))));
+            body.appendChild(tr);
+          });
+        });
+        tb.appendChild(body); sc.appendChild(tb); sec.appendChild(sc); cont.appendChild(sec);
+      });
+      $("foaie-numar").textContent = nrRanduri + " rânduri" + (foaie.stare === "inchis" ? " · luna este închisă" : "") + (foaie.faraPco ? " · nu există tabel de plata cu ora valabil în această lună" : "") + (!edit && foaie.stare !== "inchis" && poatePontaj() ? " · anul școlar este închis" : "");
+      [...cont.querySelectorAll(".foaie-scroll")].forEach((x, i) => { if (poz[i]) { x.scrollLeft = poz[i][0]; x.scrollTop = poz[i][1]; } });
+    }
+
+    function deschideEditor(r, t) {
+      const zona = $("cel-editor"); zona.replaceChildren();
+      const cutie = el("div", "cutie");
+      cutie.appendChild(el("h3", "", r.p.nume + " · " + r.n.loc));
+      cutie.appendChild(el("div", "who", dataLunga(t) + (r.n.functie ? " · " + r.n.functie : "")));
+      const cur = arataValoare(r.n, t);
+      cutie.appendChild(el("label", "", "Ore (număr întreg) sau cod"));
+      const inp = document.createElement("input"); inp.maxLength = 4; inp.autocomplete = "off"; inp.value = cur.v || ""; inp.placeholder = "ex. 4 sau CO";
+      cutie.appendChild(inp);
+      const cod = el("div", "coduri");
+      COD_ZIUA.forEach((c) => { const b = el("button", "secondary", c); b.type = "button"; b.addEventListener("click", () => { inp.value = c; }); cod.appendChild(b); });
+      cutie.appendChild(cod);
+      cutie.appendChild(el("label", "", "Aplică și la zilele următoare, până la (se sar weekendurile și zilele libere)"));
+      const pana = document.createElement("select");
+      const d0 = Number(t.slice(8, 10));
+      for (let d = d0; d <= foaie.nz; d++) { const z = foaie.start.slice(0, 8) + String(d).padStart(2, "0"); pana.add(new Option(d === d0 ? "Doar această zi" : dataLunga(z), z)); }
+      cutie.appendChild(pana);
+      const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert"); cutie.appendChild(msg);
+      const lista = () => {
+        const sf = pana.value || t; const out = [];
+        for (let d = dinIso(t); iso(d) <= sf; d.setUTCDate(d.getUTCDate() + 1)) {
+          const z = iso(d), w = d.getUTCDay();
+          if (z === t || (w !== 0 && w !== 6 && !foaie.libere.has(z))) out.push(z);
+        }
+        return out;
+      };
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Salvează"); ok.type = "button";
+      const auto = el("button", "secondary", "Revino la automat"); auto.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.classList.add("hidden"));
+      zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
+      ok.addEventListener("click", async () => {
+        const v = inp.value.trim().toUpperCase();
+        if (!(/^\d{1,2}$/.test(v) && Number(v) <= 24) && !COD_ZIUA.includes(v)) { msg.textContent = "Scrie un număr între 0 și 24 sau unul dintre coduri."; return; }
+        const zile = lista(); ok.disabled = true;
+        const { error } = await db.from("pontaj_manual").upsert(zile.map((z) => ({ norma_id: r.n.id, zi: z, valoare: v })), { onConflict: "norma_id,zi" });
+        ok.disabled = false;
+        if (error) { msg.textContent = "Nu s-a putut salva. Încearcă din nou."; return; }
+        zile.forEach((z) => foaie.manual.set(r.n.id + "|" + z, v));
+        zona.classList.add("hidden"); deseneazaFoaia();
+      });
+      auto.addEventListener("click", async () => {
+        const zile = lista(); auto.disabled = true;
+        const { error } = await db.from("pontaj_manual").delete().eq("norma_id", r.n.id).in("zi", zile);
+        auto.disabled = false;
+        if (error) { msg.textContent = "Nu s-a putut reveni la automat. Încearcă din nou."; return; }
+        zile.forEach((z) => foaie.manual.delete(r.n.id + "|" + z));
+        zona.classList.add("hidden"); deseneazaFoaia();
+      });
+      ctl.append(ok, auto, nu); cutie.appendChild(ctl);
+      zona.appendChild(cutie); zona.classList.remove("hidden");
+      inp.focus();
+    }
+
+    $("luna-select").addEventListener("change", () => { lunaSel = $("luna-select").value; try { localStorage.setItem("lunaPontaj", lunaSel); } catch (e) {} incarcaFoaie(); });
+    const muta = (pas) => { const o = $("luna-select").options; const i = $("luna-select").selectedIndex + pas; if (i >= 0 && i < o.length) { $("luna-select").selectedIndex = i; $("luna-select").dispatchEvent(new Event("change")); } };
+    $("luna-prev").addEventListener("click", () => muta(-1));
+    $("luna-next").addEventListener("click", () => muta(1));
+
     // ---------- Plata cu ora (PCO, DT, PIP pe săptămână, cu tabele „valabil de la”) ----------
     let pcoTabele = [], pcoTabelId = null, pcoPersoane = [], pcoValori = {};
     const LUNI_RO = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
@@ -1320,6 +1571,7 @@
       $("pont-principal").classList.remove("hidden");
       $("pco-form-loc").replaceChildren();
       mesajPontaj("");
+      incarcaFoaie();
     });
 
     async function incarcaPCO(alege) {
@@ -1621,6 +1873,7 @@
       $("pont-principal").classList.remove("hidden");
       $("ang-form-loc").replaceChildren();
       mesajPontaj("");
+      incarcaFoaie();
     });
 
     $("activ-ca").addEventListener("change", () => {
