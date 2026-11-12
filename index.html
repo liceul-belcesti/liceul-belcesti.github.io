@@ -228,7 +228,7 @@
     #pontaj table.foaie-t th.tot-cap .vt { font-size:.74rem; font-weight:700; }
     #pontaj table.foaie-t th.zi-cap div { font-size:.9rem; font-weight:800; }
     #pontaj table.foaie-t th.nr, #pontaj table.foaie-t td.nr { position:sticky; left:0; z-index:1; min-width:46px; width:46px; padding:0 2px; font-size:.8rem; }
-    #pontaj table.foaie-t thead th.nr { z-index:3; }
+    #pontaj table.foaie-t thead th.nr { z-index:3; white-space:nowrap; font-size:.72rem; }
     #pontaj table.foaie-t th.nm, #pontaj table.foaie-t td.nm { position:sticky; left:46px; z-index:1; min-width:154px; width:154px; max-width:154px; text-align:left; padding:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.84rem; font-weight:700; box-shadow:2px 0 4px rgba(0,0,0,.08); }
     #pontaj table.foaie-t thead th.nm { z-index:3; }
     #pontaj table.foaie-t td.we, #pontaj table.foaie-t th.we { background:color-mix(in srgb, var(--muted) 18%, var(--card)); }
@@ -1493,7 +1493,7 @@
         const sc = el("div", "foaie-scroll");
         const tb = el("table", "foaie-t");
         const th = el("thead"); const hr = el("tr");
-        hr.appendChild(el("th", "nr", "Număr"));
+        hr.appendChild(el("th", "nr", "Nr. crt."));
         hr.appendChild(el("th", "nm", "Nume și prenume"));
         zile.forEach((z) => {
           const c = el("th", "zi-cap" + (z.dow === 0 || z.dow === 6 ? " we" : ""));
