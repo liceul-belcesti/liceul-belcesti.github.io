@@ -1868,11 +1868,7 @@
       const zona = $("cel-editor"); zona.replaceChildren();
       const cutie = el("div", "cutie lat");
       cutie.appendChild(el("h3", "", "Concediu pentru mai mulți angajați"));
-      cutie.appendChild(el("div", "who", "Începând cu " + dataLunga(t) + ". Bifezi categoriile, apoi debifezi pe cine nu este în concediu."));
-      cutie.appendChild(el("label", "", "Acțiune"));
-      const actiune = document.createElement("select");
-      actiune.add(new Option("Setează codul alese", "pune")); actiune.add(new Option("Șterge codul pus greșit (zilele revin la automat)", "scoate"));
-      cutie.appendChild(actiune);
+      cutie.appendChild(el("div", "who", "Începând cu " + dataLunga(t) + ". Bifat = are codul în ziua aceasta. Bifezi sau debifezi, apoi apeși „Salvează”."));
       const l1 = el("label", "", "Cod"); cutie.appendChild(l1);
       const cod = document.createElement("select");
       COD_ZIUA.filter((c) => c !== "PCO").forEach((c) => cod.add(new Option(c + " · " + COD_NUME[c], c)));
@@ -1892,7 +1888,10 @@
       const chips = el("div", "coduri"); cutie.appendChild(chips);
       const lista = el("div", "lista-grup"); cutie.appendChild(lista);
       const numar = el("div", "who"); cutie.appendChild(numar);
-      const actualizeaza = () => { numar.textContent = pers.filter((x) => x.cb.checked).length + " selectați din " + pers.length; };
+      const actualizeaza = () => { numar.textContent = pers.filter((x) => x.cb.checked).length + " bifați din " + pers.length; };
+      const areCod = (x) => x.ns.some((n) => foaie.manual.get(n.id + "|" + t) === cod.value);
+      const recalculeaza = () => { pers.forEach((x) => { x.init = areCod(x); x.cb.checked = x.init; x.et.textContent = x.init ? "· are " + cod.value : ""; }); actualizeaza(); };
+      cod.addEventListener("change", recalculeaza);
       const chipDe = (nume, fn) => { const b = el("button", "secondary", nume); b.type = "button"; b.addEventListener("click", fn); chips.appendChild(b); };
       toateGrupele.forEach((g) => chipDe(g, () => {
         const membri = pers.filter((x) => x.grupe.has(g)); const toti = membri.every((x) => x.cb.checked);
@@ -1902,37 +1901,36 @@
       pers.forEach((x) => {
         const lb = el("label", "rand-grup"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.addEventListener("change", actualizeaza); x.cb = cb;
         lb.appendChild(cb); lb.appendChild(el("span", "", x.p.nume + " · " + [...new Set(x.ns.map((n) => n.loc))].join(", ") + " · " + [...x.grupe].join(", ")));
+        x.et = el("strong", "", ""); lb.appendChild(x.et);
         lista.appendChild(lb);
       });
-      actualizeaza();
+      recalculeaza();
       const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert"); cutie.appendChild(msg);
       const ctl = el("div", "ctl");
-      const ok = el("button", "", "Aplică"); ok.type = "button";
+      const ok = el("button", "", "Salvează"); ok.type = "button";
       const nu = el("button", "secondary", "Renunță"); nu.type = "button";
       nu.addEventListener("click", () => zona.classList.add("hidden"));
       zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
       ok.addEventListener("click", async () => {
         const alesi = pers.filter((x) => x.cb.checked);
-        if (!alesi.length) { msg.textContent = "Bifează cel puțin o persoană."; return; }
+        const scosi = pers.filter((x) => x.init && !x.cb.checked);
+        if (!alesi.length && !scosi.length) { msg.textContent = "Nu ai schimbat nimic."; return; }
         const zile = [];
         for (let d = dinIso(t); iso(d) <= pana.value; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(), z = iso(d); if (w !== 0 && w !== 6 && !foaie.libere.has(z)) zile.push(z); }
         if (!zile.length) { msg.textContent = "Intervalul ales nu are zile lucrătoare."; return; }
-        if (actiune.value === "scoate") {
-          const ids = alesi.flatMap((x) => x.ns.map((n) => n.id)); ok.disabled = true;
-          for (let i = 0; i < ids.length; i += 100) {
-            const { error } = await db.from("pontaj_manual").delete().in("norma_id", ids.slice(i, i + 100)).in("zi", zile).eq("valoare", cod.value);
-            if (error) { ok.disabled = false; msg.textContent = "Nu s-a putut șterge tot. Încearcă din nou."; incarcaFoaie(); return; }
-          }
-          zona.classList.add("hidden"); mesajPontaj(cod.value + " a fost șters pentru " + alesi.length + (alesi.length === 1 ? " persoană." : " persoane."), true); incarcaFoaie(); return;
+        ok.disabled = true;
+        const idsScosi = scosi.flatMap((x) => x.ns.map((n) => n.id));
+        for (let i = 0; i < idsScosi.length; i += 100) {
+          const { error } = await db.from("pontaj_manual").delete().in("norma_id", idsScosi.slice(i, i + 100)).in("zi", zile).eq("valoare", cod.value);
+          if (error) { ok.disabled = false; msg.textContent = "Nu s-a putut șterge tot. Încearcă din nou."; incarcaFoaie(); return; }
         }
         const rows = [];
         alesi.forEach((x) => x.ns.forEach((n) => zile.forEach((z) => { if (!(foaie.absente && foaie.absente.has(n.id + "|" + z))) rows.push({ norma_id: n.id, zi: z, valoare: cod.value }); })));
-        ok.disabled = true;
         for (let i = 0; i < rows.length; i += 500) {
           const { error } = await db.from("pontaj_manual").upsert(rows.slice(i, i + 500), { onConflict: "norma_id,zi" });
           if (error) { ok.disabled = false; msg.textContent = "Nu s-a putut salva tot. Încearcă din nou."; incarcaFoaie(); return; }
         }
-        zona.classList.add("hidden"); mesajPontaj(cod.value + " a fost setat pentru " + alesi.length + (alesi.length === 1 ? " persoană." : " persoane."), true); incarcaFoaie();
+        zona.classList.add("hidden"); mesajPontaj(cod.value + ": " + alesi.length + " bifați" + (scosi.length ? ", " + scosi.length + " scoși" : "") + ".", true); incarcaFoaie();
       });
       ctl.append(ok, nu); cutie.appendChild(ctl);
       zona.appendChild(cutie); zona.classList.remove("hidden");
