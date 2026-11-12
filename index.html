@@ -246,6 +246,16 @@
     #pontaj table.foaie-t tr.sub td.rest { background:color-mix(in srgb, var(--lc, var(--hero-a)) 10%, var(--card)); }
     #pontaj table.foaie-t tr.sub td.titlu { text-align:left; padding:0 14px; height:28px; font-size:.78rem; font-weight:700; font-style:italic; background:color-mix(in srgb, var(--lc, var(--hero-a)) 10%, var(--card)); position:sticky; left:0; z-index:1; min-width:200px; width:200px; max-width:200px; white-space:nowrap; }
     #pontaj .cel-editor { position:fixed; inset:0; z-index:50; display:flex; align-items:flex-end; justify-content:center; background:rgba(0,0,0,.45); }
+    @media (min-width:900px) {
+      #pontaj.wrap { max-width:none; padding-left:12px; padding-right:12px; }
+      #pontaj .foaie-scroll { overflow:visible; max-height:none; }
+      #pontaj table.foaie-t { width:100%; table-layout:fixed; }
+      #pontaj table.foaie-t th, #pontaj table.foaie-t td { min-width:0; width:auto; }
+      #pontaj table.foaie-t th.nr, #pontaj table.foaie-t td.nr { width:34px; min-width:0; }
+      #pontaj table.foaie-t th.nm, #pontaj table.foaie-t td.nm { width:190px; min-width:0; max-width:190px; left:34px; }
+      #pontaj table.foaie-t td.tot, #pontaj table.foaie-t th.tot-cap { width:34px; min-width:0; }
+      #pontaj table.foaie-t td.zi { font-size:.78rem; }
+    }
     #pontaj .cel-editor .cutie { width:100%; max-width:520px; max-height:88vh; overflow:auto; background:var(--card); color:var(--text); border-radius:16px 16px 0 0; padding:14px 14px 18px; }
     #pontaj .cel-editor h3 { margin:0 0 2px; font-size:1rem; }
     #pontaj .cel-editor .coduri { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
@@ -451,7 +461,7 @@
         <details class="legenda"><summary>Explicații pentru coduri și calcul</summary>
           <p>O cifră înseamnă ore lucrate (număr întreg). În celule apar codurile: <b>CO</b> concediu de odihnă · <b>CM</b> concediu medical · <b>BP</b> boală profesională · <b>AM</b> accident de muncă · <b>M</b> maternitate · <b>PRM</b> program redus maternitate · <b>PRB</b> program redus boală · <b>I</b> învoiri sau concediu fără plată · <b>O</b> obligații cetățenești · <b>N</b> absențe nemotivate · <b>L</b> liber stabilit de minister · <b>PCO</b> plata cu ora.</p>
           <p>Celulele cu chenar colorat sunt completate de tine; celelalte vin automat din program și calendar. Apasă pe o celulă ca s-o modifici.</p>
-          <p>Plata cu ora, Teorie și Instruire practică = ore pe săptămână × (zile lucrate × 0,2), rotunjit. Zile lucrate = zilele lucrătoare, fără sărbători legale și fără zilele cu concediu sau absență. Coloanele din dreapta apar doar dacă au valori.</p>
+          <p>Plata cu ora, DT (teorie) și PIP (instruire practică) = ore pe săptămână × (zile lucrate × 0,2), rotunjit. Zile lucrate = zilele lucrătoare, fără sărbători legale și fără zilele cu concediu sau absență. Coloanele din dreapta sunt aceleași în toate locațiile și apar doar dacă au valori undeva în foaie.</p>
         </details>
         <p id="foaie-libere" class="who libere"></p>
         <p id="foaie-numar" class="who"></p>
@@ -1452,15 +1462,11 @@
       randuri.forEach((r) => { const k = r.p.id + "|" + r.n.loc; const c = primar.get(k); if (!c || r.n.ordine < c.ordine) primar.set(k, r.n); });
       const edit = foaieDeschisa();
       // Coloanele de la sfârșit: [titlu, cheie, mereu vizibilă]
-      const COL = [["Total ore lucrate", "total", true], ["Zile lucrate", "lucr", true], ["Plata cu ora", "pco", false], ["Teorie", "dt", false], ["Instruire practică", "pip", false],
+      const COL = [["Total ore lucrate", "total", true], ["Zile lucrate", "lucr", true], ["Plata cu ora", "pco", false], ["DT", "dt", false], ["PIP", "pip", false],
         ["Concediu de odihnă", "CO", false], ["Concediu medical", "CM", false], ["Boală profesională", "BP", false], ["Accident de muncă", "AM", false], ["Maternitate", "M", false],
         ["Învoiri", "I", false], ["Obligații cetățenești", "O", false], ["Absențe nemotivate", "N", false], ["Total zile nelucrate", "nelucr", false]];
       let nrRanduri = 0;
-      LOCURI.forEach((loc) => {
-        const dinLoc = randuri.filter((r) => r.n.loc === loc);
-        if (!dinLoc.length) return;
-        // 1) calculează toate rândurile locului
-        dinLoc.forEach((r) => {
+      randuri.forEach((r) => {
           let total = 0, lucr = 0; const cod = {}; const celule = [];
           zile.forEach((z) => {
             const { v, man } = arataValoare(r.n, z.t);
@@ -1477,7 +1483,10 @@
           val.nelucr = COD_ABSENTA.reduce((t, c) => t + (cod[c] || 0), 0) || "";
           r.celule = celule; r.val = val;
         });
-        const vizibile = COL.filter(([, k, mereu]) => mereu || dinLoc.some((r) => r.val[k] !== "" && r.val[k] !== undefined));
+      LOCURI.forEach((loc) => {
+        const dinLoc = randuri.filter((r) => r.n.loc === loc);
+        if (!dinLoc.length) return;
+        const vizibile = COL.filter(([, k, mereu]) => mereu || randuri.some((r) => r.val[k] !== "" && r.val[k] !== undefined));
         // 2) desenează
         const sec = el("section", "bloc-loc l-" + loc);
         sec.appendChild(el("div", "grup-loc", loc));
