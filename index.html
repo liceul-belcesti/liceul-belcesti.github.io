@@ -1844,6 +1844,22 @@
       const grup = el("button", "secondary", "Setează concediu pentru mai mulți angajați"); grup.type = "button";
       grup.addEventListener("click", () => deschideGrup(t));
       ctl.appendChild(grup);
+      const nrMan = [...foaie.manual.keys()].filter((k) => k.endsWith("|" + t)).length;
+      if (nrMan) {
+        const sterg = el("button", "secondary", "Șterge toate codurile puse manual în această zi (" + nrMan + ")"); sterg.type = "button";
+        let armat = false;
+        sterg.addEventListener("click", async () => {
+          if (!armat) { armat = true; sterg.textContent = "Sigur? Apasă încă o dată"; return; }
+          sterg.disabled = true;
+          const ids = [...foaie.manual.keys()].filter((k) => k.endsWith("|" + t)).map((k) => k.split("|")[0]);
+          for (let i = 0; i < ids.length; i += 100) {
+            const { error } = await db.from("pontaj_manual").delete().in("norma_id", ids.slice(i, i + 100)).eq("zi", t);
+            if (error) { sterg.disabled = false; msg.textContent = "Nu s-a putut șterge tot. Încearcă din nou."; incarcaFoaie(); return; }
+          }
+          zona.classList.add("hidden"); mesajPontaj("Codurile din această zi au fost șterse.", true); incarcaFoaie();
+        });
+        ctl.appendChild(sterg);
+      }
       cutie.appendChild(msg); cutie.appendChild(ctl);
       zona.appendChild(cutie); zona.classList.remove("hidden");
     }
@@ -1950,7 +1966,7 @@
       };
       const ctl = el("div", "ctl");
       const ok = el("button", "", "Salvează"); ok.type = "button";
-      const auto = el("button", "secondary", "Revino la automat"); auto.type = "button";
+      const auto = el("button", "secondary", "Șterge codul (revine la automat)"); auto.type = "button";
       const nu = el("button", "secondary", "Renunță"); nu.type = "button";
       nu.addEventListener("click", () => zona.classList.add("hidden"));
       zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
