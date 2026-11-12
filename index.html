@@ -374,6 +374,14 @@
         <label for="an-select" class="an-et">Anul școlar</label>
         <select id="an-select"></select>
       </div>
+      <div id="pont-principal">
+        <div id="pont-msg-principal" class="verif">Foaia lunară de pontaj urmează să fie adăugată aici.</div>
+        <button id="btn-admin" type="button">⚙ Administrare</button>
+        <p class="who">Angajați, program, ani școlari și calendarul zilelor libere.</p>
+      </div>
+      <div id="administrare" class="hidden">
+      <button id="inapoi-admin" class="back" type="button">← Pontaj</button>
+      <h3 class="sect">Administrare</h3>
       <div id="an-actiuni" class="an-actiuni hidden">
         <button id="an-nou" class="secondary" type="button">+ Anul școlar nou</button>
         <button id="an-inchide" class="secondary" type="button">Închide anul</button>
@@ -407,6 +415,7 @@
       <div id="ang-form-loc"></div>
       <p id="ang-numar" class="who"></p>
       <div id="ang-lista"></div>
+      </div>
     </main>
 
     <main id="panou" class="wrap hidden">
@@ -814,6 +823,8 @@
       $("ang-form-loc").replaceChildren();
       $("an-nou-form").classList.add("hidden");
       $("an-actiuni").classList.toggle("hidden", !poateAni());
+      $("administrare").classList.add("hidden");
+      $("pont-principal").classList.remove("hidden");
       await incarcaAni();
     }
 
@@ -1292,6 +1303,18 @@
     $("ang-cauta").addEventListener("input", deseneazaAngajati);
     $("ang-loc").addEventListener("change", deseneazaAngajati);
     $("inapoi-pontaj").addEventListener("click", arataPrincipal);
+    $("btn-admin").addEventListener("click", () => {
+      $("pont-principal").classList.add("hidden");
+      $("administrare").classList.remove("hidden");
+      mesajPontaj("");
+      incarcaTab();
+    });
+    $("inapoi-admin").addEventListener("click", () => {
+      $("administrare").classList.add("hidden");
+      $("pont-principal").classList.remove("hidden");
+      $("ang-form-loc").replaceChildren();
+      mesajPontaj("");
+    });
 
     $("activ-ca").addEventListener("change", () => {
       const v = $("activ-ca").value;
