@@ -237,6 +237,7 @@
     #pontaj table.foaie-t td.zi.man { box-shadow:inset 0 0 0 2px var(--accent); font-weight:800; }
     #pontaj table.foaie-t td.zi.cod { font-weight:800; color:#000; }
     #pontaj table.foaie-t th, #pontaj table.foaie-t td { color:#000 !important; }
+    #pontaj table.foaie-t th.zi-cap.clicabil { cursor:pointer; }
     #pontaj table.foaie-t th.zi-cap .lz { font-size:.78rem; font-weight:700; }
     #pontaj .libere { color:var(--text); font-weight:600; }
     #pontaj table.foaie-t td.tot { min-width:38px; width:38px; font-weight:800; background:color-mix(in srgb, var(--accent) 10%, var(--card)); }
@@ -1499,6 +1500,7 @@
           const c = el("th", "zi-cap" + (z.dow === 0 || z.dow === 6 ? " we" : ""));
           c.appendChild(el("div", "", String(z.d))); c.appendChild(el("div", "lz", LIT_ZI[z.dow]));
           const lz = foaie.libere.get(z.t); if (lz) { c.title = lz.motiv; c.classList.add("lib"); }
+          if (edit && poateModificaAng() && z.dow !== 0 && z.dow !== 6) { c.classList.add("clicabil"); c.title = (lz ? lz.motiv + " – " : "") + "apasă pentru a seta zi liberă"; c.addEventListener("click", () => deschideZiLibera(z.t)); }
           hr.appendChild(c);
         });
         vizibile.forEach(([titlu]) => { const c = el("th", "tot-cap"); c.appendChild(el("span", "vt", titlu)); hr.appendChild(c); });
@@ -1541,6 +1543,45 @@
       $("foaie-libere").textContent = lis.length ? "Zile libere în această lună: " + lis.map((x) => Number(x.data.slice(8, 10)) + " " + LUNI_RO[Number(x.data.slice(5, 7)) - 1] + " – " + x.motiv).join("; ") + "." : "";
       $("foaie-numar").textContent = nrRanduri + (nrRanduri === 1 ? " rând" : " rânduri") + (foaie.stare === "inchis" ? " · luna este închisă" : "") + (foaie.faraPco ? " · nu există tabel de plata cu ora valabil în această lună" : "") + (!edit && foaie.stare !== "inchis" && poatePontaj() ? " · anul școlar este închis" : "");
       [...cont.querySelectorAll(".foaie-scroll")].forEach((x, i) => { if (poz[i]) { x.scrollLeft = poz[i][0]; x.scrollTop = poz[i][1]; } });
+    }
+
+    function deschideZiLibera(t) {
+      const zona = $("cel-editor"); zona.replaceChildren();
+      const cutie = el("div", "cutie");
+      const cur = foaie.libere.get(t);
+      cutie.appendChild(el("h3", "", dataLunga(t)));
+      cutie.appendChild(el("div", "who", cur ? "Zi liberă: " + cur.motiv + " · " + (TIP_ZI[cur.tip] || cur.tip) : "Zi lucrătoare"));
+      const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert");
+      const ctl = el("div", "ctl");
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.classList.add("hidden"));
+      zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
+      const gata = async (error, text) => {
+        if (error) { msg.textContent = "Nu s-a putut salva. Încearcă din nou."; return; }
+        zona.classList.add("hidden"); mesajPontaj(text, true); incarcaFoaie();
+      };
+      if (cur) {
+        cutie.appendChild(el("p", "who", "Dacă o scoți din zilele libere, ziua devine lucrătoare și se recalculează orele și zilele lucrate."));
+        const ok = el("button", "", "Scoate din zilele libere"); ok.type = "button";
+        ok.addEventListener("click", async () => { ok.disabled = true; const { error } = await db.from("zile_libere").delete().eq("data", t); ok.disabled = false; gata(error, "Ziua nu mai este liberă."); });
+        ctl.append(ok, nu);
+      } else {
+        const l1 = el("label", "", "Motiv (ex. Zi liberă stabilită de minister)"); cutie.appendChild(l1);
+        const motiv = document.createElement("input"); motiv.maxLength = 80; motiv.autocomplete = "off"; cutie.appendChild(motiv);
+        const l2 = el("label", "", "Tip"); cutie.appendChild(l2);
+        const tip = document.createElement("select");
+        [["men", "Liber stabilit de minister"], ["legala", "Sărbătoare legală"], ["alta", "Altă zi liberă"]].forEach(([v, x]) => tip.add(new Option(x, v)));
+        cutie.appendChild(tip);
+        const ok = el("button", "", "Setează ca zi liberă"); ok.type = "button";
+        ok.addEventListener("click", async () => {
+          const m = motiv.value.trim(); if (!m) { msg.textContent = "Scrie motivul."; return; }
+          ok.disabled = true; const { error } = await db.from("zile_libere").upsert([{ data: t, motiv: m, tip: tip.value }], { onConflict: "data" }); ok.disabled = false;
+          gata(error, "Ziua a fost setată ca zi liberă.");
+        });
+        ctl.append(ok, nu);
+      }
+      cutie.appendChild(msg); cutie.appendChild(ctl);
+      zona.appendChild(cutie); zona.classList.remove("hidden");
     }
 
     function deschideEditor(r, t) {
