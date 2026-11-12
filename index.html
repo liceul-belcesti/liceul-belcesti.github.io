@@ -100,6 +100,7 @@
     .ang-form .nr button.x { grid-column:3; grid-row:1; width:48px; min-height:48px; margin:0; padding:0; }
     .ang-form .ctl { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
     .ang-form .ctl button { margin-top:0; flex:1 1 140px; }
+    .ang-rand button.off { background:transparent; color:var(--err); border:1.5px solid var(--err); min-height:36px; margin:0; padding:4px 12px; }
     .ang-form button.off { background:transparent; color:var(--err); border:1.5px solid var(--err); }
     .ang-form button.secondary { margin-top:12px; }
     .ang-form .ctl button.secondary { margin-top:0; }
@@ -113,6 +114,8 @@
     .tabs .pt { display:inline-block; margin-left:6px; min-width:20px; padding:0 6px; border-radius:10px; font-size:.75rem; color:#fff; background:var(--err); }
     .tabs.t3 { grid-template-columns:1fr 1fr 1fr; }
     .tabs.t3 button { padding:8px 4px; }
+    .tabs.t4 { grid-template-columns:repeat(4,1fr); }
+    .tabs.t4 button { padding:8px 2px; }
     .golire { display:block; width:100%; min-height:44px; margin:0 0 12px; background:transparent; color:var(--err); border:1.5px solid var(--err); }
     .sterge-rand { width:auto; min-height:36px; margin:10px 0 0; padding:4px 14px; background:transparent; color:var(--err); border:1.5px solid var(--err); font-size:.85rem; }
     .user .sub { margin-top:6px; color:var(--muted); font-size:.86rem; }
@@ -395,10 +398,11 @@
       </div>
       <div id="an-inchis" class="verif hidden">Anul școlar este închis: se poate doar consulta.</div>
       <div id="pontaj-msg" class="panel-msg" role="alert"></div>
-      <div class="tabs t3" role="tablist" id="tab-pontaj">
+      <div class="tabs t4" role="tablist" id="tab-pontaj">
         <button type="button" role="tab" data-v="angajati" aria-selected="true">Angajați</button>
         <button type="button" role="tab" data-v="sterse" aria-selected="false">Șterși</button>
         <button type="button" role="tab" data-v="istoric" aria-selected="false">Istoric</button>
+        <button type="button" role="tab" data-v="calendar" aria-selected="false">Calendar</button>
       </div>
       <div id="ang-filtre" class="ang-filtre">
         <input id="ang-cauta" type="search" placeholder="Caută după nume" autocomplete="off">
@@ -858,8 +862,9 @@
     function incarcaTab() {
       $("ang-form-loc").replaceChildren();
       actualizeazaAn();
-      $("ang-filtre").classList.toggle("hidden", tabP === "istoric");
+      $("ang-filtre").classList.toggle("hidden", tabP === "istoric" || tabP === "calendar");
       if (tabP === "istoric") return incarcaIstoricPontaj();
+      if (tabP === "calendar") return incarcaCalendar();
       return incarcaAngajati();
     }
 
@@ -1161,6 +1166,91 @@
       mesajPontaj("");
       incarcaTab();
     });
+
+    // ---------- Calendar: zile libere (legale, liber MEN, altele) ----------
+    const TIP_ZI = { legala: "Sărbătoare legală", men: "Liber MEN", alta: "Altă zi liberă" };
+    const iso = (d) => d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+    const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(Date.UTC(y, m - 1, z)); };
+    const dataLunga = (t) => dinIso(t).toLocaleDateString("ro-RO", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+    async function incarcaCalendar() {
+      const lista = $("ang-lista"); lista.replaceChildren(); $("ang-numar").textContent = "";
+      const a = anCurent(); if (!a) return;
+      const [y1, y2] = a.denumire.split("–").map(Number);
+      const { data, error } = await db.from("zile_libere").select("data, motiv, tip")
+        .gte("data", y1 + "-09-01").lte("data", y2 + "-08-31").order("data");
+      if (error) return mesajPontaj("Nu s-a putut încărca calendarul. Încearcă din nou.");
+      const poate = poateModificaAng();
+      if (poate) {
+        const adauga = el("button", "", "+ Adaugă zi liberă"); adauga.type = "button";
+        adauga.addEventListener("click", () => formZiLibera(y1, y2));
+        lista.appendChild(adauga);
+      }
+      const luni = (t) => { const d = dinIso(t); const dow = d.getUTCDay(); return dow === 0 || dow === 6; };
+      const lucr = data.filter((x) => !luni(x.data)).length;
+      $("ang-numar").textContent = data.length + " zile libere · " + lucr + " cad în zile lucrătoare · " + a.denumire;
+      if (!data.length) lista.appendChild(el("p", "who", "Nu există zile libere pentru acest an școlar."));
+      data.forEach((z) => {
+        const r = el("div", "ang-rand citire");
+        const st = el("div", "");
+        st.appendChild(el("strong", "", dataLunga(z.data)));
+        st.appendChild(el("div", "who", z.motiv + " · " + (TIP_ZI[z.tip] || z.tip) + (luni(z.data) ? " · weekend" : "")));
+        r.appendChild(st);
+        if (poate) {
+          const sterge = el("button", "mic off", "Șterge"); sterge.type = "button";
+          let armat = false, timer = null;
+          sterge.addEventListener("click", async () => {
+            if (!armat) { armat = true; sterge.textContent = "Sigur?"; timer = setTimeout(() => { armat = false; sterge.textContent = "Șterge"; }, 4000); return; }
+            clearTimeout(timer); sterge.disabled = true;
+            const { error: e } = await db.from("zile_libere").delete().eq("data", z.data);
+            mesajPontaj(e ? "Ziua nu a putut fi ștearsă." : "Ziua liberă a fost ștearsă.", !e);
+            incarcaCalendar();
+          });
+          r.appendChild(sterge);
+        }
+        lista.appendChild(r);
+      });
+    }
+
+    function formZiLibera(y1, y2) {
+      const zona = $("ang-form-loc"); zona.replaceChildren();
+      const box = el("div", "ang-form");
+      box.appendChild(el("h3", "", "Adaugă zi liberă"));
+      const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
+      const min = y1 + "-09-01", max = y2 + "-08-31";
+      const de = camp("Data (sau prima zi, dacă sunt mai multe)", document.createElement("input")); de.type = "date"; de.min = min; de.max = max;
+      const pana = camp("Până la (opțional, pentru mai multe zile la rând)", document.createElement("input")); pana.type = "date"; pana.min = min; pana.max = max;
+      const motiv = camp("Motiv (ex. Zi liberă stabilită de minister)", document.createElement("input")); motiv.maxLength = 80; motiv.autocomplete = "off";
+      const tip = camp("Tip", document.createElement("select"));
+      [["men", "Liber MEN"], ["legala", "Sărbătoare legală"], ["alta", "Altă zi liberă"]].forEach(([v, t]) => tip.add(new Option(t, v)));
+      box.appendChild(el("p", "who", "Se adaugă doar zilele de luni până vineri; weekendurile sunt oricum libere."));
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Adaugă"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        const m = motiv.value.trim();
+        if (!de.value || !m) return mesajPontaj("Alege data și scrie motivul.");
+        const sfarsit = pana.value || de.value;
+        if (sfarsit < de.value) return mesajPontaj("„Până la” nu poate fi înaintea datei de început.");
+        const rows = [];
+        for (let d = dinIso(de.value); iso(d) <= sfarsit && rows.length < 120; d.setUTCDate(d.getUTCDate() + 1)) {
+          const dow = d.getUTCDay();
+          if (dow !== 0 && dow !== 6) rows.push({ data: iso(d), motiv: m, tip: tip.value });
+        }
+        if (!rows.length) return mesajPontaj("Intervalul ales cade doar în weekend.");
+        ok.disabled = true;
+        const { error } = await db.from("zile_libere").upsert(rows, { onConflict: "data" });
+        ok.disabled = false;
+        if (error) return mesajPontaj("Zilele nu au putut fi adăugate. Încearcă din nou.");
+        zona.replaceChildren();
+        mesajPontaj(rows.length === 1 ? "Ziua liberă a fost adăugată." : rows.length + " zile libere au fost adăugate.", true);
+        incarcaCalendar();
+      });
+      ctl.append(ok, nu); box.appendChild(ctl);
+      zona.appendChild(box);
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 
     // ---------- Import / export Excel pentru lista de angajați ----------
     const nrm = (t) => String(t == null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
