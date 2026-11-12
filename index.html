@@ -240,6 +240,11 @@
     #pontaj .sub-inloc { padding:10px 14px 6px; font-weight:800; font-size:.9rem; background:var(--card); border-top:2px solid #8a959b; }
     #pontaj table.foaie-t td.nm.inl { white-space:normal; line-height:1.15; font-size:.78rem; }
     #pontaj button.stergeinloc { width:100%; height:100%; min-height:30px; margin:0; padding:0; border:0; background:transparent; color:var(--err); font-size:1rem; font-weight:800; cursor:pointer; }
+    #pontaj .stare-bara { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:6px 0 4px; }
+    #pontaj .stare-bara button { width:auto; min-height:36px; margin:0; padding:4px 14px; font-size:.86rem; }
+    #pontaj .stare-eticheta { font-weight:800; font-size:.86rem; padding:5px 12px; border-radius:999px; border:2px solid #8a959b; background:var(--card); color:var(--text); }
+    #pontaj .stare-eticheta.st-predat { border-color:#b7791f; }
+    #pontaj .stare-eticheta.st-inchis { border-color:#2f855a; }
     #inloc-btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
     #inloc-btns button { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.88rem; }
     #pontaj table.foaie-t td.tot:empty { background:var(--card); }
@@ -465,6 +470,7 @@
           <button id="luna-next" class="secondary" type="button" aria-label="Luna următoare">›</button>
         </div>
         <p id="luna-info" class="who"></p>
+        <div id="luna-stare" class="stare-bara"></div>
         <details class="legenda"><summary>Explicații pentru coduri și calcul</summary>
           <p>O cifră înseamnă ore lucrate (număr întreg). În celule apar codurile: <b>CO</b> concediu de odihnă · <b>CM</b> concediu medical · <b>BP</b> boală profesională · <b>AM</b> accident de muncă · <b>M</b> maternitate · <b>PRM</b> program redus maternitate · <b>PRB</b> program redus boală · <b>I</b> învoiri sau concediu fără plată · <b>O</b> obligații cetățenești · <b>N</b> absențe nemotivate · <b>L</b> liber stabilit de minister · <b>PCO</b> plata cu ora.</p>
           <p>Celulele cu chenar colorat sunt completate de tine; celelalte vin automat din program și calendar. Apasă pe o celulă ca s-o modifici.</p>
@@ -1425,28 +1431,31 @@
           toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare").gte("zi", start).lte("zi", sfarsit).order("norma_id").order("zi")),
           toate(() => db.from("zile_libere").select("data, motiv, tip").gte("data", start).lte("data", sfarsit).order("data")),
           db.from("pco_tabele").select("id, valabil_de").eq("an_id", anId).lte("valabil_de", start).order("valabil_de", { ascending: false }).limit(1),
-          db.from("pontaj_luni").select("stare").eq("an_id", anId).eq("luna", start).limit(1),
+          db.from("pontaj_luni").select("stare, instantaneu").eq("an_id", anId).eq("luna", start).limit(1),
           toate(() => db.from("pontaj_inlocuiri").select("id, norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore").is("sters_la", null).lte("de_la", sfarsit).gte("pana_la", start).order("de_la").order("id"))
         ]);
         if (tabele.error || luniRand.error) throw (tabele.error || luniRand.error);
         const tab = tabele.data && tabele.data[0];
         const pcoVal = tab ? await toate(() => db.from("pco_valori").select("angajat_id, loc, pco, dt, pip").eq("tabel_id", tab.id).order("angajat_id")) : [];
         if (cerere !== cerereFoaie) return;
+        const r0 = luniRand.data && luniRand.data[0];
+        const snap = r0 && r0.stare === "inchis" && r0.instantaneu && r0.instantaneu.ang ? r0.instantaneu : null;
+        const D = snap ? { ang: snap.ang, manual: snap.manual || [], libere: snap.libere || [], inloc: snap.inloc || [], pco: snap.pco || [], faraPco: !!snap.faraPco } : { ang, manual, libere, inloc, pco: pcoVal, faraPco: !tab };
         foaie = {
-          start, nz, ang,
-          manual: new Map(manual.map((x) => [x.norma_id + "|" + x.zi, x.valoare])),
-          libere: new Map(libere.map((x) => [x.data, x])),
-          inloc,
-          pco: new Map(pcoVal.map((v) => [v.angajat_id + "|" + v.loc, v])),
+          start, nz, ang: D.ang, deLaInstantaneu: !!snap,
+          manual: new Map(D.manual.map((x) => [x.norma_id + "|" + x.zi, x.valoare])),
+          libere: new Map(D.libere.map((x) => [x.data, x])),
+          inloc: D.inloc,
+          pco: new Map(D.pco.map((v) => [v.angajat_id + "|" + v.loc, v])),
           stare: (luniRand.data && luniRand.data[0] && luniRand.data[0].stare) || "in_lucru",
-          faraPco: !tab
+          faraPco: D.faraPco
         };
         foaie.absente = new Map();
-        inloc.forEach((q) => {
+        D.inloc.forEach((q) => {
           for (let d = dinIso(q.de_la < start ? start : q.de_la); iso(d) <= q.pana_la && iso(d) <= sfarsit; d.setUTCDate(d.getUTCDate() + 1)) {
             const w = d.getUTCDay(), z = iso(d);
             if (w !== 0 && w !== 6 && !foaie.libere.has(z)) {
-              const pers = ang.find((p) => (p.norme || []).some((n) => n.id === q.norma_id));
+              const pers = D.ang.find((p) => (p.norme || []).some((n) => n.id === q.norma_id));
               (pers ? pers.norme : [{ id: q.norma_id }]).forEach((n) => foaie.absente.set(n.id + "|" + z, q.tip));
             }
           }
@@ -1457,6 +1466,54 @@
       }
     }
     let cerereFoaie = 0;
+
+    const ETICHETA_STARE = { in_lucru: "În lucru", predat: "Predat", inchis: "Închis" };
+    function deseneazaStare() {
+      const z = $("luna-stare"); z.replaceChildren();
+      if (!foaie || !anCurent()) return;
+      const st = foaie.stare;
+      const badge = el("span", "stare-eticheta st-" + st, "Stare: " + ETICHETA_STARE[st]); z.appendChild(badge);
+      const buton = (text, fn, sec) => { const b = el("button", sec ? "secondary" : "", text); b.type = "button"; b.addEventListener("click", fn); z.appendChild(b); };
+      if (st === "inchis") {
+        z.appendChild(el("span", "who", "Foaia este salvată așa cum a fost la închidere și nu se mai modifică."));
+        if (poateAni() && !anCurent().inchis) buton("Redeschide luna", () => confirmaStare("in_lucru"), true);
+        return;
+      }
+      if (!poatePontaj()) return;
+      if (st === "in_lucru") buton("Marchează ca predat", () => seteazaStare("predat"), true);
+      else buton("Înapoi în lucru", () => seteazaStare("in_lucru"), true);
+      if (poateAni() && !anCurent().inchis) buton("Închide luna", () => confirmaStare("inchis"));
+    }
+    async function seteazaStare(stare, instantaneu) {
+      const rand = { an_id: anId, luna: lunaSel, stare, instantaneu: instantaneu || null };
+      const { error } = await db.from("pontaj_luni").upsert(rand, { onConflict: "an_id,luna" });
+      if (error) { mesajPontaj("Starea lunii nu a putut fi schimbată.", false); return false; }
+      mesajPontaj("Luna este acum: " + ETICHETA_STARE[stare].toLowerCase() + ".", true);
+      incarcaFoaie(); return true;
+    }
+    function confirmaStare(stare) {
+      const zona = $("cel-editor"); zona.replaceChildren();
+      const cutie = el("div", "cutie");
+      const inchide = stare === "inchis";
+      cutie.appendChild(el("h3", "", inchide ? "Închizi luna " + numeLuna(foaie.start) + "?" : "Redeschizi luna " + numeLuna(foaie.start) + "?"));
+      cutie.appendChild(el("p", "who", inchide
+        ? "Foaia se salvează exact așa cum arată acum (angajați, program, zile libere, plata cu ora, concedii). După închidere nu se mai poate modifica, iar schimbările de program sau de zile libere de mai târziu nu o afectează."
+        : "Luna redevine „în lucru”, iar foaia salvată la închidere se șterge. Foaia se recalculează din datele curente."));
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", inchide ? "Da, închide luna" : "Da, redeschide"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.classList.add("hidden"));
+      zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
+      ok.addEventListener("click", async () => {
+        ok.disabled = true;
+        let inst = null;
+        if (inchide) inst = { versiune: 1, ang: foaie.ang, manual: [...foaie.manual].map(([k, v]) => ({ norma_id: k.split("|")[0], zi: k.split("|")[1], valoare: v })), libere: [...foaie.libere.values()], inloc: foaie.inloc, pco: [...foaie.pco.values()], faraPco: foaie.faraPco, salvat_la: new Date().toISOString() };
+        const bun = await seteazaStare(stare, inst);
+        if (bun) zona.classList.add("hidden"); else ok.disabled = false;
+      });
+      ctl.append(ok, nu); cutie.appendChild(ctl);
+      zona.appendChild(cutie); zona.classList.remove("hidden");
+    }
 
     function valoareAutomata(n, t) {
       const dow = dinIso(t).getUTCDay();
@@ -1571,6 +1628,7 @@
       const lis = [...foaie.libere.values()].filter((x) => { const w = dinIso(x.data).getUTCDay(); return w !== 0 && w !== 6; }).sort((p, q) => (p.data < q.data ? -1 : 1));
       $("foaie-libere").textContent = lis.length ? "Zile libere în această lună: " + lis.map((x) => Number(x.data.slice(8, 10)) + " " + LUNI_RO[Number(x.data.slice(5, 7)) - 1] + " – " + x.motiv).join("; ") + "." : "";
       $("inloc-btns").classList.toggle("hidden", !(edit && poateModificaAng()));
+      deseneazaStare();
       $("foaie-numar").textContent = nrRanduri + (nrRanduri === 1 ? " rând" : " rânduri") + (foaie.stare === "inchis" ? " · luna este închisă" : "") + (foaie.faraPco ? " · nu există tabel de plata cu ora valabil în această lună" : "") + (!edit && foaie.stare !== "inchis" && poatePontaj() ? " · anul școlar este închis" : "");
       [...cont.querySelectorAll(".foaie-scroll")].forEach((x, i) => { if (poz[i]) { x.scrollLeft = poz[i][0]; x.scrollTop = poz[i][1]; } });
     }
