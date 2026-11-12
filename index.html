@@ -221,13 +221,13 @@
     #pontaj .legenda summary { cursor:pointer; font-weight:700; color:var(--text); }
     #pontaj .legenda p { margin:6px 0; }
     #pontaj .foaie-scroll { overflow:auto; max-height:78vh; -webkit-overflow-scrolling:touch; }
-    #pontaj table.foaie-t { border-collapse:separate; border-spacing:0; font-size:.72rem; font-variant-numeric:tabular-nums; }
-    #pontaj table.foaie-t th, #pontaj table.foaie-t td { border-right:1px solid color-mix(in srgb, var(--line) 70%, transparent); border-bottom:1px solid color-mix(in srgb, var(--line) 70%, transparent); min-width:30px; width:30px; height:34px; padding:0; text-align:center; background:var(--card); color:var(--text); font-size:.85rem; }
+    #pontaj table.foaie-t { --card:#fff; --muted:#6b7280; --line:#8a959b; color:#000; border-collapse:separate; border-spacing:0; font-size:.72rem; font-variant-numeric:tabular-nums; }
+    #pontaj table.foaie-t th, #pontaj table.foaie-t td { border-right:1.5px solid #8a959b; border-bottom:1.5px solid #8a959b; min-width:30px; width:30px; height:34px; padding:0; text-align:center; background:var(--card); color:var(--text); font-size:.85rem; }
     #pontaj table.foaie-t thead th { position:sticky; top:0; z-index:2; font-size:.8rem; font-weight:700; background:color-mix(in srgb, var(--lc, var(--hero-a)) 16%, var(--card)); line-height:1.2; vertical-align:bottom; padding:4px 0; height:auto; }
     #pontaj table.foaie-t .vt { display:inline-block; writing-mode:vertical-rl; transform:rotate(180deg); white-space:nowrap; font-size:.72rem; font-weight:600; margin-top:3px; }
     #pontaj table.foaie-t th.tot-cap .vt { font-size:.74rem; font-weight:700; }
     #pontaj table.foaie-t th.zi-cap div { font-size:.9rem; font-weight:800; }
-    #pontaj table.foaie-t th.nr, #pontaj table.foaie-t td.nr { position:sticky; left:0; z-index:1; min-width:46px; width:46px; padding:0 2px; color:var(--muted); font-size:.75rem; }
+    #pontaj table.foaie-t th.nr, #pontaj table.foaie-t td.nr { position:sticky; left:0; z-index:1; min-width:46px; width:46px; padding:0 2px; font-size:.8rem; }
     #pontaj table.foaie-t thead th.nr { z-index:3; }
     #pontaj table.foaie-t th.nm, #pontaj table.foaie-t td.nm { position:sticky; left:46px; z-index:1; min-width:154px; width:154px; max-width:154px; text-align:left; padding:0 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:.84rem; font-weight:700; box-shadow:2px 0 4px rgba(0,0,0,.08); }
     #pontaj table.foaie-t thead th.nm { z-index:3; }
@@ -235,7 +235,10 @@
     #pontaj table.foaie-t td.lib { background:color-mix(in srgb, var(--err) 14%, var(--card)); }
     #pontaj table.foaie-t td.zi { cursor:pointer; }
     #pontaj table.foaie-t td.zi.man { box-shadow:inset 0 0 0 2px var(--accent); font-weight:800; }
-    #pontaj table.foaie-t td.zi.cod { font-weight:800; color:var(--err); }
+    #pontaj table.foaie-t td.zi.cod { font-weight:800; color:#000; }
+    #pontaj table.foaie-t th, #pontaj table.foaie-t td { color:#000 !important; }
+    #pontaj table.foaie-t th.zi-cap .lz { font-size:.78rem; font-weight:700; }
+    #pontaj .libere { color:var(--text); font-weight:600; }
     #pontaj table.foaie-t td.tot { min-width:38px; width:38px; font-weight:800; background:color-mix(in srgb, var(--accent) 10%, var(--card)); }
     #pontaj table.foaie-t tr.z2 td:not(.we):not(.lib):not(.tot) { background:color-mix(in srgb, var(--muted) 7%, var(--card)); }
     #pontaj table.foaie-t tr.cat td.titlu { text-align:left; padding:0 12px; height:34px; font-size:.82rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; background:color-mix(in srgb, var(--lc, var(--hero-a)) 24%, var(--card)); border-left:6px solid var(--lc, var(--hero-a)); position:sticky; left:0; z-index:1; min-width:200px; width:200px; max-width:200px; white-space:nowrap; }
@@ -450,6 +453,7 @@
           <p>Celulele cu chenar colorat sunt completate de tine; celelalte vin automat din program și calendar. Apasă pe o celulă ca s-o modifici.</p>
           <p>Plata cu ora, Teorie și Instruire practică = ore pe săptămână × (zile lucrate × 0,2), rotunjit. Zile lucrate = zilele lucrătoare, fără sărbători legale și fără zilele cu concediu sau absență. Coloanele din dreapta apar doar dacă au valori.</p>
         </details>
+        <p id="foaie-libere" class="who libere"></p>
         <p id="foaie-numar" class="who"></p>
         <div id="foaie"></div>
       </div>
@@ -1352,7 +1356,7 @@
     // ---------- Foaia lunară de pontaj ----------
     const COD_ZIUA = ["CO", "CM", "BP", "AM", "M", "PRM", "PRB", "I", "O", "N", "L", "PCO"];
     const COD_ABSENTA = ["CO", "CM", "BP", "AM", "M", "I", "O", "N"];
-    const LIT_ZI = ["D", "L", "Ma", "Mi", "J", "V", "S"];
+    const LIT_ZI = ["D", "L", "M", "M", "J", "V", "S"];
     let lunaSel = null, foaie = null;
     const poatePontaj = () => ["administrator", "director", "secretariat", "contabilitate"].some((r) => euRoluri.includes(r));
     const foaieDeschisa = () => !!(foaie && poatePontaj() && anCurent() && !anCurent().inchis && foaie.stare !== "inchis");
@@ -1484,7 +1488,8 @@
         hr.appendChild(el("th", "nm", "Nume și prenume"));
         zile.forEach((z) => {
           const c = el("th", "zi-cap" + (z.dow === 0 || z.dow === 6 ? " we" : ""));
-          c.appendChild(el("div", "", String(z.d))); c.appendChild(el("span", "vt", NUME_ZI_LUNGI[z.dow]));
+          c.appendChild(el("div", "", String(z.d))); c.appendChild(el("div", "lz", LIT_ZI[z.dow]));
+          const lz = foaie.libere.get(z.t); if (lz) { c.title = lz.motiv; c.classList.add("lib"); }
           hr.appendChild(c);
         });
         vizibile.forEach(([titlu]) => { const c = el("th", "tot-cap"); c.appendChild(el("span", "vt", titlu)); hr.appendChild(c); });
@@ -1511,6 +1516,7 @@
               r.celule.forEach(({ z, v, man, lib, sapt }) => {
                 const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt ? " lib" : "") + (man ? " man" : "") + (v && !/^\d+$/.test(v) ? " cod" : ""), v || "");
                 if (v && COD_NUME[v]) td.title = COD_NUME[v];
+                const lz = foaie.libere.get(z.t); if (lz && sapt) td.title = lz.motiv;
                 if (edit) td.addEventListener("click", () => deschideEditor(r, z.t));
                 else td.style.cursor = "default";
                 tr.appendChild(td);
@@ -1522,6 +1528,8 @@
         });
         tb.appendChild(body); sc.appendChild(tb); sec.appendChild(sc); cont.appendChild(sec);
       });
+      const lis = [...foaie.libere.values()].filter((x) => { const w = dinIso(x.data).getUTCDay(); return w !== 0 && w !== 6; });
+      $("foaie-libere").textContent = lis.length ? "Zile libere în această lună: " + lis.map((x) => Number(x.data.slice(8, 10)) + " " + LUNI_RO[Number(x.data.slice(5, 7)) - 1] + " – " + x.motiv).join("; ") + "." : "";
       $("foaie-numar").textContent = nrRanduri + (nrRanduri === 1 ? " rând" : " rânduri") + (foaie.stare === "inchis" ? " · luna este închisă" : "") + (foaie.faraPco ? " · nu există tabel de plata cu ora valabil în această lună" : "") + (!edit && foaie.stare !== "inchis" && poatePontaj() ? " · anul școlar este închis" : "");
       [...cont.querySelectorAll(".foaie-scroll")].forEach((x, i) => { if (poz[i]) { x.scrollLeft = poz[i][0]; x.scrollTop = poz[i][1]; } });
     }
