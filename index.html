@@ -253,6 +253,34 @@
     #pontaj .lista-grup { max-height:34vh; overflow:auto; border:1.5px solid #8a959b; border-radius:10px; padding:4px 8px; margin:6px 0; }
     #pontaj .cel-editor label.rand-grup { display:flex; align-items:center; gap:10px; margin:0; padding:6px 0; font-size:.88rem; font-weight:600; border-bottom:1px solid color-mix(in srgb, var(--muted) 30%, transparent); }
     #pontaj .cel-editor label.rand-grup input { width:20px; min-height:20px; height:20px; margin:0; padding:0; flex:none; }
+    #export-btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+    #export-btns button { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.88rem; }
+    .doar-tipar { display:none; }
+    @page { size:A4 landscape; margin:7mm; }
+    @media print {
+      body { background:#fff !important; }
+      #acasa > header, #acasa > main:not(#pontaj), #pontaj > :not(#pont-principal), #pont-principal > :not(#foaie):not(#print-titlu):not(#foaie-libere) { display:none !important; }
+      #pontaj.wrap { max-width:none; padding:0; }
+      #pont-principal .doar-tipar { display:block !important; margin:0 0 4px; font-size:13pt; color:#000; }
+      #foaie-libere { display:block; font-size:8pt; margin:0 0 4px; color:#000; }
+      #pontaj section.bloc-loc { break-after:page; page-break-after:always; border:0; box-shadow:none; background:#fff; margin:0; }
+      #pontaj section.bloc-loc:last-child { break-after:auto; page-break-after:auto; }
+      #pontaj .grup-loc { background:#fff !important; color:#000 !important; border-bottom:2px solid #000; padding:2px 0; font-size:12pt; }
+      #pontaj .foaie-scroll { overflow:visible !important; max-height:none !important; }
+      #pontaj table.foaie-t { width:100%; table-layout:fixed; font-size:6.5pt; }
+      #pontaj table.foaie-t th, #pontaj table.foaie-t td { height:auto !important; min-height:0; padding:0 !important; border:.6pt solid #000 !important; font-size:6.5pt !important; background:#fff !important; color:#000 !important; position:static !important; box-shadow:none !important; }
+      #pontaj table.foaie-t td.we, #pontaj table.foaie-t th.we, #pontaj table.foaie-t td.lib { background:#ddd !important; }
+      #pontaj table.foaie-t th.nr, #pontaj table.foaie-t td.nr { width:8mm !important; }
+      #pontaj table.foaie-t th.nm, #pontaj table.foaie-t td.nm { width:38mm !important; max-width:none; padding:0 1mm !important; white-space:nowrap; }
+      #pontaj table.foaie-t td.tot, #pontaj table.foaie-t th.tot-cap { width:6.5mm !important; }
+      #pontaj table.foaie-t thead { display:table-header-group; }
+      #pontaj table.foaie-t tr { break-inside:avoid; }
+      #pontaj table.foaie-t tr.cat td.titlu, #pontaj table.foaie-t tr.sub td.titlu { background:#eee !important; }
+      #pontaj table.foaie-t td.zi.man { box-shadow:none !important; }
+      #pontaj .stergeinloc, #pontaj .sterge-et { visibility:hidden !important; }
+      #pontaj table.foaie-t th.zi-cap div, #pontaj table.foaie-t th.zi-cap .lz { font-size:6.5pt !important; }
+      #pontaj .sub-inloc { border-top:1pt solid #000; padding:3px 0 2px; font-size:8pt; background:#fff; }
+    }
     #inloc-btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
     #inloc-btns button { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.88rem; }
     #pontaj table.foaie-t td.tot:empty { background:var(--card); }
@@ -485,6 +513,11 @@
           <p>Plata cu ora, DT (teorie) și PIP (instruire practică) = ore pe săptămână × (zile lucrate × 0,2), rotunjit. Zile lucrate = zilele lucrătoare, fără sărbători legale și fără zilele cu concediu sau absență. Coloanele din dreapta sunt aceleași în toate locațiile și apar doar dacă au valori undeva în foaie.</p>
         </details>
         <p id="foaie-libere" class="who libere"></p>
+        <h2 id="print-titlu" class="doar-tipar"></h2>
+        <div id="export-btns" class="tit-btn">
+          <button type="button" id="btn-xls" class="secondary">⬇ Exportă Excel</button>
+          <button type="button" id="btn-pdf" class="secondary">🖨 Exportă PDF</button>
+        </div>
         <div id="inloc-btns" class="tit-btn hidden">
           <button type="button" id="btn-cm" class="secondary">+ Adaugă concediu medical</button>
           <button type="button" id="btn-inv" class="secondary">+ Adaugă învoire</button>
@@ -1657,7 +1690,7 @@
         });
         const ct = el("th", "tot-cap"); ct.appendChild(el("span", "vt", "Total ore lucrate")); hr.appendChild(ct);
         for (let k = 1; k < nrTot - 1; k++) hr.appendChild(el("th", "tot-cap"));
-        if (nrTot > 1) { const cs = el("th", "tot-cap"); cs.appendChild(el("span", "vt", edit && poateModificaAng() ? "Șterge" : "")); hr.appendChild(cs); }
+        if (nrTot > 1) { const cs = el("th", "tot-cap"); cs.appendChild(el("span", "vt sterge-et", edit && poateModificaAng() ? "Șterge" : "")); hr.appendChild(cs); }
         th.appendChild(hr); tb.appendChild(th);
         const body = el("tbody"); let nr = 0;
         lista.forEach((q) => {
@@ -1803,6 +1836,47 @@
       ctl.append(ok, nu); cutie.appendChild(ctl);
       zona.appendChild(cutie); zona.classList.remove("hidden");
     }
+    // ---------- Export foaie lunară ----------
+    function numeFisierLuna() { return "pontaj-" + foaie.start.slice(0, 7); }
+    $("btn-pdf").addEventListener("click", () => {
+      if (!foaie) return;
+      $("print-titlu").textContent = "Foaie colectivă de prezență · " + numeLuna(foaie.start) + " · Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești";
+      const t0 = document.title; document.title = numeFisierLuna();
+      window.print(); setTimeout(() => { document.title = t0; }, 1000);
+    });
+    $("btn-xls").addEventListener("click", async () => {
+      if (!foaie) return;
+      const buton = $("btn-xls"); buton.disabled = true;
+      try {
+        const X = await incarcaXLSX(); const wb = X.utils.book_new();
+        const valoare = (t) => { const v = t.trim(); return /^\d+$/.test(v) ? Number(v) : v; };
+        document.querySelectorAll("#foaie section.bloc-loc").forEach((sec) => {
+          const loc = sec.querySelector(".grup-loc").textContent.trim();
+          const aoa = [["Foaie colectivă de prezență · " + numeLuna(foaie.start) + " · " + loc], []];
+          let latime = 0; const imbin = [];
+          [...sec.children].forEach((c) => {
+            if (c.classList.contains("sub-inloc")) { aoa.push([]); aoa.push([c.textContent.trim()]); return; }
+            const tb = c.querySelector && c.querySelector("table"); if (!tb) return;
+            tb.querySelectorAll("tr").forEach((tr) => {
+              const rand = [];
+              tr.querySelectorAll("th,td").forEach((td) => {
+                if (td.classList.contains("zi-cap")) rand.push(td.children[0].textContent.trim() + " " + td.children[1].textContent.trim());
+                else rand.push(valoare(td.textContent));
+                for (let k = 1; k < (td.colSpan || 1); k++) rand.push("");
+              });
+              if (tr.classList.contains("cat") || tr.classList.contains("sub")) { const r = aoa.length; imbin.push({ s: { r, c: 0 }, e: { r, c: Math.max(rand.length - 1, 1) } }); }
+              latime = Math.max(latime, rand.length); aoa.push(rand);
+            });
+          });
+          const ws = X.utils.aoa_to_sheet(aoa);
+          ws["!cols"] = [{ wch: 8 }, { wch: 30 }].concat(Array.from({ length: Math.max(latime - 2, 0) }, () => ({ wch: 6 })));
+          ws["!merges"] = imbin;
+          X.utils.book_append_sheet(wb, ws, loc.slice(0, 31));
+        });
+        X.writeFile(wb, numeFisierLuna() + ".xlsx");
+      } catch (e) { mesajPontaj("Exportul Excel nu a reușit. Încearcă din nou.", false); }
+      buton.disabled = false;
+    });
     $("btn-cm").addEventListener("click", () => { if (foaie) deschideInlocuire("CM"); });
     $("btn-inv").addEventListener("click", () => { if (foaie) deschideInlocuire("I"); });
 
