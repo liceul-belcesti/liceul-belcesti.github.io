@@ -264,6 +264,14 @@
                         border-top:1px solid var(--hero-a); border-left:5px solid var(--hero-a); }
     #pontaj .bloc-loc .ang-rand { margin:0; border:0; border-top:1px solid var(--line); border-radius:0; padding:7px 12px; }
     #pontaj .bloc-loc .grup-cat + .ang-rand { border-top:0; }
+      #pontaj .ang-dr { display:inline-flex; align-items:baseline; gap:10px; }
+    #pontaj .ang-prog { font-size:.78rem; font-weight:700; letter-spacing:.04em; font-variant-numeric:tabular-nums; color:var(--text); }
+    #pontaj .ang-prog.lipsa { font-weight:500; letter-spacing:0; color:var(--err); }
+    #pontaj .ang-form .nr .prog { grid-column:1 / 4; display:flex; flex-wrap:wrap; align-items:flex-end; gap:6px; }
+    #pontaj .ang-form .nr .prog-et { flex-basis:100%; font-size:.75rem; color:var(--muted); }
+    #pontaj .ang-form .nr .prog .zi { display:flex; flex-direction:column; align-items:center; gap:2px; margin:0; font-size:.7rem; font-weight:700; color:var(--muted); }
+    #pontaj .ang-form .nr .prog input { grid-column:auto; width:46px; min-height:38px; padding:4px 2px; text-align:center; font-size:.9rem; }
+    #pontaj .ang-form .nr .prog .mic { align-self:flex-end; min-height:38px; }
   </style>
 </head>
 <body>
@@ -782,6 +790,10 @@
     const anCurent = () => aniScolari.find((x) => x.id === anId) || null;
     const poateEdita = () => poateModificaAng() && anCurent() && !anCurent().inchis;
     const colator = new Intl.Collator("ro");
+    const ZILE = ["lu", "ma", "mi", "jo", "vi"], ETZ = ["Lu", "Ma", "Mi", "Jo", "Vi"], NUME_ZILE = ["luni", "marti", "miercuri", "joi", "vineri"];
+    const oreDin = (n) => ZILE.map((z) => n["ore_" + z]);
+    const arePrograma = (n) => oreDin(n).some((v) => v !== null && v !== undefined);
+    const programText = (n) => oreDin(n).map((v) => (v === null || v === undefined ? "-" : v)).join("·");
 
     function mesajPontaj(text, ok) {
       $("pontaj-msg").textContent = text || "";
@@ -843,7 +855,7 @@
     async function incarcaAngajati() {
       if (!anId) { $("ang-lista").replaceChildren(); $("ang-numar").textContent = ""; return; }
       const { data, error } = await db.from("angajati")
-        .select("id, nume, sters_la, norme(id, loc, categorie, functie, ordine)").eq("an_id", anId).order("nume");
+        .select("id, nume, sters_la, norme(id, loc, categorie, functie, ordine, ore_lu, ore_ma, ore_mi, ore_jo, ore_vi)").eq("an_id", anId).order("nume");
       if (error) return mesajPontaj("Nu s-a putut încărca lista. Încearcă din nou.");
       angajati = data.sort((a, b) => colator.compare(a.nume, b.nume));
       deseneazaAngajati();
@@ -857,7 +869,8 @@
       const lista = $("ang-lista"); lista.replaceChildren();
       const vizibili = angajati.filter((a) => !!a.sters_la === sterse && (!q || a.nume.toLowerCase().includes(q)) &&
         (!loc || (a.norme || []).some((n) => n.loc === loc)));
-      $("ang-numar").textContent = vizibili.length + (vizibili.length === 1 ? " persoană" : " persoane") + (sterse ? " în Șterși" : "");
+      const faraProg = sterse ? 0 : vizibili.reduce((t, a) => t + (a.norme || []).filter((n) => (!loc || n.loc === loc) && !arePrograma(n)).length, 0);
+      $("ang-numar").textContent = vizibili.length + (vizibili.length === 1 ? " persoană" : " persoane") + (sterse ? " în Șterși" : "") + (faraProg ? " · " + faraProg + (faraProg === 1 ? " normă fără program" : " norme fără program") : "");
       if (sterse) { vizibili.forEach((a) => lista.appendChild(randSters(a))); return; }
       LOCURI.filter((l) => !loc || l === loc).forEach((l) => {
         const dinLoc = vizibili.filter((a) => (a.norme || []).some((n) => n.loc === l));
@@ -878,7 +891,10 @@
             r.append(el("span", "ang-nume", a.nume));
             const alt = a.norme.filter((x) => x !== n && x.loc !== l).map((x) => x.loc);
             const info = [n.functie, alt.length ? "și la " + [...new Set(alt)].join(", ") : ""].filter(Boolean).join(" · ");
-            if (info) r.append(el("span", "ang-info", info));
+            const dr = el("span", "ang-dr");
+            if (info) dr.append(el("span", "ang-info", info));
+            dr.append(el("span", arePrograma(n) ? "ang-prog" : "ang-prog lipsa", arePrograma(n) ? programText(n) : "fără program"));
+            r.append(dr);
             if (poateEdita()) {
               r.tabIndex = 0; r.setAttribute("role", "button");
               r.addEventListener("click", () => formAngajat(a));
@@ -988,7 +1004,7 @@
       const stare = [];
 
       function adaugaNorma(n) {
-        const s = Object.assign({ loc: LOCURI.includes($("ang-loc").value) ? $("ang-loc").value : "Centru", categorie: "", functie: "" }, n || {});
+        const s = Object.assign({ loc: LOCURI.includes($("ang-loc").value) ? $("ang-loc").value : "Centru", categorie: "", functie: "", ore: [null, null, null, null, null] }, n || {});
         stare.push(s);
         const box = el("div", "nr");
         const loc = el("select"); LOCURI.forEach((l) => loc.add(new Option(l, l))); loc.value = s.loc;
@@ -1006,10 +1022,22 @@
         functie.addEventListener("input", () => { s.functie = functie.value; });
         const scoate = el("button", "off x", "✕"); scoate.type = "button"; scoate.setAttribute("aria-label", "Scoate norma");
         scoate.addEventListener("click", () => { s.elim = true; box.remove(); });
-        box.append(loc, cat, functie, scoate);
+        const prog = el("div", "prog");
+        prog.appendChild(el("span", "prog-et", "Program (ore)"));
+        s.ore.forEach((v, zi) => {
+          const w = el("label", "zi"); w.appendChild(el("span", "", ETZ[zi]));
+          const inp = el("input"); inp.type = "number"; inp.min = "0"; inp.max = "24"; inp.step = "1"; inp.inputMode = "numeric";
+          inp.value = v === null || v === undefined ? "" : v; inp.setAttribute("aria-label", NUME_ZILE[zi]);
+          inp.addEventListener("input", () => { s.ore[zi] = inp.value === "" ? null : Number(inp.value); });
+          w.appendChild(inp); prog.appendChild(w);
+        });
+        const opt = el("button", "mic", "5×8"); opt.type = "button"; opt.title = "8 ore, luni–vineri";
+        opt.addEventListener("click", () => { s.ore = [8, 8, 8, 8, 8]; prog.querySelectorAll("input").forEach((i) => { i.value = 8; }); });
+        prog.appendChild(opt);
+        box.append(loc, cat, functie, scoate, prog);
         norme.appendChild(box);
       }
-      (a ? (a.norme || []).slice().sort((x, y) => x.ordine - y.ordine) : [{}]).forEach((n) => adaugaNorma(n.id ? { id: n.id, loc: n.loc, categorie: n.categorie, functie: n.functie || "" } : {}));
+      (a ? (a.norme || []).slice().sort((x, y) => x.ordine - y.ordine) : [{}]).forEach((n) => adaugaNorma(n.id ? { id: n.id, loc: n.loc, categorie: n.categorie, functie: n.functie || "", ore: oreDin(n).map((v) => (v === undefined ? null : v)) } : {}));
 
       const plus = el("button", "secondary", "+ Încă o normă"); plus.type = "button";
       plus.addEventListener("click", () => adaugaNorma());
@@ -1025,6 +1053,7 @@
         const active = stare.filter((s) => !s.elim);
         if (n.length < 3) { msg.textContent = "Scrie numele și prenumele."; return; }
         if (!active.length || active.some((s) => !s.categorie)) { msg.textContent = "Fiecare normă are nevoie de loc și categorie."; return; }
+        if (active.some((s) => s.ore.some((v) => v !== null && (!Number.isInteger(v) || v < 0 || v > 24)))) { msg.textContent = "Orele din program sunt numere întregi între 0 și 24."; return; }
         salv.disabled = true;
         try {
           let id = a && a.id;
@@ -1039,7 +1068,9 @@
           if (scoase.length) { const { error } = await db.from("norme").delete().in("id", scoase); if (error) throw error; }
           for (let i = 0; i < active.length; i++) {
             const s = active[i];
+            const ore = s.ore.some((v) => v !== null) ? s.ore.map((v) => (v === null ? 0 : v)) : [null, null, null, null, null];
             const rand = { loc: s.loc, categorie: s.categorie, functie: (s.functie || "").trim() || null, ordine: i + 1 };
+            ZILE.forEach((z, zi) => { rand["ore_" + z] = ore[zi]; });
             const { error } = s.id ? await db.from("norme").update(rand).eq("id", s.id) : await db.from("norme").insert(Object.assign({ angajat_id: id }, rand));
             if (error) throw error;
           }
@@ -1138,11 +1169,11 @@
       const a = anCurent(); if (!a) return;
       try {
         const X = await incarcaXLSX();
-        const randuri = [["Nume și prenume", "Loc", "Categorie", "Funcție (opțional)"]];
+        const randuri = [["Nume și prenume", "Loc", "Categorie", "Funcție (opțional)", "Luni", "Marți", "Miercuri", "Joi", "Vineri"]];
         angajati.filter((p) => !p.sters_la).forEach((p) => (p.norme || []).slice().sort((x, y) => x.ordine - y.ordine)
-          .forEach((n) => randuri.push([p.nume, n.loc, n.categorie, n.functie || ""])));
+          .forEach((n) => randuri.push([p.nume, n.loc, n.categorie, n.functie || ""].concat(oreDin(n).map((v) => (v === null || v === undefined ? "" : v))))));
         const ws = X.utils.aoa_to_sheet(randuri);
-        ws["!cols"] = [{ wch: 34 }, { wch: 14 }, { wch: 40 }, { wch: 26 }];
+        ws["!cols"] = [{ wch: 34 }, { wch: 14 }, { wch: 40 }, { wch: 26 }, { wch: 9 }, { wch: 9 }, { wch: 11 }, { wch: 9 }, { wch: 9 }];
         const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, "Angajați");
         X.writeFile(wb, "angajati-" + a.denumire.replace("–", "-") + ".xlsx");
       } catch (e) { mesajPontaj("Nu s-a putut crea fișierul Excel. Verifică conexiunea la internet."); }
@@ -1167,10 +1198,11 @@
       const idx = (test) => randuri[h].findIndex((c) => test(nrm(c)));
       const cn = idx((t) => t.startsWith("nume")), cl = idx((t) => t === "loc"), cc = idx((t) => t.startsWith("categor")), cf = idx((t) => t.startsWith("functi"));
       if (cn < 0 || cl < 0 || cc < 0) return mesajPontaj("Lipsesc coloane din fișier. Folosește șablonul.");
+      const cz = NUME_ZILE.map((z) => idx((t) => t === z));
 
       const dupaNume = new Map();
       angajati.forEach((p) => { const k = nrm(p.nume); if (!dupaNume.has(k)) dupaNume.set(k, []); dupaNume.get(k).push(p); });
-      const probleme = [], sarite = [], noi = new Map(), peExistenti = [];
+      const probleme = [], sarite = [], noi = new Map(), peExistenti = [], programNou = [];
       for (let i = h + 1; i < randuri.length; i++) {
         const r = randuri[i], nr = i + 1;
         const nume = String(r[cn] || "").trim().replace(/\s+/g, " ");
@@ -1182,25 +1214,33 @@
         if (!loc) { probleme.push("Rândul " + nr + " (" + nume + "): locul „" + locT + "” nu e Centru, Tansa sau Munteni."); continue; }
         if (!cat) { probleme.push("Rândul " + nr + " (" + nume + "): categoria „" + catT + "” nu există la " + loc + "."); continue; }
         if (functie.length > 60) { probleme.push("Rândul " + nr + " (" + nume + "): funcția e prea lungă."); continue; }
+        const brute = cz.map((c) => (c < 0 ? "" : String(r[c] == null ? "" : r[c]).trim()));
+        const proasta = brute.findIndex((v) => v !== "" && !(/^\d+$/.test(v) && Number(v) <= 24));
+        if (proasta >= 0) { probleme.push("Rândul " + nr + " (" + nume + "): orele de " + NUME_ZILE[proasta] + " trebuie să fie un număr întreg între 0 și 24."); continue; }
+        const ore = brute.some((v) => v !== "") ? brute.map((v) => (v === "" ? 0 : Number(v))) : [null, null, null, null, null];
         const k = nrm(nume), gasiti = dupaNume.get(k) || [];
         const activ = gasiti.find((p) => !p.sters_la);
         if (activ) {
-          if ((activ.norme || []).some((n) => n.loc === loc && n.categorie === cat)) { sarite.push(nume + " · " + loc + " · " + cat + " (există deja)"); continue; }
+          const ex = (activ.norme || []).find((n) => n.loc === loc && n.categorie === cat);
+          if (ex) {
+            if (ore[0] !== null && !arePrograma(ex) && !programNou.some((x) => x.n === ex)) { programNou.push({ p: activ, n: ex, ore }); continue; }
+            sarite.push(nume + " · " + loc + " · " + cat + (arePrograma(ex) ? " (există deja, cu program)" : " (există deja)")); continue;
+          }
           if (peExistenti.some((x) => x.p === activ && x.loc === loc && x.categorie === cat)) { sarite.push(nume + " · " + loc + " · " + cat + " (dublură în fișier)"); continue; }
-          peExistenti.push({ p: activ, loc, categorie: cat, functie: functie || null });
+          peExistenti.push({ p: activ, loc, categorie: cat, functie: functie || null, ore });
         } else if (gasiti.length) {
           sarite.push(nume + " (este în „Șterși”: restaureaz-o de acolo)"); continue;
         } else {
           const n = noi.get(k) || { nume, norme: [] };
           if (n.norme.some((x) => x.loc === loc && x.categorie === cat)) { sarite.push(nume + " · " + loc + " · " + cat + " (dublură în fișier)"); continue; }
-          n.norme.push({ loc, categorie: cat, functie: functie || null }); noi.set(k, n);
+          n.norme.push({ loc, categorie: cat, functie: functie || null, ore }); noi.set(k, n);
         }
       }
       const noiArr = [...noi.values()];
       const nNormeNoi = noiArr.reduce((t, x) => t + x.norme.length, 0) + peExistenti.length;
       const box = el("div", "previz");
       box.appendChild(el("h3", "", "Previzualizare import"));
-      box.appendChild(el("p", "", noiArr.length + " angajați noi · " + nNormeNoi + " norme noi · " + sarite.length + " sărite · " + probleme.length + " cu probleme"));
+      box.appendChild(el("p", "", noiArr.length + " angajați noi · " + nNormeNoi + " norme noi · " + programNou.length + " programe completate · " + sarite.length + " sărite · " + probleme.length + " cu probleme"));
       const detalii = (titlu, lista, cls) => {
         if (!lista.length) return;
         const d = el("details", cls || ""); d.open = cls === "prob";
@@ -1210,29 +1250,32 @@
       detalii("Probleme (nu se importă)", probleme, "prob");
       detalii("Angajați noi", noiArr.map((x) => x.nume + " · " + x.norme.map((n) => n.loc + " " + n.categorie).join(", ")));
       detalii("Norme noi pentru angajați existenți", peExistenti.map((x) => x.p.nume + " · " + x.loc + " · " + x.categorie));
+      detalii("Program completat pentru norme existente", programNou.map((x) => x.p.nume + " · " + x.n.loc + " · " + x.n.categorie + " · " + x.ore.join("·")));
       detalii("Sărite", sarite);
       const ctl = el("div", "ctl");
       const ok = el("button", "", "Confirmă importul"); ok.type = "button";
       const nu = el("button", "secondary", "Renunță"); nu.type = "button";
       nu.addEventListener("click", () => zona.replaceChildren());
-      if (!noiArr.length && !peExistenti.length) { ok.disabled = true; box.appendChild(el("p", "who", "Nu e nimic de importat.")); }
+      if (!noiArr.length && !peExistenti.length && !programNou.length) { ok.disabled = true; box.appendChild(el("p", "who", "Nu e nimic de importat.")); }
       ok.addEventListener("click", async () => {
         ok.disabled = true; nu.disabled = true;
         try {
           const ordinePe = (p) => (p.norme || []).reduce((m, n) => Math.max(m, n.ordine || 0), 0);
           const normeDeAdaugat = [];
-          peExistenti.forEach((x, i) => normeDeAdaugat.push({ angajat_id: x.p.id, loc: x.loc, categorie: x.categorie, functie: x.functie, ordine: ordinePe(x.p) + 1 + i }));
+          const cuOre = (o) => ({ ore_lu: o[0], ore_ma: o[1], ore_mi: o[2], ore_jo: o[3], ore_vi: o[4] });
+          peExistenti.forEach((x, i) => normeDeAdaugat.push(Object.assign({ angajat_id: x.p.id, loc: x.loc, categorie: x.categorie, functie: x.functie, ordine: ordinePe(x.p) + 1 + i }, cuOre(x.ore))));
+          for (const x of programNou) { const { error } = await db.from("norme").update(cuOre(x.ore)).eq("id", x.n.id); if (error) throw error; }
           for (let i = 0; i < noiArr.length; i += 100) {
             const bucata = noiArr.slice(i, i + 100);
             const { data, error } = await db.from("angajati").insert(bucata.map((x) => ({ nume: x.nume, an_id: anId }))).select("id, nume");
             if (error || !data || data.length !== bucata.length) throw error || new Error("ins");
-            data.forEach((rd, j) => { if (rd.nume !== bucata[j].nume) throw new Error("ordine"); bucata[j].norme.forEach((n, q) => normeDeAdaugat.push({ angajat_id: rd.id, loc: n.loc, categorie: n.categorie, functie: n.functie, ordine: q + 1 })); });
+            data.forEach((rd, j) => { if (rd.nume !== bucata[j].nume) throw new Error("ordine"); bucata[j].norme.forEach((n, q) => normeDeAdaugat.push(Object.assign({ angajat_id: rd.id, loc: n.loc, categorie: n.categorie, functie: n.functie, ordine: q + 1 }, cuOre(n.ore)))); });
           }
           for (let i = 0; i < normeDeAdaugat.length; i += 100) {
             const { error } = await db.from("norme").insert(normeDeAdaugat.slice(i, i + 100)); if (error) throw error;
           }
           zona.replaceChildren();
-          mesajPontaj("Import terminat: " + noiArr.length + " angajați noi și " + normeDeAdaugat.length + " norme adăugate.", true);
+          mesajPontaj("Import terminat: " + noiArr.length + " angajați noi, " + normeDeAdaugat.length + " norme adăugate și " + programNou.length + " programe completate.", true);
           incarcaAngajati();
         } catch (e) {
           ok.disabled = false; nu.disabled = false;
