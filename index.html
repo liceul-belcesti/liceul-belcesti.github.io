@@ -245,6 +245,10 @@
     #pontaj .stare-eticheta { font-weight:800; font-size:.86rem; padding:5px 12px; border-radius:999px; border:2px solid #8a959b; background:var(--card); color:var(--text); }
     #pontaj .stare-eticheta.st-predat { border-color:#b7791f; }
     #pontaj .stare-eticheta.st-inchis { border-color:#2f855a; }
+    #pontaj .cel-editor .cutie.lat { max-width:640px; }
+    #pontaj .lista-grup { max-height:34vh; overflow:auto; border:1.5px solid #8a959b; border-radius:10px; padding:4px 8px; margin:6px 0; }
+    #pontaj .cel-editor label.rand-grup { display:flex; align-items:center; gap:10px; margin:0; padding:6px 0; font-size:.88rem; font-weight:600; border-bottom:1px solid color-mix(in srgb, var(--muted) 30%, transparent); }
+    #pontaj .cel-editor label.rand-grup input { width:20px; min-height:20px; height:20px; margin:0; padding:0; flex:none; }
     #inloc-btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
     #inloc-btns button { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.88rem; }
     #pontaj table.foaie-t td.tot:empty { background:var(--card); }
@@ -1834,7 +1838,72 @@
         });
         ctl.append(ok, nu);
       }
+      const grup = el("button", "secondary", "Setează concediu pentru mai mulți angajați"); grup.type = "button";
+      grup.addEventListener("click", () => deschideGrup(t));
+      ctl.appendChild(grup);
       cutie.appendChild(msg); cutie.appendChild(ctl);
+      zona.appendChild(cutie); zona.classList.remove("hidden");
+    }
+
+    function deschideGrup(t) {
+      const zona = $("cel-editor"); zona.replaceChildren();
+      const cutie = el("div", "cutie lat");
+      cutie.appendChild(el("h3", "", "Concediu pentru mai mulți angajați"));
+      cutie.appendChild(el("div", "who", "Începând cu " + dataLunga(t) + ". Bifezi categoriile, apoi debifezi pe cine nu este în concediu."));
+      const l1 = el("label", "", "Cod"); cutie.appendChild(l1);
+      const cod = document.createElement("select");
+      COD_ZIUA.filter((c) => c !== "PCO").forEach((c) => cod.add(new Option(c + " · " + COD_NUME[c], c)));
+      cutie.appendChild(cod);
+      cutie.appendChild(el("label", "", "Până la (se sar weekendurile și zilele libere)"));
+      const pana = document.createElement("select");
+      const d0 = Number(t.slice(8, 10));
+      for (let d = d0; d <= foaie.nz; d++) { const z = foaie.start.slice(0, 8) + String(d).padStart(2, "0"); pana.add(new Option(d === d0 ? "Doar această zi" : dataLunga(z), z)); }
+      cutie.appendChild(pana);
+      // persoane și grupe
+      const grupaDe = (n) => (CATEGORII_PE_FUNCTII.includes(n.categorie) && n.functie) ? n.functie : n.categorie;
+      const pers = foaie.ang.map((p) => ({ p, ns: (p.norme || []).filter((n) => !n.doar_pco) })).filter((x) => x.ns.length);
+      pers.forEach((x) => { x.grupe = new Set(x.ns.map(grupaDe)); x.cb = null; });
+      pers.sort((a, b) => a.p.nume.localeCompare(b.p.nume, "ro"));
+      const toateGrupele = [...new Set(pers.flatMap((x) => [...x.grupe]))].sort((a, b) => a.localeCompare(b, "ro"));
+      cutie.appendChild(el("label", "", "Categorii de personal"));
+      const chips = el("div", "coduri"); cutie.appendChild(chips);
+      const lista = el("div", "lista-grup"); cutie.appendChild(lista);
+      const numar = el("div", "who"); cutie.appendChild(numar);
+      const actualizeaza = () => { numar.textContent = pers.filter((x) => x.cb.checked).length + " selectați din " + pers.length; };
+      const chipDe = (nume, fn) => { const b = el("button", "secondary", nume); b.type = "button"; b.addEventListener("click", fn); chips.appendChild(b); };
+      toateGrupele.forEach((g) => chipDe(g, () => {
+        const membri = pers.filter((x) => x.grupe.has(g)); const toti = membri.every((x) => x.cb.checked);
+        membri.forEach((x) => { x.cb.checked = !toti; }); actualizeaza();
+      }));
+      chipDe("Toți", () => { const toti = pers.every((x) => x.cb.checked); pers.forEach((x) => { x.cb.checked = !toti; }); actualizeaza(); });
+      pers.forEach((x) => {
+        const lb = el("label", "rand-grup"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.addEventListener("change", actualizeaza); x.cb = cb;
+        lb.appendChild(cb); lb.appendChild(el("span", "", x.p.nume + " · " + [...new Set(x.ns.map((n) => n.loc))].join(", ") + " · " + [...x.grupe].join(", ")));
+        lista.appendChild(lb);
+      });
+      actualizeaza();
+      const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert"); cutie.appendChild(msg);
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Setează"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.classList.add("hidden"));
+      zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
+      ok.addEventListener("click", async () => {
+        const alesi = pers.filter((x) => x.cb.checked);
+        if (!alesi.length) { msg.textContent = "Bifează cel puțin o persoană."; return; }
+        const zile = [];
+        for (let d = dinIso(t); iso(d) <= pana.value; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(), z = iso(d); if (w !== 0 && w !== 6 && !foaie.libere.has(z)) zile.push(z); }
+        if (!zile.length) { msg.textContent = "Intervalul ales nu are zile lucrătoare."; return; }
+        const rows = [];
+        alesi.forEach((x) => x.ns.forEach((n) => zile.forEach((z) => { if (!(foaie.absente && foaie.absente.has(n.id + "|" + z))) rows.push({ norma_id: n.id, zi: z, valoare: cod.value }); })));
+        ok.disabled = true;
+        for (let i = 0; i < rows.length; i += 500) {
+          const { error } = await db.from("pontaj_manual").upsert(rows.slice(i, i + 500), { onConflict: "norma_id,zi" });
+          if (error) { ok.disabled = false; msg.textContent = "Nu s-a putut salva tot. Încearcă din nou."; incarcaFoaie(); return; }
+        }
+        zona.classList.add("hidden"); mesajPontaj(cod.value + " a fost setat pentru " + alesi.length + (alesi.length === 1 ? " persoană." : " persoane."), true); incarcaFoaie();
+      });
+      ctl.append(ok, nu); cutie.appendChild(ctl);
       zona.appendChild(cutie); zona.classList.remove("hidden");
     }
 
