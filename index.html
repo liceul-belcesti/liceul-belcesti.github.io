@@ -1940,6 +1940,7 @@
           if (D.libere.some((x) => x.data === z)) continue;
           D.ang.forEach((p) => {
             const t = tinta.get(p.id); if (!t) return;
+            if ((p.norme || []).some((n) => n.categorie === "Directori")) return; // directorii rămân cu 8 ore pe zi
             const nr = (orarPe.get(p.id + "|" + w) || []).filter((c) => c === pr.clasa).length;
             if (nr) adauga(t, z, nr, "minus");
           });
