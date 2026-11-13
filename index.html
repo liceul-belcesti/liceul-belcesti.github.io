@@ -3215,7 +3215,32 @@
         lista.forEach((x) => { const arata = !gasit && vizibil(x.p); if (arata) gasit = true; x.b.style.display = arata ? "" : "none"; });
         $("bar-pontaj").classList.toggle("hidden", !vizibil($("pontaj")));
       }
-      new MutationObserver(sincronizeaza).observe($("acasa"), { attributes: true, attributeFilter: ["class"], subtree: true });
+      // Săgeata „înapoi” a browserului merge la ecranul anterior din platformă, nu la pagina Google.
+      const cheie = () => { const x = lista.find((y) => vizibil(y.p)); return x ? x.b.id : ""; };
+      let stiva = ["#baza", ""], idx = 1, ignoraNota = false, peBack = false;
+      try { history.replaceState({ i: 0 }, ""); history.pushState({ i: 1 }, ""); } catch (e) { idx = -1; }
+      function nota() {
+        if (idx < 0 || ignoraNota || peBack) return;
+        const k = cheie();
+        if (k === stiva[idx]) return;
+        if (idx >= 2 && stiva[idx - 1] === k) { peBack = true; history.back(); return; }
+        stiva.length = idx + 1; stiva.push(k); idx++;
+        try { history.pushState({ i: idx }, ""); } catch (e) { idx = -1; }
+      }
+      window.addEventListener("popstate", async (e) => {
+        if (idx < 0) return;
+        const i = e.state && typeof e.state.i === "number" ? e.state.i : 0;
+        if (peBack) { peBack = false; idx = i; return; }
+        if (i === 0) { try { history.pushState({ i: 1 }, ""); } catch (er) {} idx = 1; stiva = ["#baza", stiva[1] || ""]; return; }
+        if (i > idx) { try { history.replaceState({ i: idx }, ""); } catch (er) {} return; }
+        const tinta = stiva[i]; idx = i; ignoraNota = true;
+        for (let n = 0; n < 4 && cheie() !== tinta; n++) {
+          const x = lista.find((y) => vizibil(y.p)); if (!x) break;
+          x.b.click(); await new Promise((r) => setTimeout(r, 0));
+        }
+        ignoraNota = false;
+      });
+      new MutationObserver(() => { sincronizeaza(); nota(); }).observe($("acasa"), { attributes: true, attributeFilter: ["class"], subtree: true });
       sincronizeaza();
     })();
     $("inapoi-pontaj").addEventListener("click", arataPrincipal);
