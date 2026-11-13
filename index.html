@@ -571,6 +571,7 @@
         <div id="luna-stare" class="stare-bara"></div>
         <details class="legenda"><summary>Explicații pentru coduri și calcul</summary>
           <p>O cifră înseamnă ore lucrate (număr întreg). În celule apar codurile: <b>CO</b> concediu de odihnă · <b>CM</b> concediu medical · <b>BP</b> boală profesională · <b>AM</b> accident de muncă · <b>M</b> maternitate · <b>PRM</b> program redus maternitate · <b>PRB</b> program redus boală · <b>I</b> învoiri sau concediu fără plată · <b>O</b> obligații cetățenești · <b>N</b> absențe nemotivate · <b>L</b> liber stabilit de minister · <b>PCO</b> plata cu ora.</p>
+          <p>Pentru cei care au doar plata cu ora: <b>Total ore lucrate</b> = suma orelor din foaie, <b>Zile lucrate</b> = zilele cu cel puțin o oră, iar DT și PIP = ore pe săptămână × (0,2 × zilele lucrătoare din lună), rotunjit; plata cu ora = DT + PIP.</p>
           <p>Zilele cu fundal bej sunt vacanță școlară (după structura anului școlar): sunt doar informative, nu schimbă calculul. Numărul lor apare în antet.</p>
           <p>Celulele cu chenar colorat sunt completate de tine; orele scrise îngroșat, cu portocaliu, sunt ajustate automat din cauza practicii comasate; celelalte vin automat din program și calendar. Apasă pe o celulă ca s-o modifici.</p>
           <p>Plata cu ora, DT (teorie) și PIP (instruire practică) = ore pe săptămână × (zile lucrate × 0,2), rotunjit. Zile lucrate = zilele lucrătoare, fără sărbători legale și fără zilele cu concediu sau absență. Coloanele din dreapta sunt aceleași în toate locațiile și apar doar dacă au valori undeva în foaie.</p>
@@ -1293,7 +1294,7 @@
         const scoate = el("button", "off x", "✕"); scoate.type = "button"; scoate.setAttribute("aria-label", "Scoate norma");
         scoate.addEventListener("click", () => { s.elim = true; box.remove(); });
         const doar = el("label", "doar"); const doarCb = document.createElement("input"); doarCb.type = "checkbox"; doarCb.checked = !!s.doar_pco;
-        doar.append(doarCb, document.createTextNode(" Doar plata cu ora (orele din program se trec la plata cu ora, nu la total)"));
+        doar.append(doarCb, document.createTextNode(" Doar plata cu ora (în foaie: total ore și zile lucrate după orar; plata cu ora, DT și PIP după formula pe zilele lucrătoare din lună)"));
         const prog = el("div", "prog");
                 doarCb.addEventListener("change", () => { s.doar_pco = doarCb.checked; });
         prog.appendChild(el("span", "prog-et", "Program (ore)"));
@@ -2013,20 +2014,20 @@
         ["Învoiri", "I", false], ["Obligații cetățenești", "O", false], ["Absențe nemotivate", "N", false], ["Total zile nelucrate", "nelucr", false]];
       let nrRanduri = 0;
       randuri.forEach((r) => {
-          let total = 0, lucr = 0; const cod = {}; const celule = [];
+          let total = 0, lucr = 0, cuOra = 0; const cod = {}; const celule = [];
           zile.forEach((z) => {
             const { v, man, aj } = arataValoare(r.n, z.t);
             const lib = foaie.libere.has(z.t); const sapt = z.dow !== 0 && z.dow !== 6;
             celule.push({ z, v, man, lib, sapt, aj });
-            if (v && /^\d+$/.test(v)) total += Number(v);
+            if (v && /^\d+$/.test(v)) { total += Number(v); if (Number(v) > 0) cuOra++; }
             if (v && COD_ABSENTA.includes(v)) cod[v] = (cod[v] || 0) + 1;
             if (sapt && !lib && !(v && COD_ABSENTA.includes(v))) lucr++;
           });
           const pc = primar.get(r.p.id + "|" + r.n.loc) === r.n ? foaie.pco.get(r.p.id + "|" + r.n.loc) : null;
           const luna = (x) => (pc && +x ? String(Math.round(Number((+x * lucr * 0.2).toFixed(6)))) : "");
           const doarP = !!r.n.doar_pco;
-          const val = { total: doarP ? "" : (total || ""), lucr, pco: doarP ? (total || "") : (pc ? luna(pc.pco) : ""), dt: pc ? luna(pc.dt) : "", pip: pc ? luna(pc.pip) : "" };
-          // Doar plata cu ora: Plata cu ora = rotunjit(DT + PIP), cu DT și PIP calculate lunar din orele pe săptămână × (0,2 × zile lucrătoare).
+          const val = { total: total || "", lucr: doarP ? cuOra : lucr, pco: doarP ? (total || "") : (pc ? luna(pc.pco) : ""), dt: pc ? luna(pc.dt) : "", pip: pc ? luna(pc.pip) : "" };
+          // Doar plata cu ora: Total ore lucrate = suma orelor din foaie; Zile lucrate = zilele cu cel puțin o oră; DT și PIP = ore pe săptămână × (0,2 × zile lucrătoare din lună); Plata cu ora = rotunjit(DT + PIP).
           if (doarP) {
             const dtR = pc && +pc.dt ? +pc.dt * lucr * 0.2 : 0, pipR = pc && +pc.pip ? +pc.pip * lucr * 0.2 : 0;
             val.dt = Math.round(Number(dtR.toFixed(6))) || ""; val.pip = Math.round(Number(pipR.toFixed(6))) || "";
