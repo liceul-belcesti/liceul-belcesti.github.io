@@ -256,8 +256,12 @@
     #pontaj .lista-grup { max-height:34vh; overflow:auto; border:1.5px solid #8a959b; border-radius:10px; padding:4px 8px; margin:6px 0; }
     #pontaj .cel-editor label.rand-grup { display:flex; align-items:center; gap:10px; margin:0; padding:6px 0; font-size:.88rem; font-weight:600; border-bottom:1px solid color-mix(in srgb, var(--muted) 30%, transparent); }
     #pontaj .cel-editor label.rand-grup input { width:20px; min-height:20px; height:20px; margin:0; padding:0; flex:none; }
-    #export-btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
-    #export-btns button { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.88rem; }
+    #bara-foaie { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin:10px 0; padding:10px 12px; background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
+    #export-btns, #inloc-btns { display:flex; flex-wrap:wrap; gap:8px; margin:0; }
+    #export-btns { margin-left:auto; }
+    #export-btns button, #inloc-btns button { width:auto; min-height:42px; margin:0; padding:8px 16px; font-size:.92rem; font-weight:800; border-radius:10px; }
+    #export-btns button.secondary { border:2px solid var(--accent); color:var(--accent); background:transparent; }
+    #inloc-btns button { background:var(--accent); color:var(--on-accent); border:2px solid var(--accent); }
     .doar-tipar, .antet-tipar, .semnaturi-tipar { display:none; }
     .antet-tipar .ant-logo { max-height:60px; }
     @page { size:A4 landscape; margin:6mm; }
@@ -298,8 +302,6 @@
       #pontaj .semnaturi-tipar div { min-width:60mm; text-align:center; }
       #pontaj .semnaturi-tipar span { display:block; margin-top:6mm; border-top:.6pt solid #000; font-weight:400; font-size:7.5pt; padding-top:.5mm; }
     }
-    #inloc-btns { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
-    #inloc-btns button { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.88rem; }
     #pontaj table.foaie-t td.tot:empty { background:var(--card); }
     #pontaj table.foaie-t th.zi-cap.clicabil { cursor:pointer; }
     #pontaj table.foaie-t th.zi-cap .lz { font-size:.78rem; font-weight:700; }
@@ -579,13 +581,15 @@
         <p id="foaie-libere" class="who libere"></p>
         <p id="foaie-vacante" class="who libere vacante"></p>
         <h2 id="print-titlu" class="doar-tipar"></h2>
-        <div id="export-btns" class="tit-btn">
-          <button type="button" id="btn-xls" class="secondary">⬇ Exportă Excel</button>
-          <button type="button" id="btn-pdf" class="secondary">🖨 Exportă PDF</button>
-        </div>
-        <div id="inloc-btns" class="tit-btn hidden">
-          <button type="button" id="btn-cm" class="secondary">+ Adaugă concediu medical</button>
-          <button type="button" id="btn-inv" class="secondary">+ Adaugă învoire</button>
+        <div id="bara-foaie">
+          <div id="inloc-btns" class="tit-btn hidden">
+            <button type="button" id="btn-cm">+ Adaugă concediu medical</button>
+            <button type="button" id="btn-inv">+ Adaugă învoire</button>
+          </div>
+          <div id="export-btns" class="tit-btn">
+            <button type="button" id="btn-xls" class="secondary">⬇ Exportă Excel</button>
+            <button type="button" id="btn-pdf" class="secondary">🖨 Exportă PDF</button>
+          </div>
         </div>
         <p id="foaie-numar" class="who"></p>
         <div id="foaie"></div>
