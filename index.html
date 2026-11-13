@@ -242,6 +242,7 @@
     #pontaj table.foaie-t td.zi { cursor:pointer; }
     #pontaj table.foaie-t td.zi.man { box-shadow:inset 0 0 0 2px var(--accent); font-weight:800; }
     #pontaj table.foaie-t td.zi.cod { font-weight:800; color:#000; }
+    #pontaj table.foaie-t td.zi.cod.ccc { font-weight:400; font-size:.78em; letter-spacing:-.02em; }
     #pontaj table.foaie-t th, #pontaj table.foaie-t td { color:#000 !important; }
     #pontaj .det-corp { padding:6px 14px 10px; font-size:.82rem; } #pontaj .det-p { margin:4px 0 8px; } #pontaj .det-pers { margin:0 0 6px; break-inside:avoid; } #pontaj .det-zi { padding-left:12px; }
     #cel-editor .cutie .zona-n { border:2px solid #b42318; background:#fff5f5; border-radius:10px; padding:10px; margin:8px 0; }
@@ -2229,7 +2230,7 @@
           tr.appendChild(el("td", "nr", String(nr)));
           tr.appendChild(el("td", "nm", r.p.nume));
           r.celule.forEach(({ z, v, man, lib, sapt, aj, out, taiat, auto }) => {
-            const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt && !out ? " lib" : "") + (out && sapt ? " afara" : "") + (taiat ? " taiat" : "") + (sapt && !lib && !out && foaie.vac.has(z.t) ? " vac" : "") + (man ? " man" : "") + (aj && !man ? " ajust" : "") + (v && !/^\d+$/.test(v) ? " cod" : ""), v || "");
+            const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt && !out ? " lib" : "") + (out && sapt ? " afara" : "") + (taiat ? " taiat" : "") + (sapt && !lib && !out && foaie.vac.has(z.t) ? " vac" : "") + (man ? " man" : "") + (aj && !man ? " ajust" : "") + (v && !/^\d+$/.test(v) ? " cod" : "") + (v === "CCC" ? " ccc" : ""), v || "");
             if (v && /^\d+$/.test(v) && +v > MAX_ZI) { td.classList.add("depasit"); td.title = "Atenție: peste " + MAX_ZI + " ore într-o zi"; }
             if (aj && !man) td.title = "Ore ajustate" + (aj.minus ? " · − " + aj.minus + " ore de predare" : "") + (aj.plus ? " · + " + aj.plus + " ore adăugate" : "");
             if (v && COD_NUME[v]) td.title = COD_NUME[v];
