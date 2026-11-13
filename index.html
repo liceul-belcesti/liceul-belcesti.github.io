@@ -344,6 +344,13 @@
     #pontaj #ang-adauga { width:auto; margin:6px 0; padding:6px 14px; }
     #pontaj .tabs { margin:0 0 8px; padding:3px; gap:3px; }
     #pontaj .tabs button { min-height:34px; margin:0; font-size:.85rem; }
+    #pontaj #tab-pontaj { background:transparent; padding:0; gap:6px; margin:6px 0 10px; }
+    #pontaj #tab-pontaj button { min-height:42px; font-size:.95rem; font-weight:700; color:var(--accent); background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
+    #pontaj #tab-pontaj button[aria-selected="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,.25); }
+    .eticheta-pc { display:inline-block; margin-top:4px; padding:2px 10px; border-radius:999px; background:var(--accent); color:var(--on-accent); font-size:.78rem; font-weight:700; }
+    #structura .ang-rand { border-left:5px solid var(--line); }
+    #structura .per-cursuri { border-left-color:#2e7d32; } #structura .per-vacanta, #structura .per-vacanta_mobila { border-left-color:#ef6c00; }
+    #structura .per-scoala_altfel, #structura .per-saptamana_verde { border-left-color:#1565c0; } #structura .per-zi_fara_cursuri, #structura .per-alta { border-left-color:#757575; }
     #pontaj .ang-filtre { grid-template-columns:1.4fr 1fr; gap:6px; margin:0 0 4px; }
     #pontaj .ang-filtre input, #pontaj .ang-filtre select { min-height:38px; padding:4px 10px; font-size:.875rem; }
     #pontaj .who { margin:4px 0; font-size:.78rem; }
@@ -571,10 +578,10 @@
       </div>
       <div id="an-inchis" class="verif hidden">Anul școlar este închis: se poate doar consulta.</div>
       <div class="tabs t4" role="tablist" id="tab-pontaj">
-        <button type="button" role="tab" data-v="angajati" aria-selected="true">Angajați</button>
-        <button type="button" role="tab" data-v="sterse" aria-selected="false">Șterși</button>
-        <button type="button" role="tab" data-v="istoric" aria-selected="false">Istoric</button>
-        <button type="button" role="tab" data-v="calendar" aria-selected="false">Calendar</button>
+        <button type="button" role="tab" data-v="angajati" aria-selected="true">👥 Angajați</button>
+        <button type="button" role="tab" data-v="sterse" aria-selected="false">🗑 Șterși</button>
+        <button type="button" role="tab" data-v="istoric" aria-selected="false">🕘 Istoric</button>
+        <button type="button" role="tab" data-v="calendar" aria-selected="false">📅 Calendar</button>
       </div>
       <div id="ang-filtre" class="ang-filtre">
         <input id="ang-cauta" type="search" placeholder="Caută după nume" autocomplete="off">
@@ -593,6 +600,19 @@
       <div id="ang-lista"></div>
       </div>
       <div id="cel-editor" class="cel-editor hidden" role="dialog" aria-modal="true"></div>
+    </main>
+
+    <main id="structura" class="wrap hidden">
+      <button id="inapoi-str" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Structura anului școlar</h1>
+      <div class="an-bara">
+        <label for="str-an" class="an-et">Anul școlar</label>
+        <select id="str-an"></select>
+      </div>
+      <div id="str-msg" class="panel-msg" role="status"></div>
+      <div id="str-form-loc"></div>
+      <p id="str-numar" class="who"></p>
+      <div id="str-lista"></div>
     </main>
 
     <main id="panou" class="wrap hidden">
@@ -629,6 +649,7 @@
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"] },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul claselor și al profesorilor", sub: ["Orarul claselor", "Orarul profesorilor"] },
+      structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii", sub: ["Programul săptămânii"] },
       registru: { ico: "📁", t: "Registratură", d: "Documente și numere de înregistrare", sub: ["Documente", "Numere de înregistrare"] },
       catalog:  { ico: "📘", t: "Situație școlară", d: "Note și absențe", sub: ["Note", "Absențe"] }
@@ -636,9 +657,9 @@
     // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      director:      ["utilizatori", "pontaj", "anunturi", "orar", "altfel", "registru"],
-      secretariat:   ["pontaj", "anunturi", "orar", "registru"],
-      contabilitate: ["pontaj"],
+      director:      ["utilizatori", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
+      secretariat:   ["pontaj", "structura", "anunturi", "orar", "registru"],
+      contabilitate: ["pontaj", "structura"],
       profesor:      ["anunturi", "orar", "altfel", "registru"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
@@ -732,15 +753,21 @@
       if (pastreaza !== true) memoreazaVedere("");
       $("panou").classList.add("hidden");
       $("pontaj").classList.add("hidden");
+      $("structura").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
     $("alerta").addEventListener("click", () => deschideModul("utilizatori"));
 
     function deschideModul(cheie) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura") return;
       memoreazaVedere(cheie);
       if (cheie === "pontaj") return deschidePontaj();
+      if (cheie === "structura") {
+        document.querySelector("#acasa > main.wrap").classList.add("hidden");
+        $("structura").classList.remove("hidden");
+        return incarcaStructuraModul();
+      }
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("panou").classList.remove("hidden");
       mesajPanou("");
@@ -1373,9 +1400,6 @@
         .gte("data", y1 + "-09-01").lte("data", y2 + "-08-31").order("data");
       if (error) return mesajPontaj("Nu s-a putut încărca calendarul. Încearcă din nou.");
       const poate = poateModificaAng();
-      const secStr = el("section", ""); lista.appendChild(secStr);
-      incarcaStructura(secStr, a, poate);
-      lista.appendChild(el("h3", "", "Zile libere"));
       if (poate) {
         const adauga = el("button", "", "+ Adaugă zi liberă"); adauga.type = "button";
         adauga.addEventListener("click", () => formZiLibera(y1, y2));
@@ -1410,8 +1434,26 @@
     // ---------- Structura anului școlar (introdusă manual) ----------
     const TIP_PER = { cursuri: "Cursuri (modul)", vacanta: "Vacanță", vacanta_mobila: "Vacanța mobilă", scoala_altfel: "Săptămâna „Școala Altfel”", saptamana_verde: "Săptămâna Verde", zi_fara_cursuri: "Zi fără cursuri", alta: "Altă perioadă" };
     const dataPer = (t) => dinIso(t).toLocaleDateString("ro-RO", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
+    const zileLucrPer = (p) => { let n = 0; for (let d = dinIso(p.de_la); iso(d) <= p.pana_la; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(); if (w !== 0 && w !== 6) n++; } return n; };
+    const mesajStr = (text, ok) => { $("str-msg").textContent = text || ""; $("str-msg").className = "panel-msg" + (ok ? " ok" : ""); };
+    async function incarcaStructuraModul() {
+      mesajStr("");
+      $("str-form-loc").replaceChildren();
+      const { data, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false });
+      if (error || !data.length) return mesajStr("Anii școlari nu au putut fi încărcați.");
+      const sel = $("str-an"); const vechi = sel.value; sel.replaceChildren();
+      data.forEach((x) => sel.add(new Option(x.denumire + (x.inchis ? " · închis" : ""), x.id)));
+      sel.value = data.some((x) => x.id === vechi) ? vechi : (data.find((x) => x.denumire === anulScolarZilei()) || data[0]).id;
+      sel._ani = data;
+      desenezStructura();
+    }
+    function desenezStructura() {
+      const sel = $("str-an"); const a = (sel._ani || []).find((x) => x.id === sel.value); if (!a) return;
+      $("str-form-loc").replaceChildren();
+      incarcaStructura($("str-lista"), a, poateModificaAng() && !a.inchis);
+    }
     async function incarcaStructura(sec, a, poate) {
-      sec.replaceChildren(el("h3", "", "Structura anului școlar " + a.denumire));
+      sec.replaceChildren();
       const { data, error } = await db.from("structura_an").select("id, tip, denumire, de_la, pana_la, practica_comasata")
         .eq("an_id", a.id).is("sters_la", null).order("de_la");
       if (error) { sec.appendChild(el("p", "who", "Structura anului școlar nu a putut fi încărcată.")); return; }
@@ -1420,13 +1462,16 @@
         b.addEventListener("click", () => formStructura(a, null, () => incarcaStructura(sec, a, poate)));
         sec.appendChild(b);
       }
+      const nrp = data.filter((p) => p.practica_comasata).length;
+      $("str-numar").textContent = data.length + " perioade · " + nrp + " cu practică comasată · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "");
       if (!data.length) sec.appendChild(el("p", "who", "Nu ai introdus încă nicio perioadă pentru acest an școlar."));
       data.forEach((p) => {
-        const r = el("div", "ang-rand citire");
+        const r = el("div", "ang-rand citire per-" + p.tip);
         const st = el("div", "");
         st.appendChild(el("strong", "", p.denumire));
         const interval = p.de_la === p.pana_la ? dataPer(p.de_la) : dataPer(p.de_la) + " – " + dataPer(p.pana_la);
-        st.appendChild(el("div", "who", (TIP_PER[p.tip] || p.tip) + " · " + interval + (p.practica_comasata ? " · practică comasată" : "")));
+        st.appendChild(el("div", "who", (TIP_PER[p.tip] || p.tip) + " · " + interval + (zileLucrPer(p) ? " · " + zileLucrPer(p) + (zileLucrPer(p) === 1 ? " zi lucrătoare" : " zile lucrătoare") : "")));
+        if (p.practica_comasata) st.appendChild(el("span", "eticheta-pc", "Practică comasată"));
         r.appendChild(st);
         if (poate) {
           const ed = el("button", "mic", "Modifică"); ed.type = "button";
@@ -1437,7 +1482,7 @@
             if (!armat) { armat = true; sterge.textContent = "Sigur?"; timer = setTimeout(() => { armat = false; sterge.textContent = "Șterge"; }, 4000); return; }
             clearTimeout(timer); sterge.disabled = true;
             const { error: e } = await db.from("structura_an").update({ sters_la: new Date().toISOString() }).eq("id", p.id);
-            mesajPontaj(e ? "Perioada nu a putut fi ștearsă." : "Perioada a fost ștearsă.", !e);
+            mesajStr(e ? "Perioada nu a putut fi ștearsă." : "Perioada a fost ștearsă.", !e);
             incarcaStructura(sec, a, poate);
           });
           r.append(ed, sterge);
@@ -1448,7 +1493,7 @@
 
     function formStructura(a, p, dupa) {
       const [y1, y2] = a.denumire.split("–").map(Number);
-      const zona = $("ang-form-loc"); zona.replaceChildren();
+      const zona = $("str-form-loc"); zona.replaceChildren();
       const box = el("div", "ang-form");
       box.appendChild(el("h3", "", p ? "Modifică perioada" : "Adaugă perioadă"));
       const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
@@ -1470,16 +1515,16 @@
       nu.addEventListener("click", () => zona.replaceChildren());
       ok.addEventListener("click", async () => {
         const nume = den.value.trim();
-        if (!nume || !de.value || !pana.value) return mesajPontaj("Completează denumirea și ambele date.");
-        if (pana.value < de.value) return mesajPontaj("„Până la” nu poate fi înaintea datei de început.");
+        if (!nume || !de.value || !pana.value) return mesajStr("Completează denumirea și ambele date.");
+        if (pana.value < de.value) return mesajStr("„Până la” nu poate fi înaintea datei de început.");
         const rand = { tip: tip.value, denumire: nume, de_la: de.value, pana_la: pana.value, practica_comasata: pc.checked };
         ok.disabled = true;
         const { error } = p ? await db.from("structura_an").update(rand).eq("id", p.id)
           : await db.from("structura_an").insert({ ...rand, an_id: a.id });
         ok.disabled = false;
-        if (error) return mesajPontaj("Perioada nu a putut fi salvată. Încearcă din nou.");
+        if (error) return mesajStr("Perioada nu a putut fi salvată. Încearcă din nou.");
         zona.replaceChildren();
-        mesajPontaj(p ? "Perioada a fost modificată." : "Perioada a fost adăugată.", true);
+        mesajStr(p ? "Perioada a fost modificată." : "Perioada a fost adăugată.", true);
         dupa();
       });
       ctl.append(ok, nu); box.appendChild(ctl);
@@ -2559,6 +2604,8 @@
     });
 
     $("inapoi").addEventListener("click", arataPrincipal);
+    $("inapoi-str").addEventListener("click", arataPrincipal);
+    $("str-an").addEventListener("change", desenezStructura);
 
     // Mesajul rămâne afișat chiar dacă ieșirea din cont declanșează o nouă verificare.
     let mesajRamas = "";
