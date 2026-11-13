@@ -1373,6 +1373,9 @@
         .gte("data", y1 + "-09-01").lte("data", y2 + "-08-31").order("data");
       if (error) return mesajPontaj("Nu s-a putut încărca calendarul. Încearcă din nou.");
       const poate = poateModificaAng();
+      const secStr = el("section", ""); lista.appendChild(secStr);
+      incarcaStructura(secStr, a, poate);
+      lista.appendChild(el("h3", "", "Zile libere"));
       if (poate) {
         const adauga = el("button", "", "+ Adaugă zi liberă"); adauga.type = "button";
         adauga.addEventListener("click", () => formZiLibera(y1, y2));
@@ -1402,6 +1405,86 @@
         }
         lista.appendChild(r);
       });
+    }
+
+    // ---------- Structura anului școlar (introdusă manual) ----------
+    const TIP_PER = { cursuri: "Cursuri (modul)", vacanta: "Vacanță", vacanta_mobila: "Vacanța mobilă", scoala_altfel: "Săptămâna „Școala Altfel”", saptamana_verde: "Săptămâna Verde", zi_fara_cursuri: "Zi fără cursuri", alta: "Altă perioadă" };
+    const dataPer = (t) => dinIso(t).toLocaleDateString("ro-RO", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
+    async function incarcaStructura(sec, a, poate) {
+      sec.replaceChildren(el("h3", "", "Structura anului școlar " + a.denumire));
+      const { data, error } = await db.from("structura_an").select("id, tip, denumire, de_la, pana_la, practica_comasata")
+        .eq("an_id", a.id).is("sters_la", null).order("de_la");
+      if (error) { sec.appendChild(el("p", "who", "Structura anului școlar nu a putut fi încărcată.")); return; }
+      if (poate) {
+        const b = el("button", "", "+ Adaugă perioadă"); b.type = "button";
+        b.addEventListener("click", () => formStructura(a, null, () => incarcaStructura(sec, a, poate)));
+        sec.appendChild(b);
+      }
+      if (!data.length) sec.appendChild(el("p", "who", "Nu ai introdus încă nicio perioadă pentru acest an școlar."));
+      data.forEach((p) => {
+        const r = el("div", "ang-rand citire");
+        const st = el("div", "");
+        st.appendChild(el("strong", "", p.denumire));
+        const interval = p.de_la === p.pana_la ? dataPer(p.de_la) : dataPer(p.de_la) + " – " + dataPer(p.pana_la);
+        st.appendChild(el("div", "who", (TIP_PER[p.tip] || p.tip) + " · " + interval + (p.practica_comasata ? " · practică comasată" : "")));
+        r.appendChild(st);
+        if (poate) {
+          const ed = el("button", "mic", "Modifică"); ed.type = "button";
+          ed.addEventListener("click", () => formStructura(a, p, () => incarcaStructura(sec, a, poate)));
+          const sterge = el("button", "mic off", "Șterge"); sterge.type = "button";
+          let armat = false, timer = null;
+          sterge.addEventListener("click", async () => {
+            if (!armat) { armat = true; sterge.textContent = "Sigur?"; timer = setTimeout(() => { armat = false; sterge.textContent = "Șterge"; }, 4000); return; }
+            clearTimeout(timer); sterge.disabled = true;
+            const { error: e } = await db.from("structura_an").update({ sters_la: new Date().toISOString() }).eq("id", p.id);
+            mesajPontaj(e ? "Perioada nu a putut fi ștearsă." : "Perioada a fost ștearsă.", !e);
+            incarcaStructura(sec, a, poate);
+          });
+          r.append(ed, sterge);
+        }
+        sec.appendChild(r);
+      });
+    }
+
+    function formStructura(a, p, dupa) {
+      const [y1, y2] = a.denumire.split("–").map(Number);
+      const zona = $("ang-form-loc"); zona.replaceChildren();
+      const box = el("div", "ang-form");
+      box.appendChild(el("h3", "", p ? "Modifică perioada" : "Adaugă perioadă"));
+      const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
+      const tip = camp("Tip", document.createElement("select"));
+      Object.keys(TIP_PER).forEach((k) => tip.add(new Option(TIP_PER[k], k)));
+      const den = camp("Denumire (ex. Modulul 1, Vacanța de iarnă)", document.createElement("input")); den.maxLength = 100; den.autocomplete = "off";
+      const min = y1 + "-09-01", max = y2 + "-08-31";
+      const de = camp("De la", document.createElement("input")); de.type = "date"; de.min = min; de.max = max;
+      const pana = camp("Până la (inclusiv)", document.createElement("input")); pana.type = "date"; pana.min = min; pana.max = max;
+      const lc = el("label", "rand-grup");
+      const pc = document.createElement("input"); pc.type = "checkbox";
+      lc.append(pc, document.createTextNode(" Elevii de liceu și școală profesională fac practică comasată în această perioadă"));
+      box.appendChild(lc);
+      if (p) { tip.value = p.tip; den.value = p.denumire; de.value = p.de_la; pana.value = p.pana_la; pc.checked = p.practica_comasata; }
+      else tip.addEventListener("change", () => { if (!den.value) den.value = TIP_PER[tip.value].replace(" (modul)", ""); if (tip.value === "scoala_altfel" || tip.value === "saptamana_verde") pc.checked = true; });
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", p ? "Salvează" : "Adaugă"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        const nume = den.value.trim();
+        if (!nume || !de.value || !pana.value) return mesajPontaj("Completează denumirea și ambele date.");
+        if (pana.value < de.value) return mesajPontaj("„Până la” nu poate fi înaintea datei de început.");
+        const rand = { tip: tip.value, denumire: nume, de_la: de.value, pana_la: pana.value, practica_comasata: pc.checked };
+        ok.disabled = true;
+        const { error } = p ? await db.from("structura_an").update(rand).eq("id", p.id)
+          : await db.from("structura_an").insert({ ...rand, an_id: a.id });
+        ok.disabled = false;
+        if (error) return mesajPontaj("Perioada nu a putut fi salvată. Încearcă din nou.");
+        zona.replaceChildren();
+        mesajPontaj(p ? "Perioada a fost modificată." : "Perioada a fost adăugată.", true);
+        dupa();
+      });
+      ctl.append(ok, nu); box.appendChild(ctl);
+      zona.appendChild(box);
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function formZiLibera(y1, y2) {
