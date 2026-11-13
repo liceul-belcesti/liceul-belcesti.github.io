@@ -1953,7 +1953,7 @@
       const dow = dinIso(t).getUTCDay();
       if (dow === 0 || dow === 6) return null;
       const lib = foaie.libere.get(t);
-      if (lib) return lib.tip === "legala" ? null : "L";
+      if (lib) return "L";
       const v = n["ore_" + ZILE[dow - 1]];
       const aj = foaie.ajust && foaie.ajust.get(n.id + "|" + t);
       if (aj) { const baza = v === null || v === undefined ? 0 : Number(v); const nou = Math.max(0, baza - aj.minus) + aj.plus; return nou ? String(nou) : null; }
@@ -1966,7 +1966,7 @@
     };
 
     const NUME_ZI_LUNGI = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
-    const COD_NUME = { CO: "Concediu de odihnă", CM: "Concediu medical", BP: "Boală profesională", AM: "Accident de muncă", M: "Maternitate", PRM: "Program redus maternitate", PRB: "Program redus boală", I: "Învoiri", O: "Obligații cetățenești", N: "Absențe nemotivate", L: "Liber stabilit de minister", PCO: "Plata cu ora" };
+    const COD_NUME = { CO: "Concediu de odihnă", CM: "Concediu medical", BP: "Boală profesională", AM: "Accident de muncă", M: "Maternitate", PRM: "Program redus maternitate", PRB: "Program redus boală", I: "Învoiri", O: "Obligații cetățenești", N: "Absențe nemotivate", L: "Zi liberă (sărbătoare legală, liber stabilit de minister sau altă zi liberă)", PCO: "Plata cu ora" };
     const CATEGORII_PE_FUNCTII = ["Directori", "Didactic auxiliar", "Nedidactic"];
 
     function textLibere() {
