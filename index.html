@@ -282,7 +282,10 @@
     #pontaj #rand-an-luna .an-et { font-weight:800; font-size:.95rem; color:var(--accent); }
     #pontaj #rand-an-luna #an-select { width:auto; min-width:150px; min-height:44px; font-size:1.05rem; font-weight:800; color:var(--accent); background:var(--teal-100); border:2px solid var(--accent); }
     #pontaj #rand-an-luna .luna-bara { flex:1 1 280px; margin:0; }
-    #pontaj:has(#pont-principal.hidden) #rand-an-luna .luna-bara { display:none; }
+    #pontaj:has(#pont-principal.hidden) #rand-an-luna .luna-bara, #pontaj:has(#pont-principal.hidden) #rand-an-luna .inreg-bara { display:none; }
+    #pontaj .inreg-bara { display:flex; align-items:center; gap:8px; flex:0 1 auto; }
+    #pontaj .inreg-bara input { width:auto; min-height:44px; padding:6px 10px; font:inherit; font-weight:700; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
+    #pontaj .inreg-bara #inreg-nr { width:110px; }
     #pontaj .stare-eticheta.st-in_lucru { border-color:#e67700; background:#ffe8cc; color:#7c3a00; }
     #pontaj .stare-eticheta.st-predat { border-color:#2f855a; background:#d3f2df; color:#14532d; }
     #pontaj .stare-eticheta.st-inchis { border-color:#c62828; background:#fde0e0; color:#7f1d1d; }
@@ -593,6 +596,12 @@
           <button id="luna-prev" class="secondary" type="button" aria-label="Luna anterioară">‹</button>
           <select id="luna-select" aria-label="Luna"></select>
           <button id="luna-next" class="secondary" type="button" aria-label="Luna următoare">›</button>
+        </div>
+        <div class="inreg-bara">
+          <label for="inreg-nr" class="an-et">Nr. înregistrare</label>
+          <input id="inreg-nr" maxlength="20" autocomplete="off" inputmode="numeric" placeholder="…………">
+          <label for="inreg-data" class="an-et">din</label>
+          <input id="inreg-data" type="date">
         </div>
       </div>
       <div id="pontaj-msg" class="panel-msg" role="alert"></div>
@@ -1871,7 +1880,7 @@
           toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare").gte("zi", start).lte("zi", sfarsit).order("norma_id").order("zi")),
           toate(() => db.from("zile_libere").select("data, motiv, tip").gte("data", start).lte("data", sfarsit).order("data")),
           db.from("pco_tabele").select("id, valabil_de").eq("an_id", anId).lte("valabil_de", start).order("valabil_de", { ascending: false }).limit(1),
-          db.from("pontaj_luni").select("stare, instantaneu").eq("an_id", anId).eq("luna", start).limit(1),
+          db.from("pontaj_luni").select("stare, instantaneu, nr_inregistrare, data_inregistrare").eq("an_id", anId).eq("luna", start).limit(1),
           toate(() => db.from("pontaj_inlocuiri").select("id, norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore").is("sters_la", null).lte("de_la", sfarsit).gte("pana_la", start).order("de_la").order("id")),
           toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa").eq("an_id", anId).order("angajat_id").order("zi").order("ora")),
           toate(() => db.from("practica_clase").select("clasa, angajat_id, de_la, pana_la").eq("an_id", anId).is("sters_la", null).lte("de_la", sfarsit).gte("pana_la", start).order("clasa").order("de_la").order("id")),
@@ -1894,6 +1903,8 @@
           faraPco: D.faraPco, orar: D.orar, pract: D.pract, vacRanduri: D.vac
         };
         foaie.ajust = calculeazaAjustari(D, start, sfarsit);
+        $("inreg-nr").value = (r0 && r0.nr_inregistrare) || ""; $("inreg-data").value = (r0 && r0.data_inregistrare) || "";
+        const poateInreg = poatePontaj() && anCurent() && !anCurent().inchis; $("inreg-nr").disabled = !poateInreg; $("inreg-data").disabled = !poateInreg;
         foaie.vac = new Map(); foaie.vacPerioade = [];
         D.vac.forEach((v) => {
           const de = v.de_la < start ? start : v.de_la, pana = v.pana_la > sfarsit ? sfarsit : v.pana_la; let n = 0;
@@ -2357,27 +2368,31 @@
     function numeFisierLuna() { return "pontaj-" + foaie.start.slice(0, 7); }
     let antetVal = { nr: "", data: "" };
     function cereAntet(dupa) {
+      antetVal = { nr: $("inreg-nr").value.trim(), data: $("inreg-data").value };
+      const mergi = () => { if (dupa === "pdf") tipareste(); else exportaExcel(); };
+      if (antetVal.nr) return mergi();
       const zona = $("cel-editor"); zona.replaceChildren();
       const cutie = el("div", "cutie");
-      cutie.appendChild(el("h3", "", "Antetul foii"));
-      cutie.appendChild(el("div", "who", "Se completează pe foaie lângă numele școlii. Dacă lași gol, rămâne loc de scris de mână."));
-      cutie.appendChild(el("label", "", "Număr de înregistrare"));
-      const nr = document.createElement("input"); nr.maxLength = 20; nr.autocomplete = "off"; nr.value = antetVal.nr; cutie.appendChild(nr);
-      cutie.appendChild(el("label", "", "Data înregistrării"));
-      const dt = document.createElement("input"); dt.type = "date"; dt.value = antetVal.data; cutie.appendChild(dt);
+      cutie.appendChild(el("h3", "", "Nu ai trecut numărul de înregistrare"));
+      cutie.appendChild(el("div", "who", "Îl poți completa sus, lângă lună. Dacă continui fără el, pe foaie rămâne loc de scris de mână."));
       const ctl = el("div", "ctl");
-      const ok = el("button", "", dupa === "pdf" ? "Continuă la tipărire" : "Descarcă Excel"); ok.type = "button";
-      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
-      nu.addEventListener("click", () => zona.classList.add("hidden"));
-      zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
-      ok.addEventListener("click", () => {
-        antetVal = { nr: nr.value.trim(), data: dt.value };
-        zona.classList.add("hidden");
-        if (dupa === "pdf") tipareste(); else exportaExcel();
-      });
+      const ok = el("button", "", dupa === "pdf" ? "Continuă fără număr" : "Descarcă fără număr"); ok.type = "button";
+      const nu = el("button", "secondary", "Completez numărul"); nu.type = "button";
+      const inchide = () => zona.classList.add("hidden");
+      nu.addEventListener("click", () => { inchide(); $("inreg-nr").focus(); });
+      zona.addEventListener("click", (e) => { if (e.target === zona) inchide(); }, { once: true });
+      ok.addEventListener("click", () => { inchide(); mergi(); });
       ctl.append(ok, nu); cutie.appendChild(ctl);
-      zona.appendChild(cutie); zona.classList.remove("hidden"); nr.focus();
+      zona.appendChild(cutie); zona.classList.remove("hidden"); ok.focus();
     }
+    async function salveazaInregistrare() {
+      if (!foaie || !anId) return;
+      const nr = $("inreg-nr").value.trim(), data = $("inreg-data").value;
+      const { error } = await db.from("pontaj_luni").upsert({ an_id: anId, luna: lunaSel, nr_inregistrare: nr || null, data_inregistrare: data || null }, { onConflict: "an_id,luna" });
+      mesajPontaj(error ? "Numărul de înregistrare nu a putut fi salvat." : "Numărul de înregistrare a fost salvat.", !error);
+    }
+    $("inreg-nr").addEventListener("change", salveazaInregistrare);
+    $("inreg-data").addEventListener("change", salveazaInregistrare);
     function tipareste() {
       const dataTxt = antetVal.data ? antetVal.data.slice(8, 10) + "." + antetVal.data.slice(5, 7) + "." + antetVal.data.slice(0, 4) : "……………";
       document.querySelectorAll("#foaie .ant-nr").forEach((x) => { x.textContent = antetVal.nr || "…………"; });
