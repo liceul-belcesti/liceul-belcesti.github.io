@@ -1974,7 +1974,7 @@
       if (lib) return "L";
       const v = n["ore_" + ZILE[dow - 1]];
       const aj = foaie.ajust && foaie.ajust.get(n.id + "|" + t);
-      if (aj) { const baza = v === null || v === undefined ? 0 : Number(v); const nou = Math.max(0, baza - aj.minus) + aj.plus; return nou ? String(nou) : null; }
+      if (aj) { const baza = v === null || v === undefined ? 0 : Number(v); const nou = Math.max(0, baza - aj.minus) + aj.plus; return String(nou); }
       return v === null || v === undefined ? null : String(v);
     }
     const arataValoare = (n, t) => {
