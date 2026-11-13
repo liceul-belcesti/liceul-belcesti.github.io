@@ -259,12 +259,36 @@
     #bara-foaie { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin:10px 0; padding:10px 12px; background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
     #export-btns, #inloc-btns { display:flex; flex-wrap:wrap; gap:8px; margin:0; }
     #export-btns { margin-left:auto; }
+    #pontaj #inloc-btns { justify-content:flex-start; }
     #export-btns button, #inloc-btns button { width:auto; min-height:42px; margin:0; padding:8px 16px; font-size:.92rem; font-weight:800; border-radius:10px; }
     #export-btns button.secondary { border:2px solid var(--accent); color:var(--accent); background:transparent; }
     #inloc-btns button { background:var(--accent); color:var(--on-accent); border:2px solid var(--accent); }
     .doar-tipar, .antet-tipar, .semnaturi-tipar { display:none; }
     .antet-tipar .ant-logo { max-height:60px; }
     @page { size:A4 landscape; margin:6mm; }
+
+    .bar { flex-wrap:wrap; }
+    .bar #bar-inapoi { display:flex; }
+    .bar #bar-inapoi button { background:#fff; color:var(--accent); border:0; font-weight:800; }
+    .bar .name { flex:1 1 200px; }
+    .bar .bar-dreapta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .bar #bar-pontaj { display:flex; gap:8px; }
+    .bar #bar-pontaj.hidden { display:none; }
+    .bar #bar-pontaj #btn-admin { background:#fff; color:var(--accent); border:0; font-weight:800; }
+    .bar #bar-pontaj #btn-pco { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); font-weight:800; }
+    .bar .bar-user { text-align:right; line-height:1.2; font-size:.85rem; font-weight:700; min-width:0; }
+    .bar .bar-user small { display:block; font-weight:400; opacity:.85; font-size:.74rem; }
+    #pontaj #rand-an-luna { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:6px 0 10px; padding:10px 12px; background:var(--card); border:2px solid var(--accent); border-radius:12px; }
+    #pontaj #rand-an-luna .an-et { font-weight:800; font-size:.95rem; color:var(--accent); }
+    #pontaj #rand-an-luna #an-select { width:auto; min-width:150px; min-height:44px; font-size:1.05rem; font-weight:800; color:var(--accent); background:var(--teal-100); border:2px solid var(--accent); }
+    #pontaj #rand-an-luna .luna-bara { flex:1 1 280px; margin:0; }
+    #pontaj:has(#pont-principal.hidden) #rand-an-luna .luna-bara { display:none; }
+    #pontaj .stare-eticheta.st-in_lucru { border-color:#e67700; background:#ffe8cc; color:#7c3a00; }
+    #pontaj .stare-eticheta.st-predat { border-color:#2f855a; background:#d3f2df; color:#14532d; }
+    #pontaj .stare-eticheta.st-inchis { border-color:#c62828; background:#fde0e0; color:#7f1d1d; }
+    #pontaj .stare-bara button.b-verde { background:#2f855a; color:#fff; border:2px solid #2f855a; font-weight:800; }
+    #pontaj .stare-bara button.b-rosu { background:#c62828; color:#fff; border:2px solid #c62828; font-weight:800; }
+    #pontaj .stare-bara button.b-portocaliu { background:#e67700; color:#fff; border:2px solid #e67700; font-weight:800; }
     @media print {
       * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       body { background:#fff !important; }
@@ -531,8 +555,16 @@
   <!-- PAGINA PRINCIPALĂ -->
   <div id="acasa" class="hidden">
     <header class="bar">
-      <div class="name">Platforma școlii<small>Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești</small></div>
-      <button id="iesire" type="button">Ieși din cont</button>
+      <div id="bar-inapoi"></div>
+      <div class="name">Spațiul virtual al școlii<small>Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești</small></div>
+      <div class="bar-dreapta">
+        <div id="bar-pontaj" class="hidden">
+          <button id="btn-pco" class="secondary" type="button">Plata cu ora</button>
+          <button id="btn-admin" type="button">⚙ Administrare</button>
+        </div>
+        <div id="bar-user" class="bar-user"><span id="bar-email"></span><small id="bar-functie"></small></div>
+        <button id="iesire" type="button">Ieși din cont</button>
+      </div>
     </header>
     <main class="wrap">
       <h1 class="hello">Bun venit, <span id="prenume"></span>!</h1>
@@ -553,22 +585,18 @@
       <button id="inapoi-pontaj" class="back" type="button">← Înapoi</button>
       <div class="tit-rand">
         <h1 class="hello">Pontaj</h1>
-        <div class="tit-btn">
-          <button id="btn-pco" class="secondary" type="button">Plata cu ora</button>
-          <button id="btn-admin" type="button">⚙ Administrare</button>
-        </div>
       </div>
-      <div class="an-bara">
+      <div class="an-bara" id="rand-an-luna">
         <label for="an-select" class="an-et">Anul școlar</label>
         <select id="an-select"></select>
-      </div>
-      <div id="pontaj-msg" class="panel-msg" role="alert"></div>
-      <div id="pont-principal">
         <div class="luna-bara">
           <button id="luna-prev" class="secondary" type="button" aria-label="Luna anterioară">‹</button>
           <select id="luna-select" aria-label="Luna"></select>
           <button id="luna-next" class="secondary" type="button" aria-label="Luna următoare">›</button>
         </div>
+      </div>
+      <div id="pontaj-msg" class="panel-msg" role="alert"></div>
+      <div id="pont-principal">
         <p id="luna-info" class="who"></p>
         <div id="luna-stare" class="stare-bara"></div>
         <details class="legenda"><summary>Explicații pentru coduri și calcul</summary>
@@ -765,6 +793,7 @@
     function aplicaRoluri(r) {
       euRoluri = r;
       $("rol").textContent = euRoluri.map((x) => ETICHETE[x] || x).join(" · ");
+      $("bar-functie").textContent = $("rol").textContent;
       pregatesteComutator();
     }
 
@@ -1897,16 +1926,16 @@
       if (!foaie || !anCurent()) return;
       const st = foaie.stare;
       const badge = el("span", "stare-eticheta st-" + st, "Stare: " + ETICHETA_STARE[st]); z.appendChild(badge);
-      const buton = (text, fn, sec) => { const b = el("button", sec ? "secondary" : "", text); b.type = "button"; b.addEventListener("click", fn); z.appendChild(b); };
+      const buton = (text, fn, clasa) => { const b = el("button", clasa || "", text); b.type = "button"; b.addEventListener("click", fn); z.appendChild(b); };
       if (st === "inchis") {
         z.appendChild(el("span", "who", "Foaia este salvată așa cum a fost la închidere și nu se mai modifică."));
-        if (poateAni() && !anCurent().inchis) buton("Redeschide luna", () => confirmaStare("in_lucru"), true);
+        if (poateAni() && !anCurent().inchis) buton("Redeschide luna", () => confirmaStare("in_lucru"), "b-portocaliu");
         return;
       }
       if (!poatePontaj()) return;
-      if (st === "in_lucru") buton("Marchează ca predat", () => seteazaStare("predat"), true);
-      else buton("Înapoi în lucru", () => seteazaStare("in_lucru"), true);
-      if (poateAni() && !anCurent().inchis) buton("Închide luna", () => confirmaStare("inchis"));
+      if (st === "in_lucru") buton("Marchează ca predat", () => seteazaStare("predat"), "b-verde");
+      else buton("Înapoi în lucru", () => seteazaStare("in_lucru"), "b-portocaliu");
+      if (poateAni() && !anCurent().inchis) buton("Închide luna", () => confirmaStare("inchis"), "b-rosu");
     }
     async function seteazaStare(stare, instantaneu) {
       const rand = { an_id: anId, luna: lunaSel, stare, instantaneu: instantaneu || null };
@@ -2901,6 +2930,22 @@
     $("ang-adauga").addEventListener("click", () => formAngajat(null));
     $("ang-cauta").addEventListener("input", deseneazaAngajati);
     $("ang-loc").addEventListener("change", deseneazaAngajati);
+
+    // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
+    (function () {
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi"];
+      const slot = $("bar-inapoi");
+      const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
+      lista.forEach((x) => slot.appendChild(x.b));
+      const vizibil = (p) => !p.closest(".hidden");
+      function sincronizeaza() {
+        let gasit = false;
+        lista.forEach((x) => { const arata = !gasit && vizibil(x.p); if (arata) gasit = true; x.b.style.display = arata ? "" : "none"; });
+        $("bar-pontaj").classList.toggle("hidden", !vizibil($("pontaj")));
+      }
+      new MutationObserver(sincronizeaza).observe($("acasa"), { attributes: true, attributeFilter: ["class"], subtree: true });
+      sincronizeaza();
+    })();
     $("inapoi-pontaj").addEventListener("click", arataPrincipal);
     $("btn-admin").addEventListener("click", () => {
       $("pont-principal").classList.add("hidden");
@@ -2992,6 +3037,7 @@
       $("prenume").textContent = (data.nume || "").split(" ")[0];
       $("cine").textContent = data.nume + " · " + sesiune.user.email;
       $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
+      $("bar-email").textContent = sesiune.user.email; $("bar-functie").textContent = $("rol").textContent;
       pregatesteComutator();
       let v = ""; try { v = sessionStorage.getItem("vedere") || ""; } catch (e) {}
       if (v && moduleleMele(euRoluri).includes(v) && MODULE[v] && MODULE[v].activ) deschideModul(v);
