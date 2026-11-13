@@ -344,6 +344,11 @@
     #pontaj #ang-adauga { width:auto; margin:6px 0; padding:6px 14px; }
     #pontaj .tabs { margin:0 0 8px; padding:3px; gap:3px; }
     #pontaj .tabs button { min-height:34px; margin:0; font-size:.85rem; }
+    .tabs.t5 { grid-template-columns:repeat(5,1fr); }
+    @media (max-width:760px) { .tabs.t5 { grid-template-columns:1fr 1fr; } }
+    #structura #tab-str { background:transparent; padding:0; gap:6px; margin:6px 0 10px; }
+    #structura #tab-str button { min-height:46px; padding:6px 4px; font-size:.9rem; font-weight:700; color:var(--accent); background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
+    #structura #tab-str button[aria-selected="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,.25); }
     #pontaj #tab-pontaj { background:transparent; padding:0; gap:6px; margin:6px 0 10px; }
     #pontaj #tab-pontaj button { min-height:42px; font-size:.95rem; font-weight:700; color:var(--accent); background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
     #pontaj #tab-pontaj button[aria-selected="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,.25); }
@@ -577,11 +582,10 @@
         <div class="ctl"><button id="an-nou-salveaza" type="button">Creează</button><button id="an-nou-renunta" class="secondary" type="button">Renunță</button></div>
       </div>
       <div id="an-inchis" class="verif hidden">Anul școlar este închis: se poate doar consulta.</div>
-      <div class="tabs t4" role="tablist" id="tab-pontaj">
+      <div class="tabs t3" role="tablist" id="tab-pontaj">
         <button type="button" role="tab" data-v="angajati" aria-selected="true">👥 Angajați</button>
         <button type="button" role="tab" data-v="sterse" aria-selected="false">🗑 Șterși</button>
         <button type="button" role="tab" data-v="istoric" aria-selected="false">🕘 Istoric</button>
-        <button type="button" role="tab" data-v="calendar" aria-selected="false">📅 Calendar</button>
       </div>
       <div id="ang-filtre" class="ang-filtre">
         <input id="ang-cauta" type="search" placeholder="Caută după nume" autocomplete="off">
@@ -608,6 +612,13 @@
       <div class="an-bara">
         <label for="str-an" class="an-et">Anul școlar</label>
         <select id="str-an"></select>
+      </div>
+      <div class="tabs t5" role="tablist" id="tab-str">
+        <button type="button" role="tab" data-v="structura" aria-selected="true">📆 Structura anului școlar</button>
+        <button type="button" role="tab" data-v="altfel" aria-selected="false">🎨 Școala Altfel</button>
+        <button type="button" role="tab" data-v="verde" aria-selected="false">🌿 Săptămâna Verde</button>
+        <button type="button" role="tab" data-v="practica" aria-selected="false">🛠 Practică comasată</button>
+        <button type="button" role="tab" data-v="libere" aria-selected="false">🏖 Zile libere</button>
       </div>
       <div id="str-msg" class="panel-msg" role="status"></div>
       <div id="str-form-loc"></div>
@@ -1066,9 +1077,8 @@
     function incarcaTab() {
       $("ang-form-loc").replaceChildren();
       actualizeazaAn();
-      $("ang-filtre").classList.toggle("hidden", tabP === "istoric" || tabP === "calendar");
+      $("ang-filtre").classList.toggle("hidden", tabP === "istoric");
       if (tabP === "istoric") return incarcaIstoricPontaj();
-      if (tabP === "calendar") return incarcaCalendar();
       return incarcaAngajati();
     }
 
@@ -1393,13 +1403,13 @@
     const dataLunga = (t) => dinIso(t).toLocaleDateString("ro-RO", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
     async function incarcaCalendar() {
-      const lista = $("ang-lista"); lista.replaceChildren(); $("ang-numar").textContent = "";
-      const a = anCurent(); if (!a) return;
+      const lista = $("str-lista"); lista.replaceChildren(); $("str-numar").textContent = "";
+      const a = anStr(); if (!a) return;
       const [y1, y2] = a.denumire.split("–").map(Number);
       const { data, error } = await db.from("zile_libere").select("data, motiv, tip")
         .gte("data", y1 + "-09-01").lte("data", y2 + "-08-31").order("data");
-      if (error) return mesajPontaj("Nu s-a putut încărca calendarul. Încearcă din nou.");
-      const poate = poateModificaAng();
+      if (error) return mesajStr("Nu s-a putut încărca calendarul. Încearcă din nou.");
+      const poate = poateModificaAng() && !a.inchis;
       if (poate) {
         const adauga = el("button", "", "+ Adaugă zi liberă"); adauga.type = "button";
         adauga.addEventListener("click", () => formZiLibera(y1, y2));
@@ -1407,7 +1417,7 @@
       }
       const luni = (t) => { const d = dinIso(t); const dow = d.getUTCDay(); return dow === 0 || dow === 6; };
       const lucr = data.filter((x) => !luni(x.data)).length;
-      $("ang-numar").textContent = data.length + " zile libere · " + lucr + " cad în zile lucrătoare · " + a.denumire;
+      $("str-numar").textContent = data.length + " zile libere · " + lucr + " cad în zile lucrătoare · " + a.denumire;
       if (!data.length) lista.appendChild(el("p", "who", "Nu există zile libere pentru acest an școlar."));
       data.forEach((z) => {
         const r = el("div", "ang-rand citire");
@@ -1422,7 +1432,7 @@
             if (!armat) { armat = true; sterge.textContent = "Sigur?"; timer = setTimeout(() => { armat = false; sterge.textContent = "Șterge"; }, 4000); return; }
             clearTimeout(timer); sterge.disabled = true;
             const { error: e } = await db.from("zile_libere").delete().eq("data", z.data);
-            mesajPontaj(e ? "Ziua nu a putut fi ștearsă." : "Ziua liberă a fost ștearsă.", !e);
+            mesajStr(e ? "Ziua nu a putut fi ștearsă." : "Ziua liberă a fost ștearsă.", !e);
             incarcaCalendar();
           });
           r.appendChild(sterge);
@@ -1450,21 +1460,40 @@
     function desenezStructura() {
       const sel = $("str-an"); const a = (sel._ani || []).find((x) => x.id === sel.value); if (!a) return;
       $("str-form-loc").replaceChildren();
-      incarcaStructura($("str-lista"), a, poateModificaAng() && !a.inchis);
+      $("str-lista").replaceChildren();
+      const poate = poateModificaAng() && !a.inchis;
+      if (tabS === "libere") return incarcaCalendar();
+      const CFG = {
+        structura: {},
+        altfel: { filtru: (p) => p.tip === "scoala_altfel", buton: "+ Adaugă Școala Altfel", preset: { tip: "scoala_altfel", den: "Școala Altfel", pc: true }, gol: "Nu ai introdus încă săptămâna „Școala Altfel”." },
+        verde: { filtru: (p) => p.tip === "saptamana_verde", buton: "+ Adaugă Săptămâna Verde", preset: { tip: "saptamana_verde", den: "Săptămâna Verde", pc: true }, gol: "Nu ai introdus încă Săptămâna Verde." },
+        practica: { filtru: (p) => p.practica_comasata, buton: "+ Adaugă perioadă de practică comasată", preset: { tip: "alta", den: "Practică comasată", pc: true }, gol: "Nu ai introdus încă nicio perioadă de practică comasată." }
+      };
+      incarcaStructura($("str-lista"), a, poate, CFG[tabS]);
     }
-    async function incarcaStructura(sec, a, poate) {
+    let tabS = "structura";
+    const anStr = () => { const sel = $("str-an"); return (sel._ani || []).find((x) => x.id === sel.value) || null; };
+    $("tab-str").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button[data-v]"); if (!b) return;
+      tabS = b.dataset.v;
+      $("tab-str").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+      mesajStr(""); desenezStructura();
+    });
+    async function incarcaStructura(sec, a, poate, cfg) {
+      cfg = cfg || {};
       sec.replaceChildren();
-      const { data, error } = await db.from("structura_an").select("id, tip, denumire, de_la, pana_la, practica_comasata")
+      let { data, error } = await db.from("structura_an").select("id, tip, denumire, de_la, pana_la, practica_comasata")
         .eq("an_id", a.id).is("sters_la", null).order("de_la");
       if (error) { sec.appendChild(el("p", "who", "Structura anului școlar nu a putut fi încărcată.")); return; }
+      const toate = data; data = cfg.filtru ? toate.filter(cfg.filtru) : toate;
       if (poate) {
-        const b = el("button", "", "+ Adaugă perioadă"); b.type = "button";
-        b.addEventListener("click", () => formStructura(a, null, () => incarcaStructura(sec, a, poate)));
+        const b = el("button", "", cfg.buton || "+ Adaugă perioadă"); b.type = "button";
+        b.addEventListener("click", () => formStructura(a, null, () => incarcaStructura(sec, a, poate, cfg), cfg.preset));
         sec.appendChild(b);
       }
       const nrp = data.filter((p) => p.practica_comasata).length;
-      $("str-numar").textContent = data.length + " perioade · " + nrp + " cu practică comasată · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "");
-      if (!data.length) sec.appendChild(el("p", "who", "Nu ai introdus încă nicio perioadă pentru acest an școlar."));
+      $("str-numar").textContent = data.length + (data.length === 1 ? " perioadă" : " perioade") + (cfg.filtru ? "" : " · " + nrp + " cu practică comasată") + " · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "");
+      if (!data.length) sec.appendChild(el("p", "who", cfg.gol || "Nu ai introdus încă nicio perioadă pentru acest an școlar."));
       data.forEach((p) => {
         const r = el("div", "ang-rand citire per-" + p.tip);
         const st = el("div", "");
@@ -1475,7 +1504,7 @@
         r.appendChild(st);
         if (poate) {
           const ed = el("button", "mic", "Modifică"); ed.type = "button";
-          ed.addEventListener("click", () => formStructura(a, p, () => incarcaStructura(sec, a, poate)));
+          ed.addEventListener("click", () => formStructura(a, p, () => incarcaStructura(sec, a, poate, cfg), cfg.preset));
           const sterge = el("button", "mic off", "Șterge"); sterge.type = "button";
           let armat = false, timer = null;
           sterge.addEventListener("click", async () => {
@@ -1483,7 +1512,7 @@
             clearTimeout(timer); sterge.disabled = true;
             const { error: e } = await db.from("structura_an").update({ sters_la: new Date().toISOString() }).eq("id", p.id);
             mesajStr(e ? "Perioada nu a putut fi ștearsă." : "Perioada a fost ștearsă.", !e);
-            incarcaStructura(sec, a, poate);
+            incarcaStructura(sec, a, poate, cfg);
           });
           r.append(ed, sterge);
         }
@@ -1491,7 +1520,7 @@
       });
     }
 
-    function formStructura(a, p, dupa) {
+    function formStructura(a, p, dupa, preset) {
       const [y1, y2] = a.denumire.split("–").map(Number);
       const zona = $("str-form-loc"); zona.replaceChildren();
       const box = el("div", "ang-form");
@@ -1508,7 +1537,8 @@
       lc.append(pc, document.createTextNode(" Elevii de liceu și școală profesională fac practică comasată în această perioadă"));
       box.appendChild(lc);
       if (p) { tip.value = p.tip; den.value = p.denumire; de.value = p.de_la; pana.value = p.pana_la; pc.checked = p.practica_comasata; }
-      else tip.addEventListener("change", () => { if (!den.value) den.value = TIP_PER[tip.value].replace(" (modul)", ""); if (tip.value === "scoala_altfel" || tip.value === "saptamana_verde") pc.checked = true; });
+      else if (preset) { tip.value = preset.tip; den.value = preset.den || ""; pc.checked = !!preset.pc; }
+      if (!p) tip.addEventListener("change", () => { if (!den.value) den.value = TIP_PER[tip.value].replace(" (modul)", ""); if (tip.value === "scoala_altfel" || tip.value === "saptamana_verde") pc.checked = true; });
       const ctl = el("div", "ctl");
       const ok = el("button", "", p ? "Salvează" : "Adaugă"); ok.type = "button";
       const nu = el("button", "secondary", "Renunță"); nu.type = "button";
@@ -1533,7 +1563,7 @@
     }
 
     function formZiLibera(y1, y2) {
-      const zona = $("ang-form-loc"); zona.replaceChildren();
+      const zona = $("str-form-loc"); zona.replaceChildren();
       const box = el("div", "ang-form");
       box.appendChild(el("h3", "", "Adaugă zi liberă"));
       const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
@@ -1550,21 +1580,21 @@
       nu.addEventListener("click", () => zona.replaceChildren());
       ok.addEventListener("click", async () => {
         const m = motiv.value.trim();
-        if (!de.value || !m) return mesajPontaj("Alege data și scrie motivul.");
+        if (!de.value || !m) return mesajStr("Alege data și scrie motivul.");
         const sfarsit = pana.value || de.value;
-        if (sfarsit < de.value) return mesajPontaj("„Până la” nu poate fi înaintea datei de început.");
+        if (sfarsit < de.value) return mesajStr("„Până la” nu poate fi înaintea datei de început.");
         const rows = [];
         for (let d = dinIso(de.value); iso(d) <= sfarsit && rows.length < 120; d.setUTCDate(d.getUTCDate() + 1)) {
           const dow = d.getUTCDay();
           if (dow !== 0 && dow !== 6) rows.push({ data: iso(d), motiv: m, tip: tip.value });
         }
-        if (!rows.length) return mesajPontaj("Intervalul ales cade doar în weekend.");
+        if (!rows.length) return mesajStr("Intervalul ales cade doar în weekend.");
         ok.disabled = true;
         const { error } = await db.from("zile_libere").upsert(rows, { onConflict: "data" });
         ok.disabled = false;
-        if (error) return mesajPontaj("Zilele nu au putut fi adăugate. Încearcă din nou.");
+        if (error) return mesajStr("Zilele nu au putut fi adăugate. Încearcă din nou.");
         zona.replaceChildren();
-        mesajPontaj(rows.length === 1 ? "Ziua liberă a fost adăugată." : rows.length + " zile libere au fost adăugate.", true);
+        mesajStr(rows.length === 1 ? "Ziua liberă a fost adăugată." : rows.length + " zile libere au fost adăugate.", true);
         incarcaCalendar();
       });
       ctl.append(ok, nu); box.appendChild(ctl);
@@ -1759,6 +1789,16 @@
           const luna = (x) => (pc && +x ? String(Math.round(Number((+x * lucr * 0.2).toFixed(6)))) : "");
           const doarP = !!r.n.doar_pco;
           const val = { total: doarP ? "" : (total || ""), lucr, pco: doarP ? (total || "") : (pc ? luna(pc.pco) : ""), dt: pc ? luna(pc.dt) : "", pip: pc ? luna(pc.pip) : "" };
+          // Doar plata cu ora: DT + PIP trebuie să dea exact orele din Plata cu ora; se împarte totalul după raportul DT : PIP din tabel.
+          if (doarP) {
+            const sd = pc ? (+pc.dt || 0) : 0, sp = pc ? (+pc.pip || 0) : 0;
+            if (total && sd + sp > 0) { const d = Math.round(total * sd / (sd + sp)); val.dt = d || ""; val.pip = (total - d) || ""; }
+            else { val.dt = ""; val.pip = ""; }
+          } else if (pc) {
+            // Ceilalți: Plata cu ora cuprinde DT și PIP (pco din tabel = orele fără DT/PIP).
+            const t3 = (+val.pco || 0) + (+val.dt || 0) + (+val.pip || 0);
+            val.pco = t3 || "";
+          }
           COD_ABSENTA.forEach((c) => { val[c] = cod[c] || ""; });
           val.nelucr = COD_ABSENTA.reduce((t, c) => t + (cod[c] || 0), 0) || "";
           r.celule = celule; r.val = val;
