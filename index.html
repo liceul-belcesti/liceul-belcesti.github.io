@@ -2289,7 +2289,6 @@
       const cccLuna = foaie.ccc || [];
       const taieri = new Map();
       randuri.forEach((r) => r.celule.forEach((c) => { if (c.taiat) { const a = taieri.get(r.p.id) || { p: r.p, zile: [] }; a.zile.push({ z: c.z.t, auto: c.auto, v: c.v, oreN: c.oreN }); taieri.set(r.p.id, a); } }));
-      if ((!foaie.ajust || !foaie.ajust.size) && !cccLuna.length && !taieri.size) return;
       const normeDupa = new Map(randuri.map((r) => [r.n.id, r]));
       const dd = (t) => Number(t.slice(8, 10)) + " " + LUNI_RO[Number(t.slice(5, 7)) - 1];
       const nume = new Map(foaie.ang.map((p) => [p.id, p.nume]));
@@ -2297,7 +2296,52 @@
       const perioade = (foaie.pract || []).filter((x) => x.pana_la >= start && x.de_la <= sf).sort((a, b) => (a.de_la < b.de_la ? -1 : 1));
       const pe = new Map();
       foaie.ajust.forEach((c, k) => { const [nid, z] = k.split("|"); const r = normeDupa.get(nid); if (!r) return; const a = pe.get(r.p.id) || { p: r.p, n: r.n, zile: [] }; a.zile.push({ z, c }); pe.set(r.p.id, a); });
-      if (!pe.size && !cccLuna.length && !taieri.size) return;
+      // Concedii medicale și învoiri (cu înlocuitori), plus alte modificări manuale
+      const urm = (z) => { const d = dinIso(z); do { d.setUTCDate(d.getUTCDate() + 1); } while (d.getUTCDay() === 0 || d.getUTCDay() === 6 || foaie.libere.has(iso(d))); return iso(d); };
+      const perDe = (a, b) => (a === b ? dd(a) : dd(a) + " – " + dd(b));
+      const zileLuc = []; for (let d = dinIso(start); iso(d) <= sf; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(); if (w !== 0 && w !== 6 && !foaie.libere.has(iso(d))) zileLuc.push(iso(d)); }
+      const NUME_TIP = { CM: "concediu medical", I: "învoire" };
+      const grupe = new Map();
+      (foaie.inloc || []).forEach((q) => {
+        const r = normeDupa.get(q.norma_id); if (!r || q.pana_la < start || q.de_la > sf) return;
+        const k = q.norma_id + "|" + q.tip + "|" + q.de_la + "|" + q.pana_la;
+        const g = grupe.get(k) || { r, tip: q.tip, de: q.de_la < start ? start : q.de_la, pana: q.pana_la > sf ? sf : q.pana_la, qs: [] }; g.qs.push(q); grupe.set(k, g);
+      });
+      const persN = new Map(foaie.ang.map((p) => [p.id, p.nume]));
+      const blocInloc = [...grupe.values()].sort((x, y) => (x.r.p.nume || "").localeCompare(y.r.p.nume || "", "ro") || (x.de < y.de ? -1 : 1)).map((g) => {
+        const d = el("div", "det-pers"); d.appendChild(el("b", "", g.r.p.nume + " – " + NUME_TIP[g.tip] + ", " + perDe(g.de, g.pana)));
+        const orarAbs = (foaie.orar || []).filter((o) => o.angajat_id === g.r.p.id);
+        const acop = new Set(); let modClase = false;
+        g.qs.forEach((q) => {
+          const inl = q.inlocuitor_nume || persN.get(q.inlocuitor_angajat_id) || "—";
+          const zl = zileLuc.filter((z) => z >= g.de && z <= g.pana && q.ore && q.ore[z]);
+          const tot = zl.reduce((t, z) => t + Number(q.ore[z]), 0);
+          let txt;
+          if (q.ore_clase) {
+            modClase = true;
+            txt = zl.filter((z) => q.ore_clase[z]).map((z) => { q.ore_clase[z].forEach((x) => acop.add(dinIso(z).getUTCDay() + "|" + x.split(":")[0] + "|" + x.split(":").slice(1).join(":") + "|" + z)); return ZI_SC[dinIso(z).getUTCDay()] + " " + dd(z) + ": " + q.ore_clase[z].map((x) => "ora " + x.split(":")[0] + " – clasa " + x.split(":").slice(1).join(":")).join(", "); }).join("; ");
+          } else txt = zl.map((z) => dd(z) + ": " + q.ore[z] + (Number(q.ore[z]) === 1 ? " oră" : " ore")).join("; ");
+          d.appendChild(el("div", "det-zi", "Înlocuitor " + inl + " – " + tot + (tot === 1 ? " oră" : " ore") + (txt ? " (" + txt + ")" : "") + "."));
+        });
+        if (modClase) {
+          const nea = [];
+          zileLuc.filter((z) => z >= g.de && z <= g.pana).forEach((z) => { const w = dinIso(z).getUTCDay(); orarAbs.filter((o) => Number(o.zi) === w).sort((a, b) => a.ora - b.ora).forEach((o) => { if (!acop.has(w + "|" + o.ora + "|" + o.clasa + "|" + z)) nea.push(ZI_SC[w] + " " + dd(z) + ": ora " + o.ora + " – clasa " + o.clasa); }); });
+          d.appendChild(el("div", "det-zi", nea.length ? "Ore neacoperite (nu se pontează nimănui): " + nea.join("; ") + "." : "Toate orele au fost acoperite."));
+        }
+        return d;
+      });
+      // alte modificări manuale: coduri (CO, BP, O etc.) și ore schimbate manual
+      const codM = new Map(), oreM = new Map();
+      randuri.forEach((r) => r.celule.forEach((c) => {
+        if (!c.man || !c.v || c.out || c.v === "N") return;
+        if (!/^\d+$/.test(c.v)) { const k = r.p.id + "|" + c.v; const a = codM.get(k) || { p: r.p, cod: c.v, zile: new Set() }; a.zile.add(c.z.t); codM.set(k, a); }
+        else if (!c.taiat && Number(c.v) !== c.auto) { const a = oreM.get(r.p.id) || { p: r.p, zile: [] }; if (!a.zile.some((x) => x.z === c.z.t)) a.zile.push({ z: c.z.t, auto: c.auto, v: c.v }); oreM.set(r.p.id, a); }
+      }));
+      const blocCod = [...codM.values()].sort((x, y) => (x.p.nume || "").localeCompare(y.p.nume || "", "ro")).map((a) => {
+        const zl = [...a.zile].sort(); const runs = []; zl.forEach((z) => { const u = runs[runs.length - 1]; if (u && (urm(u[1]) === z || (dinIso(z) - dinIso(u[1])) === 86400000)) u[1] = z; else runs.push([z, z]); });
+        return a.p.nume + " – " + (COD_NUME[a.cod] || a.cod).toLowerCase() + " (" + a.cod + "): " + runs.map((x) => perDe(x[0], x[1])).join("; ") + ".";
+      });
+      if (!pe.size && !cccLuna.length && !taieri.size && !blocInloc.length && !blocCod.length && !oreM.size) return;
       const sec = el("section", "bloc-loc anexa");
       const cont = el("div", "det-practica");
       cont.appendChild(el("div", "anexa-titlu", "Anexa 1"));
@@ -2345,6 +2389,18 @@
             d.appendChild(el("div", "det-zi", ZI_SC[w] + " " + dd(z) + ": " + t + "."));
           });
           lista.appendChild(d);
+        });
+      }
+      if (blocInloc.length) {
+        const ci = el("p", "det-p"); ci.appendChild(el("b", "", "Concedii medicale și învoiri, cu înlocuitorii lor:")); lista.appendChild(ci);
+        blocInloc.forEach((d) => lista.appendChild(d));
+      }
+      if (blocCod.length || oreM.size) {
+        const cm = el("p", "det-p"); cm.appendChild(el("b", "", "Alte modificări făcute manual în foaie:")); lista.appendChild(cm);
+        blocCod.forEach((t) => lista.appendChild(el("div", "det-zi", t)));
+        [...oreM.values()].sort((x, y) => (x.p.nume || "").localeCompare(y.p.nume || "", "ro")).forEach((a) => {
+          a.zile.sort((x, y) => (x.z < y.z ? -1 : 1));
+          lista.appendChild(el("div", "det-zi", a.p.nume + " – ore modificate manual: " + a.zile.map((x) => ZI_SC[dinIso(x.z).getUTCDay()] + " " + dd(x.z) + ": " + x.auto + " → " + x.v + " ore").join("; ") + "."));
         });
       }
       cont.appendChild(lista); sec.appendChild(cont); cont0.appendChild(sec);
@@ -2908,6 +2964,33 @@
       zona.appendChild(cutie); zona.classList.remove("hidden");
     }
 
+    // Scoate zilele alese din concediile medicale / învoirile persoanei (împarte perioada dacă e nevoie).
+    async function scoateZileDinInlocuiri(p, zile) {
+      const nid = new Set((p.norme || []).map((n) => n.id));
+      const scoase = new Set(zile);
+      const qs = (foaie.inloc || []).filter((q) => nid.has(q.norma_id) && zile.some((z) => z >= q.de_la && z <= q.pana_la));
+      for (const q of qs) {
+        const segmente = []; let cur = null;
+        for (let d = dinIso(q.de_la); iso(d) <= q.pana_la; d.setUTCDate(d.getUTCDate() + 1)) {
+          const z = iso(d);
+          if (scoase.has(z)) { cur = null; continue; }
+          if (!cur) { cur = { de: z, pana: z }; segmente.push(cur); } else cur.pana = z;
+        }
+        const lucr = (sg) => { for (let d = dinIso(sg.de); iso(d) <= sg.pana; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(); if (w !== 0 && w !== 6) return true; } return false; };
+        const buni = segmente.filter(lucr);
+        const filtrat = (obj, sg) => { if (!obj) return obj; const o = {}; Object.keys(obj).forEach((z) => { if (z >= sg.de && z <= sg.pana) o[z] = obj[z]; }); return o; };
+        if (!buni.length) { const { error } = await db.from("pontaj_inlocuiri").update({ sters_la: new Date().toISOString() }).eq("id", q.id); if (error) return error; continue; }
+        const primul = buni[0];
+        const { error } = await db.from("pontaj_inlocuiri").update({ de_la: primul.de, pana_la: primul.pana, ore: filtrat(q.ore, primul), ore_clase: q.ore_clase ? filtrat(q.ore_clase, primul) : null }).eq("id", q.id);
+        if (error) return error;
+        for (const sg of buni.slice(1)) {
+          const { error: e3 } = await db.from("pontaj_inlocuiri").insert({ norma_id: q.norma_id, tip: q.tip, de_la: sg.de, pana_la: sg.pana, inlocuitor_angajat_id: q.inlocuitor_angajat_id, inlocuitor_nume: q.inlocuitor_nume, ore: filtrat(q.ore, sg), ore_clase: q.ore_clase ? filtrat(q.ore_clase, sg) : null });
+          if (e3) return e3;
+        }
+      }
+      return null;
+    }
+
     function deschideEditor(r, t) {
       const zona = $("cel-editor"); zona.replaceChildren();
       const cutie = el("div", "cutie");
@@ -2958,7 +3041,7 @@
       };
       const ctl = el("div", "ctl");
       const ok = el("button", "", "Salvează"); ok.type = "button";
-      const auto = el("button", "secondary", "Șterge codul (revine la automat)"); auto.type = "button";
+      const auto = el("button", "secondary", "Șterge codul (revine la automat; scoate ziua și din concediul medical sau învoire)"); auto.type = "button";
       const nu = el("button", "secondary", "Renunță"); nu.type = "button";
       nu.addEventListener("click", () => zona.classList.add("hidden"));
       zona.addEventListener("click", (e) => { if (e.target === zona) zona.classList.add("hidden"); }, { once: true });
@@ -2983,10 +3066,12 @@
       auto.addEventListener("click", async () => {
         const zile = lista(); auto.disabled = true;
         const { error } = await db.from("pontaj_manual").delete().eq("norma_id", r.n.id).in("zi", zile);
+        if (error) { auto.disabled = false; msg.textContent = "Nu s-a putut reveni la automat. Încearcă din nou."; return; }
+        const e2 = await scoateZileDinInlocuiri(r.p, zile);
         auto.disabled = false;
-        if (error) { msg.textContent = "Nu s-a putut reveni la automat. Încearcă din nou."; return; }
+        if (e2) { msg.textContent = "Codul a fost șters, dar concediul medical sau învoirea nu s-a putut modifica. Încearcă din nou."; incarcaFoaie(); return; }
         zile.forEach((z) => { foaie.manual.delete(r.n.id + "|" + z); foaie.oreN.delete(r.n.id + "|" + z); });
-        zona.classList.add("hidden"); deseneazaFoaia();
+        zona.classList.add("hidden"); incarcaFoaie();
       });
       ctl.append(ok, auto, nu); cutie.appendChild(ctl);
       zona.appendChild(cutie); zona.classList.remove("hidden");
