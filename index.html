@@ -1095,7 +1095,6 @@
     const LOCURI = ["Centru", "Tansa", "Munteni"];
     const NUME_LOC = { Centru: "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești și Grădinița cu program normal Belcești", Munteni: "Școala Gimnazială „Victor Iamandi” Munteni", Tansa: "Școala Primară Tansa" };
     const SEMNATURI = [["Întocmit,", "", "prof. dr. Ciprian MIHAI"], ["Avizat,", "Secretar-șef,", "Elena GHERASIM"], ["Aprobat,", "Director,", "prof. Cătălin - Ionuț BAZILUC"]];
-    const NEDIDACTICE = ["Didactic auxiliar", "Nedidactic"];
     const CATEGORII = {
       Centru: ["Directori", "Educatoare", "Învățători", "Profesori", "Profesori discipline tehnice / ingineri", "Didactic auxiliar", "Nedidactic"],
       Tansa: ["Educatoare", "Învățători", "Profesori", "Didactic auxiliar", "Nedidactic"],
@@ -2094,9 +2093,9 @@
           val.nelucr = COD_ABSENTA.reduce((t, c) => t + (cod[c] || 0), 0) || "";
           r.celule = celule; r.val = val;
         });
-      // Pontaj general: o singură linie pe cadru didactic, cu orele din toate structurile adunate.
+      // Pontaj general: o singură linie pe persoană, cu orele din toate structurile adunate.
       const dupaP = new Map();
-      randuri.filter((r) => !NEDIDACTICE.includes(r.n.categorie)).forEach((r) => { if (!dupaP.has(r.p.id)) dupaP.set(r.p.id, []); dupaP.get(r.p.id).push(r); });
+      randuri.forEach((r) => { if (!dupaP.has(r.p.id)) dupaP.set(r.p.id, []); dupaP.get(r.p.id).push(r); });
       const general = [...dupaP.values()].map((rs) => {
         const celule = rs[0].celule.map((c0, i) => {
           const toate = rs.map((r) => r.celule[i]);
