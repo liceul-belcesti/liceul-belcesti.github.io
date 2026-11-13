@@ -279,6 +279,10 @@
     #pontaj #inloc-btns { justify-content:flex-start; }
     #export-btns button, #inloc-btns button { width:auto; min-height:42px; margin:0; padding:8px 16px; font-size:.92rem; font-weight:800; border-radius:10px; }
     #export-btns button.secondary { border:2px solid var(--accent); color:var(--accent); background:transparent; }
+    #cel-editor .cutie .inloc-rand { display:grid; grid-template-columns:1fr 90px 44px; gap:6px; margin:6px 0; align-items:center; }
+    #cel-editor .cutie .inloc-rand input.hidden { display:none; }
+    #cel-editor .cutie .inloc-rand input.nm-x { grid-column:1 / -1; order:5; }
+    #cel-editor .cutie .inloc-rand button { width:auto; margin:0; min-height:42px; padding:0; }
     #inloc-btns button { background:var(--accent); color:var(--on-accent); border:2px solid var(--accent); }
     .doar-tipar, .antet-tipar, .semnaturi-tipar { display:none; }
     .antet-tipar .ant-logo { max-height:60px; }
@@ -2463,15 +2467,25 @@
       norme.forEach((r) => cine.add(new Option(r.p.nume, r.n.id)));
       const de = camp("De la", document.createElement("input")); de.type = "date"; de.min = foaie.start; de.max = foaie.start.slice(0, 8) + String(foaie.nz).padStart(2, "0"); de.value = de.min;
       const pana = camp("Până la (în aceeași lună; dacă merge mai departe, adaugi separat luna următoare)", document.createElement("input")); pana.type = "date"; pana.min = de.min; pana.max = de.max; pana.value = de.min;
-      const inl = camp("Înlocuitor", document.createElement("select"));
-      inl.add(new Option("Alege…", ""));
       const pers = foaie.ang.slice().sort((a, b) => a.nume.localeCompare(b.nume, "ro"));
-      pers.forEach((p) => inl.add(new Option(p.nume, "a:" + p.id)));
-      inl.add(new Option("Altă persoană (nu este angajat în listă)", "x"));
-      const lN = el("label", "hidden", "Numele și prenumele înlocuitorului"); const nume = document.createElement("input"); nume.maxLength = 80; nume.autocomplete = "off"; nume.className = "hidden";
-      cutie.appendChild(lN); cutie.appendChild(nume);
-      inl.addEventListener("change", () => { const x = inl.value === "x"; lN.classList.toggle("hidden", !x); nume.classList.toggle("hidden", !x); if (x) nume.focus(); });
-      const ore = camp("Ore pe zi ale înlocuitorului (gol = programul celui înlocuit)", document.createElement("input")); ore.inputMode = "numeric"; ore.maxLength = 2; ore.autocomplete = "off";
+      cutie.appendChild(el("label", "", "Înlocuitori (dacă sunt mai mulți, scrie câte ore pe zi ține fiecare; la ultimul, gol = restul orelor)"));
+      const lista = el("div", "inloc-lista"); cutie.appendChild(lista);
+      const randuriInl = [];
+      const adaugaInl = () => {
+        const w = el("div", "inloc-rand");
+        const sel = document.createElement("select"); sel.add(new Option("Alege…", ""));
+        pers.forEach((p) => sel.add(new Option(p.nume, "a:" + p.id)));
+        sel.add(new Option("Altă persoană (nu este angajat în listă)", "x"));
+        const nm = document.createElement("input"); nm.maxLength = 80; nm.autocomplete = "off"; nm.placeholder = "Nume și prenume"; nm.className = "nm-x hidden";
+        const oo = document.createElement("input"); oo.inputMode = "numeric"; oo.maxLength = 2; oo.autocomplete = "off"; oo.placeholder = "Ore pe zi";
+        const sb = el("button", "secondary", "✕"); sb.type = "button"; sb.title = "Scoate înlocuitorul"; sb.setAttribute("aria-label", "Scoate înlocuitorul");
+        sel.addEventListener("change", () => { const x = sel.value === "x"; nm.classList.toggle("hidden", !x); if (x) nm.focus(); });
+        const rd = { w, sel, nm, oo };
+        sb.addEventListener("click", () => { if (randuriInl.length < 2) return; randuriInl.splice(randuriInl.indexOf(rd), 1); w.remove(); sb.disabled = false; });
+        w.append(sel, nm, oo, sb); lista.appendChild(w); randuriInl.push(rd);
+      };
+      adaugaInl();
+      const maiUnul = el("button", "secondary", "+ Adaugă încă un înlocuitor"); maiUnul.type = "button"; maiUnul.addEventListener("click", adaugaInl); cutie.appendChild(maiUnul);
       const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert"); cutie.appendChild(msg);
       const ctl = el("div", "ctl");
       const ok = el("button", "", "Adaugă"); ok.type = "button";
@@ -2482,21 +2496,38 @@
         const r = norme.find((x) => x.n.id === cine.value);
         if (!r) { msg.textContent = "Alege cine lipsește."; return; }
         if (!de.value || !pana.value || pana.value < de.value || de.value < de.min || pana.value > de.max) { msg.textContent = "Alege zilele în cadrul lunii afișate."; return; }
-        if (!inl.value) { msg.textContent = "Alege înlocuitorul."; return; }
-        let inlocId = null, inlocNume = null;
-        if (inl.value === "x") { inlocNume = nume.value.trim(); if (inlocNume.length < 2) { msg.textContent = "Scrie numele înlocuitorului."; return; } }
-        else inlocId = inl.value.slice(2);
-        const fix = ore.value.trim();
-        if (fix && !(/^\d{1,2}$/.test(fix) && Number(fix) >= 1 && Number(fix) <= 24)) { msg.textContent = "Orele pe zi: un număr între 1 și 24."; return; }
-        const oreZi = {};
+        const zileLuc = [];
         for (let d = dinIso(de.value); iso(d) <= pana.value; d.setUTCDate(d.getUTCDate() + 1)) {
           const w = d.getUTCDay(), z = iso(d); if (w === 0 || w === 6 || foaie.libere.has(z)) continue;
-          const o = fix ? Number(fix) : (r.p.norme || []).reduce((t, n) => t + (Number(n["ore_" + ZILE[w - 1]]) || 0), 0);
-          if (o) oreZi[z] = Number(o);
+          zileLuc.push({ z, prog: (r.p.norme || []).reduce((tt, n) => tt + (Number(n["ore_" + ZILE[w - 1]]) || 0), 0) });
         }
-        if (!Object.keys(oreZi).length) { msg.textContent = "Cel înlocuit nu are ore în program în aceste zile. Scrie tu orele pe zi."; return; }
+        const inlocuitori = [], vazuti = new Set();
+        for (const rd of randuriInl) {
+          if (!rd.sel.value) { msg.textContent = "Alege înlocuitorul sau scoate rândul gol."; return; }
+          let id = null, nm = null;
+          if (rd.sel.value === "x") { nm = rd.nm.value.trim(); if (nm.length < 2) { msg.textContent = "Scrie numele înlocuitorului."; return; } }
+          else id = rd.sel.value.slice(2);
+          const cheie = id || nm.toLowerCase();
+          if (vazuti.has(cheie)) { msg.textContent = "Același înlocuitor apare de două ori."; return; }
+          vazuti.add(cheie);
+          const fix = rd.oo.value.trim();
+          if (fix && !(/^\d{1,2}$/.test(fix) && Number(fix) >= 1 && Number(fix) <= 24)) { msg.textContent = "Orele pe zi: un număr între 1 și 24."; return; }
+          inlocuitori.push({ id, nm, fix: fix ? Number(fix) : null });
+        }
+        const multi = inlocuitori.length > 1;
+        if (multi && inlocuitori.slice(0, -1).some((x) => x.fix === null)) { msg.textContent = "Când sunt mai mulți înlocuitori, scrie orele pe zi la fiecare, în afară de ultimul."; return; }
+        const randuriNoi = inlocuitori.map((x, ix) => {
+          const oreZi = {};
+          zileLuc.forEach(({ z, prog }) => {
+            const ocupat = inlocuitori.slice(0, ix).reduce((tt, y) => tt + (y.fix || 0), 0);
+            const o = x.fix !== null ? x.fix : multi ? Math.max(0, prog - ocupat) : prog;
+            if (o) oreZi[z] = o;
+          });
+          return { norma_id: r.n.id, tip, de_la: de.value, pana_la: pana.value, inlocuitor_angajat_id: x.id, inlocuitor_nume: x.nm, ore: oreZi };
+        });
+        if (randuriNoi.some((x) => !Object.keys(x.ore).length)) { msg.textContent = "Cel înlocuit nu are ore în program în aceste zile sau un înlocuitor ar rămâne fără ore. Scrie tu orele pe zi."; return; }
         ok.disabled = true;
-        const { error } = await db.from("pontaj_inlocuiri").insert({ norma_id: r.n.id, tip, de_la: de.value, pana_la: pana.value, inlocuitor_angajat_id: inlocId, inlocuitor_nume: inlocNume, ore: oreZi });
+        const { error } = await db.from("pontaj_inlocuiri").insert(randuriNoi);
         ok.disabled = false;
         if (error) { msg.textContent = "Nu s-a putut salva. Încearcă din nou."; return; }
         zona.classList.add("hidden"); mesajPontaj(tip === "CM" ? "Concediul medical a fost adăugat." : "Învoirea a fost adăugată.", true); incarcaFoaie();
