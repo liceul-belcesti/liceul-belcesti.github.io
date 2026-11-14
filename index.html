@@ -327,6 +327,8 @@
     #pontaj .stare-bara button.b-rosu { background:#c62828; color:#fff; border:2px solid #c62828; font-weight:800; }
     #pontaj .stare-bara button.b-portocaliu { background:#e67700; color:#fff; border:2px solid #e67700; font-weight:800; }
     @media print {
+      body.fara-tipar #foaie, body.fara-tipar #pont-principal > * { display:none !important; }
+      body.fara-tipar #pont-principal::after { content:"Foaia poate fi tipărită doar după închiderea lunii."; display:block; font:16px sans-serif; padding:20px; }
       * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       body { background:#fff !important; }
       #acasa > header, #acasa > main:not(#pontaj), #pontaj > :not(#pont-principal), #pont-principal > :not(#foaie) { display:none !important; }
@@ -2351,7 +2353,7 @@
       $("foaie-libere").textContent = textLibere();
       $("foaie-vacante").textContent = textVacante();
       $("inloc-btns").classList.toggle("hidden", !(edit && poateModificaAng()));
-      deseneazaStare();
+      deseneazaStare(); aplicaBlocareTipar();
       $("foaie-numar").textContent = nrRanduri + (nrRanduri === 1 ? " rând" : " rânduri") + (foaie.stare === "inchis" ? " · luna este închisă" : "") + (foaie.faraPco ? " · nu există tabel de plata cu ora valabil în această lună" : "") + (!edit && foaie.stare !== "inchis" && poatePontaj() ? " · anul școlar este închis" : "");
       [...cont.querySelectorAll(".foaie-scroll")].forEach((x, i) => { if (poz[i]) { x.scrollLeft = poz[i][0]; x.scrollTop = poz[i][1]; } });
     }
@@ -2867,16 +2869,27 @@
     }
     $("inreg-nr").addEventListener("change", salveazaInregistrare);
     $("inreg-data").addEventListener("change", salveazaInregistrare);
+    // Secretariatul și contabilitatea (fără rol de administrator sau director) poate tipări și exporta doar după închiderea lunii.
+    const tiparBlocat = () => !!foaie && (euRoluri.includes("secretariat") || euRoluri.includes("contabilitate")) && !euRoluri.includes("administrator") && !euRoluri.includes("director") && foaie.stare !== "inchis";
+    function aplicaBlocareTipar() {
+      const b = tiparBlocat();
+      document.body.classList.toggle("fara-tipar", b);
+      const msg = "Tipărirea și exportul sunt posibile doar după închiderea lunii.";
+      ["btn-pdf", "btn-xls"].forEach((i) => { $(i).disabled = b; $(i).title = b ? msg : ""; });
+      if (b) $("luna-stare").appendChild(el("span", "who", msg));
+    }
     function tipareste() {
+      if (tiparBlocat()) return;
       const dataTxt = antetVal.data ? antetVal.data.slice(8, 10) + "." + antetVal.data.slice(5, 7) + "." + antetVal.data.slice(0, 4) : "……………";
       document.querySelectorAll("#foaie .ant-nr").forEach((x) => { x.textContent = antetVal.nr || "…………"; });
       document.querySelectorAll("#foaie .ant-data").forEach((x) => { x.textContent = dataTxt; });
       const t0 = document.title; document.title = numeFisierLuna();
       window.print(); setTimeout(() => { document.title = t0; }, 1000);
     }
-    $("btn-pdf").addEventListener("click", () => { if (foaie) cereAntet("pdf"); });
-    $("btn-xls").addEventListener("click", () => { if (foaie) cereAntet("xls"); });
+    $("btn-pdf").addEventListener("click", () => { if (foaie && !tiparBlocat()) cereAntet("pdf"); });
+    $("btn-xls").addEventListener("click", () => { if (foaie && !tiparBlocat()) cereAntet("xls"); });
     async function exportaExcel() {
+      if (tiparBlocat()) return;
 
       if (!foaie) return;
       const buton = $("btn-xls"); buton.disabled = true;
