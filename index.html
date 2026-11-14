@@ -216,6 +216,9 @@
     .user .nm { font-weight:700; word-break:break-word; }
     .badge { padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; background:var(--teal-100); color:var(--accent); }
     .badge.wait { background:#fff1d6; color:#8a5a00; }
+    .badge.necitit { background:#fde4e1; color:#b42318; }
+    .badge.citit { background:#e6eaec; color:#4a5a60; }
+    .anunt-citit { opacity:.8; }
     @media (prefers-color-scheme: dark) { .badge.wait { background:#3a2c0a; color:#ffd27a; } }
     .user .ctl { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
     .user select { flex:1 1 160px; min-height:44px; padding:8px 10px; font:inherit; color:var(--text); background:var(--card);
@@ -1306,12 +1309,8 @@
       const citite = new Set((cit || []).map((x) => x.anunt_id));
       lista.replaceChildren();
       if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există anunțuri."; lista.appendChild(p); return; }
-      const necitite = data.filter((a) => a.creat_de !== euId && !citite.has(a.id));
-      data.forEach((a) => lista.appendChild(randAnunt(a, necitite.includes(a))));
-      if (necitite.length) { // după afișare, anunțurile se marchează ca citite
-        await db.from("anunturi_citite").upsert(necitite.map((a) => ({ anunt_id: a.id, user_id: euId })), { onConflict: "anunt_id,user_id", ignoreDuplicates: true });
-        actualizeazaClopot();
-      }
+      data.forEach((a) => lista.appendChild(randAnunt(a, a.creat_de === euId ? null : !citite.has(a.id))));
+      actualizeazaClopot();
     }
     function randAnunt(a, nou) {
       const azi = new Date().toISOString().slice(0, 10);
@@ -1320,7 +1319,8 @@
       const top = document.createElement("div"); top.className = "top";
       const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = a.titlu;
       top.appendChild(nm);
-      if (nou) { const b = document.createElement("span"); b.className = "badge"; b.textContent = "Nou"; top.appendChild(b); }
+      const stare = document.createElement("span"); // necitit / citit: doar pentru cei care nu au scris anunțul
+      if (nou !== null) { stare.className = "badge " + (nou ? "necitit" : "citit"); stare.textContent = nou ? "Necitit" : "Citit"; top.appendChild(stare); if (!nou) r.classList.add("anunt-citit"); }
       if (a.important) { const b = document.createElement("span"); b.className = "badge wait"; b.textContent = "Important"; top.appendChild(b); }
       const sub = document.createElement("div"); sub.className = "sub";
       sub.textContent = "Publicat la " + dataAnunt(a.creat_la) + (a.expira_la ? " · " + (expirat ? "expirat" : "afișat până la") + " " + dataAnunt(a.expira_la) : "") +
@@ -1345,6 +1345,17 @@
         });
         r.appendChild(z);
       }
+      if (nou === true) {
+        const cit = document.createElement("button"); cit.type = "button"; cit.textContent = "Am citit";
+        cit.addEventListener("click", async () => {
+          cit.disabled = true;
+          const { error } = await db.from("anunturi_citite").upsert({ anunt_id: a.id, user_id: euId }, { onConflict: "anunt_id,user_id", ignoreDuplicates: true });
+          if (error) { cit.disabled = false; return mesajAnunt("Nu s-a putut marca anunțul ca citit."); }
+          stare.className = "badge citit"; stare.textContent = "Citit"; r.classList.add("anunt-citit"); cit.remove();
+          actualizeazaClopot();
+        });
+        const z = document.createElement("div"); z.className = "ctl"; z.appendChild(cit); r.appendChild(z);
+      }
       if (poatePublica()) {
         const ctl = document.createElement("div"); ctl.className = "ctl";
         const mod = document.createElement("button"); mod.type = "button"; mod.textContent = "Modifică";
@@ -1356,7 +1367,7 @@
           clearTimeout(timer); del.disabled = true;
           if (fis.length) await db.storage.from("anunturi").remove(fis.map((f) => f.cale));
           await db.from("anunturi_fisiere").delete().eq("anunt_id", a.id);
-          const { error } = await db.from("anunturi").update({ sters_la: new Date().toISOString() }).eq("id", a.id);
+          const { error } = await db.rpc("sterge_anunt", { p_id: a.id });
           if (error) { del.disabled = false; return mesajAnunt("Ștergerea nu a reușit."); }
           mesajAnunt("Anunțul a fost șters.", true); incarcaAnunturi();
         });
