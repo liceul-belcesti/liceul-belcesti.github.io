@@ -216,6 +216,14 @@
     .user .nm { font-weight:700; word-break:break-word; }
     .badge { padding:2px 10px; border-radius:999px; font-size:.75rem; font-weight:700; background:var(--teal-100); color:var(--accent); }
     .badge.wait { background:#fff1d6; color:#8a5a00; }
+    .anunt-cap { cursor:pointer; }
+    .anunt-sageata { margin-left:auto; color:var(--muted, #5a6b70); font-size:1rem; }
+    .anunt-corp { margin-top:8px; }
+    .anunt-discret { display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; }
+    .link-discret { background:none; border:0; padding:2px 0; width:auto; min-height:0; font-size:.8rem; font-weight:400; color:var(--muted, #5a6b70); text-decoration:underline; cursor:pointer; }
+    .anunt-cititori { margin-top:6px; font-size:.85rem; display:grid; gap:2px; }
+    .anunt-cititori-cap { font-weight:700; margin-bottom:2px; }
+    .cit-nu { color:#b42318; }
     .badge.necitit { background:#b42318; color:#fff; font-size:.9rem; padding:4px 14px; }
     .badge.citit { background:#d9f2e3; color:#14633a; font-size:.9rem; padding:4px 14px; }
     
@@ -1282,10 +1290,10 @@
       const b = $("clopot");
       if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); return; }
       const azi = new Date().toISOString().slice(0, 10);
-      const [a, c] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id")]);
+      const [a, c] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id, necitit")]);
       if (a.error || c.error) return;
-      const citite = new Set(c.data.map((x) => x.anunt_id));
-      const n = a.data.filter((x) => !citite.has(x.id) && (!x.expira_la || x.expira_la >= azi)).length;
+      const citite = new Set(c.data.filter((x) => !x.necitit).map((x) => x.anunt_id));
+      const n = a.data.filter((x) => x.creat_de !== euId && !citite.has(x.id) && (!x.expira_la || x.expira_la >= azi)).length;
       b.classList.remove("hidden");
       $("clopot-nr").textContent = n > 99 ? "99+" : String(n); $("clopot-nr").classList.toggle("hidden", n < 1);
       b.setAttribute("aria-label", n ? n + " anunțuri noi" : "Anunțuri");
@@ -1309,31 +1317,44 @@
         .select("id, titlu, continut, important, pentru, expira_la, creat_la, creat_de, anunturi_fisiere(id, cale, nume, marime)")
         .is("sters_la", null).order("important", { ascending: false }).order("creat_la", { ascending: false }).limit(100);
       if (error) return mesajAnunt("Nu s-au putut încărca anunțurile. Încearcă din nou.");
-      const { data: cit } = await db.from("anunturi_citite").select("anunt_id");
-      const citite = new Set((cit || []).map((x) => x.anunt_id));
+      const { data: cit } = await db.from("anunturi_citite").select("anunt_id, necitit");
+      const citite = new Map((cit || []).map((x) => [x.anunt_id, x]));
       lista.replaceChildren();
       if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există anunțuri."; lista.appendChild(p); return; }
-      data.forEach((a) => lista.appendChild(randAnunt(a, !citite.has(a.id))));
+      data.forEach((a) => lista.appendChild(randAnunt(a, citite.get(a.id) || null)));
       actualizeazaClopot();
     }
-    function randAnunt(a, nou) {
+    function randAnunt(a, rc) {
       const azi = new Date().toISOString().slice(0, 10);
       const expirat = !!a.expira_la && a.expira_la < azi;
+      const propriu = a.creat_de === euId; // autorul nu are stare citit/necitit la propriul anunț
+      let are = !!rc, necitit = !propriu && (!rc || rc.necitit);
       const r = document.createElement("div"); r.className = "user anunt" + (a.important ? " anunt-imp" : "") + (expirat ? " anunt-exp" : "");
-      const top = document.createElement("div"); top.className = "top";
+      const top = document.createElement("div"); top.className = "top anunt-cap"; top.tabIndex = 0; top.setAttribute("role", "button"); top.setAttribute("aria-expanded", "false");
       const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = a.titlu;
       top.appendChild(nm);
-      const stare = document.createElement("span"); top.appendChild(stare);
-      const arataStare = (necitit) => {
-        stare.className = "badge " + (necitit ? "necitit" : "citit"); stare.textContent = necitit ? "● Necitit" : "✓ Citit";
-        r.classList.toggle("anunt-necitit", necitit); r.classList.toggle("anunt-citit", !necitit);
-      };
-      arataStare(nou);
+      const stare = document.createElement("span");
+      if (!propriu) top.appendChild(stare);
+      if (a.important) { const b = document.createElement("span"); b.className = "badge wait"; b.textContent = "Important"; top.appendChild(b); }
+      const sageata = document.createElement("span"); sageata.className = "anunt-sageata"; sageata.textContent = "▾"; top.appendChild(sageata);
       const sub = document.createElement("div"); sub.className = "sub";
       sub.textContent = "Publicat la " + dataAnunt(a.creat_la) + (a.expira_la ? " · " + (expirat ? "expirat" : "afișat până la") + " " + dataAnunt(a.expira_la) : "") +
         (poatePublica() ? " · pentru: " + a.pentru.map((x) => PENTRU[x] || x).join(", ") : "");
       r.append(top, sub);
-      if (a.continut) { const t = document.createElement("div"); t.className = "anunt-text"; t.textContent = a.continut; r.appendChild(t); }
+      const corp = document.createElement("div"); corp.className = "anunt-corp hidden"; r.appendChild(corp);
+      const arataStare = () => {
+        stare.className = "badge " + (necitit ? "necitit" : "citit"); stare.textContent = necitit ? "● Necitit" : "✓ Citit";
+        r.classList.toggle("anunt-necitit", necitit); r.classList.toggle("anunt-citit", !necitit);
+      };
+      if (!propriu) arataStare();
+      const scrieStare = async (nec) => { // rândul din anunturi_citite: prima deschidere = citit; „necitit” este doar al celui care îl cere
+        const { error } = are
+          ? await db.from("anunturi_citite").update({ necitit: nec }).eq("anunt_id", a.id).eq("user_id", euId)
+          : await db.from("anunturi_citite").insert({ anunt_id: a.id, user_id: euId, necitit: nec });
+        if (error) { mesajAnunt("Nu s-a putut schimba starea anunțului."); return false; }
+        are = true; necitit = nec; arataStare(); actualizeazaClopot(); return true;
+      };
+      if (a.continut) { const t = document.createElement("div"); t.className = "anunt-text"; t.textContent = a.continut; corp.appendChild(t); }
       const fis = a.anunturi_fisiere || [];
       if (fis.length) {
         const z = document.createElement("div"); z.className = "anunt-fis";
@@ -1350,24 +1371,36 @@
           });
           z.appendChild(b);
         });
-        r.appendChild(z);
+        corp.appendChild(z);
       }
-      {
-        let necitit = nou;
-        const cit = document.createElement("button"); cit.type = "button";
-        const eticheta = () => { cit.textContent = necitit ? "✓ Marchează ca citit" : "Marchează ca necitit"; cit.className = necitit ? "" : "secondary"; };
-        eticheta();
-        cit.addEventListener("click", async () => {
-          cit.disabled = true;
-          const { error } = necitit
-            ? await db.from("anunturi_citite").upsert({ anunt_id: a.id, user_id: euId }, { onConflict: "anunt_id,user_id", ignoreDuplicates: true })
-            : await db.from("anunturi_citite").delete().eq("anunt_id", a.id).eq("user_id", euId);
-          cit.disabled = false;
-          if (error) return mesajAnunt("Nu s-a putut schimba starea anunțului.");
-          necitit = !necitit; arataStare(necitit); eticheta(); actualizeazaClopot();
+      const discret = document.createElement("div"); discret.className = "anunt-discret"; corp.appendChild(discret);
+      if (!propriu) { // discret: doar pentru contul curent
+        const nec = document.createElement("button"); nec.type = "button"; nec.className = "link-discret"; nec.textContent = "Marchează ca necitit pentru mine";
+        nec.addEventListener("click", async () => { nec.disabled = true; const ok = await scrieStare(true); nec.disabled = false; if (ok) { corp.classList.add("hidden"); top.setAttribute("aria-expanded", "false"); sageata.textContent = "▾"; } });
+        discret.appendChild(nec);
+      }
+      if (poatePublica()) { // cine a deschis anunțul
+        const cine = document.createElement("button"); cine.type = "button"; cine.className = "link-discret"; cine.textContent = "Cine a citit";
+        const lista = document.createElement("div"); lista.className = "anunt-cititori hidden";
+        cine.addEventListener("click", async () => {
+          if (!lista.classList.contains("hidden")) { lista.classList.add("hidden"); return; }
+          cine.disabled = true; const { data, error } = await db.rpc("cititori_anunt", { p_id: a.id }); cine.disabled = false;
+          if (error) return mesajAnunt("Lista nu a putut fi încărcată.");
+          lista.replaceChildren();
+          const total = data.length, citit = data.filter((x) => x.citit_la).length;
+          const cap = document.createElement("div"); cap.className = "anunt-cititori-cap"; cap.textContent = "Au deschis anunțul: " + citit + " din " + total; lista.appendChild(cap);
+          data.forEach((x) => { const l = document.createElement("div"); l.className = x.citit_la ? "cit-da" : "cit-nu"; l.textContent = (x.citit_la ? "✓ " : "○ ") + x.nume + (x.citit_la ? " · " + dataAnunt(x.citit_la) : " · nu l-a deschis"); lista.appendChild(l); });
+          lista.classList.remove("hidden");
         });
-        const z = document.createElement("div"); z.className = "ctl"; z.appendChild(cit); r.appendChild(z);
+        discret.appendChild(cine); corp.appendChild(lista);
       }
+      const comuta = async () => {
+        const deschis = corp.classList.toggle("hidden") === false;
+        top.setAttribute("aria-expanded", String(deschis)); sageata.textContent = deschis ? "▴" : "▾";
+        if (deschis && !propriu && necitit) await scrieStare(false); // deschiderea = citit
+      };
+      top.addEventListener("click", comuta);
+      top.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); comuta(); } });
       if (poatePublica()) {
         const ctl = document.createElement("div"); ctl.className = "ctl";
         const mod = document.createElement("button"); mod.type = "button"; mod.textContent = "Modifică";
@@ -1383,7 +1416,7 @@
           if (error) { del.disabled = false; return mesajAnunt("Ștergerea nu a reușit."); }
           mesajAnunt("Anunțul a fost șters.", true); incarcaAnunturi();
         });
-        ctl.append(mod, del); r.appendChild(ctl);
+        ctl.append(mod, del); corp.appendChild(ctl);
       }
       return r;
     }
@@ -1438,7 +1471,6 @@
         let id = a && a.id;
         if (a) { const { error } = await db.from("anunturi").update(rand).eq("id", a.id); if (error) { salv.disabled = false; return mesajAnunt("Salvarea nu a reușit."); } }
         else { const { data, error } = await db.from("anunturi").insert(rand).select("id").single(); if (error || !data) { salv.disabled = false; return mesajAnunt("Publicarea nu a reușit."); } id = data.id; }
-        if (!a) await db.from("anunturi_citite").upsert({ anunt_id: id, user_id: euId }, { onConflict: "anunt_id,user_id", ignoreDuplicates: true });
         let esuate = 0;
         for (const x of [...sterse]) {
           await db.storage.from("anunturi").remove([x.cale]);
