@@ -107,6 +107,9 @@
     .alerta { display:block; width:100%; margin:0 0 16px; padding:14px 16px; min-height:48px; text-align:left; font-weight:700;
               color:#fff; background:var(--err); border:0; border-radius:12px; cursor:pointer; }
     .alerta.hidden { display:none; }
+    .popup-copie { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.5); }
+    .popup-copie .popup-cutie { width:100%; max-width:440px; background:var(--card); color:var(--text); border-radius:16px; padding:20px; box-shadow:0 8px 30px rgba(0,0,0,.35); }
+    .popup-copie h3 { margin:0 0 8px; }
     .tile { position:relative; }
     .cnt { position:absolute; top:10px; right:10px; min-width:26px; height:26px; padding:0 8px; border-radius:13px; display:inline-flex;
            align-items:center; justify-content:center; font-size:.85rem; font-weight:800; color:#fff; background:var(--err); }
@@ -622,6 +625,7 @@
       </div>
 
       <button id="alerta" class="alerta hidden" type="button"></button>
+      <button id="alerta-copie" class="alerta hidden" type="button"></button>
 
       <h3 class="sect">Modulele tale</h3>
       <div id="module" class="grid"></div>
@@ -762,6 +766,7 @@
         <button type="button" role="tab" data-v="conturi" aria-selected="true">Conturi</button>
         <button type="button" role="tab" data-v="sterse" aria-selected="false">Șterse</button>
         <button type="button" role="tab" data-v="istoric" aria-selected="false">Istoric</button>
+        <button type="button" role="tab" data-v="copie" id="tab-copie" class="hidden" aria-selected="false">Copie de siguranță</button>
       </div>
       <div id="panou-msg" class="panel-msg" role="alert"></div>
       <div id="lista"></div>
@@ -827,6 +832,7 @@
       a.textContent = n === 1 ? "🔔 1 cont nou așteaptă aprobarea. Apasă ca să îl vezi." : "🔔 " + n + " conturi noi așteaptă aprobarea. Apasă ca să le vezi.";
       const sel = $("activ-ca");
       deseneazaModule(sel && sel.value ? [sel.value] : euRoluri);
+      verificaCopie();
       document.querySelectorAll("#tab-panou button[data-v=conturi] .pt").forEach((x) => x.remove());
       if (n > 0) { const p = document.createElement("span"); p.className = "pt"; p.textContent = n; document.querySelector("#tab-panou button[data-v=conturi]").appendChild(p); }
     }
@@ -899,8 +905,9 @@
       if (euId) actualizeazaNotificari();
     }
     $("alerta").addEventListener("click", () => deschideModul("utilizatori"));
+    $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
-    function deschideModul(cheie) {
+    function deschideModul(cheie, vedereIni) {
       if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura") return;
       memoreazaVedere(cheie);
       if (cheie === "pontaj") return deschidePontaj();
@@ -912,15 +919,83 @@
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("panou").classList.remove("hidden");
       mesajPanou("");
-      vedere = "conturi";
-      $("tab-panou").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === "conturi" ? "true" : "false"));
+      vedere = vedereIni || "conturi";
+      const adm = euRoluri.includes("administrator");
+      $("tab-copie").classList.toggle("hidden", !adm); $("tab-panou").classList.toggle("t4", adm); $("tab-panou").classList.toggle("t3", !adm);
+      $("tab-panou").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === vedere ? "true" : "false"));
       incarcaUtilizatori();
     }
 
     let vedere = "conturi";
     const dataRo = (t) => new Date(t).toLocaleString("ro-RO", { dateStyle: "short", timeStyle: "short" });
 
+    // Copia de siguranță: doar administratorul; baza de date gratuită nu are copii automate.
+    async function verificaCopie() {
+      const a = $("alerta-copie");
+      if (!euRoluri.includes("administrator")) { a.classList.add("hidden"); return null; }
+      const { data, error } = await db.rpc("ultima_copie");
+      if (error) return null;
+      const zile = data ? Math.floor((Date.now() - new Date(data).getTime()) / 864e5) : null;
+      a.classList.toggle("hidden", !(zile === null || zile >= 7));
+      a.textContent = zile === null ? "💾 Nu ai făcut încă nicio copie de siguranță. Apasă ca să o descarci." : "💾 Ultima copie de siguranță are " + zile + " zile. Apasă ca să faci una nouă.";
+      if (zile === null || zile >= 7) arataPopupCopie(zile);
+      return data;
+    }
+    // La prima autentificare după 7 zile (sau dacă nu există nicio copie) apare o fereastră, o singură dată pe sesiune.
+    function arataPopupCopie(zile) {
+      let gata = false; try { gata = sessionStorage.getItem("popupCopie") === "1"; sessionStorage.setItem("popupCopie", "1"); } catch (e) {}
+      if (gata || document.getElementById("popup-copie")) return;
+      const fond = document.createElement("div"); fond.id = "popup-copie"; fond.className = "popup-copie"; fond.setAttribute("role", "dialog"); fond.setAttribute("aria-modal", "true");
+      const c = document.createElement("div"); c.className = "popup-cutie";
+      const h = document.createElement("h3"); h.textContent = "Copie de siguranță";
+      const p = document.createElement("p"); p.className = "who";
+      p.textContent = zile === null ? "Nu ai făcut încă nicio copie de siguranță a datelor." : "Au trecut " + zile + " zile de la ultima copie de siguranță a datelor.";
+      const p2 = document.createElement("p"); p2.className = "who"; p2.textContent = "Descarc-o acum și păstreaz-o pe un disc sau un stick al tău.";
+      const m = document.createElement("p"); m.className = "who";
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const da = document.createElement("button"); da.type = "button"; da.textContent = "⬇ Descarcă acum";
+      const nu = document.createElement("button"); nu.type = "button"; nu.className = "secondary"; nu.textContent = "Mai târziu";
+      nu.addEventListener("click", () => fond.remove());
+      da.addEventListener("click", async () => {
+        da.disabled = true; m.textContent = "Se pregătește copia…";
+        const d = await descarcaCopie();
+        if (!d) { da.disabled = false; m.textContent = "Copia nu s-a putut descărca. Încearcă din nou."; return; }
+        fond.remove(); verificaCopie();
+      });
+      ctl.append(da, nu); c.append(h, p, p2, m, ctl); fond.appendChild(c); document.body.appendChild(fond);
+    }
+    async function descarcaCopie() {
+      const { data, error } = await db.rpc("copie_siguranta");
+      if (error || !data) return null;
+      const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = "copie-liceul-belcesti-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      return data;
+    }
+    async function deseneazaCopie() {
+      const lista = $("lista"); lista.replaceChildren();
+      if (!euRoluri.includes("administrator")) return mesajPanou("Doar administratorul poate descărca copia de siguranță.");
+      const cutie = document.createElement("div"); cutie.className = "user";
+      const t = document.createElement("div"); t.className = "nm"; t.textContent = "Copie de siguranță a datelor";
+      const d = document.createElement("div"); d.className = "info";
+      d.textContent = "Fișierul conține toate datele platformei: angajați, norme, pontaj, orar, structura anului, conturi și istoric. Conține date personale: păstrează-l pe un disc sau un stick al tău, nu în folderul site-ului și nu îl trimite prin e-mail.";
+      const st = document.createElement("div"); st.className = "info";
+      const ultima = await verificaCopie();
+      st.textContent = ultima ? "Ultima copie descărcată: " + dataRo(ultima) : "Nu s-a descărcat încă nicio copie.";
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const b = document.createElement("button"); b.type = "button"; b.textContent = "⬇ Descarcă copia de siguranță";
+      b.addEventListener("click", async () => {
+        b.disabled = true; mesajPanou("Se pregătește copia…");
+        const data = await descarcaCopie();
+        if (!data) { b.disabled = false; return mesajPanou("Copia nu s-a putut descărca. Încearcă din nou."); }
+        mesajPanou("Copia a fost descărcată (" + data.randuri + " înregistrări). Păstreaz-o într-un loc sigur.", true);
+        b.disabled = false; const u = await verificaCopie(); st.textContent = "Ultima copie descărcată: " + dataRo(u || new Date());
+      });
+      ctl.appendChild(b); cutie.append(t, d, st, ctl); lista.appendChild(cutie);
+    }
     async function incarcaUtilizatori() {
+      if (vedere === "copie") return deseneazaCopie();
       const lista = $("lista");
       const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de, angajat_nume";
       if (vedere === "istoric") {
