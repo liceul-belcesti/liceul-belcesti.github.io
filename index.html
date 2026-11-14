@@ -1382,6 +1382,12 @@
       const li = document.createElement("label"); li.className = "ang-inactivi";
       const imp = Object.assign(document.createElement("input"), { type: "checkbox", checked: !!(a && a.important) });
       li.append(imp, document.createTextNode(" Important (apare primul)")); f.appendChild(li);
+      let mail = null;
+      if (!a) {
+        const lm = document.createElement("label"); lm.className = "ang-inactivi";
+        mail = Object.assign(document.createElement("input"), { type: "checkbox", checked: true });
+        lm.append(mail, document.createTextNode(" Trimite și pe e-mail destinatarilor")); f.appendChild(lm);
+      }
       const sterse = new Set();
       if (a && (a.anunturi_fisiere || []).length) {
         const lf = document.createElement("label"); lf.textContent = "Fișiere atașate (bifează pentru a le elimina)"; f.appendChild(lf);
@@ -1421,8 +1427,17 @@
           const { error: e2 } = await db.from("anunturi_fisiere").insert({ anunt_id: id, cale, nume: x.name.slice(0, 200), tip: FISIERE_OK[ext], marime: x.size });
           if (e2) { esuate++; await db.storage.from("anunturi").remove([cale]); }
         }
+        let notaMail = "";
+        if (!a && mail && mail.checked) {
+          mesajAnunt("Se trimit e-mailurile…");
+          try {
+            const { data: r, error: er } = await db.functions.invoke("trimite-anunt-email", { body: { anunt_id: id } });
+            if (er || !r || r.eroare) notaMail = " E-mailurile nu au putut fi trimise.";
+            else notaMail = " E-mail trimis către " + r.trimise + (r.trimise === 1 ? " persoană" : " persoane") + (r.esuate ? ", " + r.esuate + " nereușite" : "") + ".";
+          } catch (e) { notaMail = " E-mailurile nu au putut fi trimise."; }
+        }
         zona.replaceChildren();
-        mesajAnunt(esuate ? "Anunțul a fost salvat, dar " + esuate + (esuate === 1 ? " fișier nu a putut fi procesat." : " fișiere nu au putut fi procesate.") : (a ? "Anunțul a fost modificat." : "Anunțul a fost publicat."), !esuate);
+        mesajAnunt(esuate ? "Anunțul a fost salvat, dar " + esuate + (esuate === 1 ? " fișier nu a putut fi procesat." : " fișiere nu au putut fi procesate.") : (a ? "Anunțul a fost modificat." : "Anunțul a fost publicat.") + notaMail, !esuate);
         incarcaAnunturi();
       });
       ctl.append(salv, nu); f.appendChild(ctl); zona.appendChild(f);
