@@ -218,11 +218,11 @@
     .badge.wait { background:#fff1d6; color:#8a5a00; }
     .badge.necitit { background:#b42318; color:#fff; font-size:.9rem; padding:4px 14px; }
     .badge.citit { background:#d9f2e3; color:#14633a; font-size:.9rem; padding:4px 14px; }
-    .badge.autor { background:#e6eaec; color:#4a5a60; font-size:.85rem; padding:3px 12px; }
+    
     .user.anunt.anunt-necitit { background:rgba(180,35,24,.08); border:2px solid #b42318; }
     .user.anunt.anunt-necitit .nm { font-size:1.15rem; }
     .user.anunt.anunt-citit { border:2px solid #2e9d62; }
-    @media (prefers-color-scheme: dark) { .badge.citit { background:#12351f; color:#8fe0b2; } .badge.autor { background:#2a3438; color:#b8c7cc; } }
+    @media (prefers-color-scheme: dark) { .badge.citit { background:#12351f; color:#8fe0b2; } }
     @media (prefers-color-scheme: dark) { .badge.wait { background:#3a2c0a; color:#ffd27a; } }
     .user .ctl { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
     .user select { flex:1 1 160px; min-height:44px; padding:8px 10px; font:inherit; color:var(--text); background:var(--card);
@@ -1285,7 +1285,7 @@
       const [a, c] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id")]);
       if (a.error || c.error) return;
       const citite = new Set(c.data.map((x) => x.anunt_id));
-      const n = a.data.filter((x) => x.creat_de !== euId && !citite.has(x.id) && (!x.expira_la || x.expira_la >= azi)).length;
+      const n = a.data.filter((x) => !citite.has(x.id) && (!x.expira_la || x.expira_la >= azi)).length;
       b.classList.remove("hidden");
       $("clopot-nr").textContent = n > 99 ? "99+" : String(n); $("clopot-nr").classList.toggle("hidden", n < 1);
       b.setAttribute("aria-label", n ? n + " anunțuri noi" : "Anunțuri");
@@ -1313,7 +1313,7 @@
       const citite = new Set((cit || []).map((x) => x.anunt_id));
       lista.replaceChildren();
       if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există anunțuri."; lista.appendChild(p); return; }
-      data.forEach((a) => lista.appendChild(randAnunt(a, a.creat_de === euId ? null : !citite.has(a.id))));
+      data.forEach((a) => lista.appendChild(randAnunt(a, !citite.has(a.id))));
       actualizeazaClopot();
     }
     function randAnunt(a, nou) {
@@ -1323,10 +1323,12 @@
       const top = document.createElement("div"); top.className = "top";
       const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = a.titlu;
       top.appendChild(nm);
-      const stare = document.createElement("span"); // necitit / citit: doar pentru cei care nu au scris anunțul
-      if (nou !== null) { stare.className = "badge " + (nou ? "necitit" : "citit"); stare.textContent = nou ? "● Necitit" : "✓ Citit"; top.appendChild(stare); r.classList.add(nou ? "anunt-necitit" : "anunt-citit"); }
-      else { stare.className = "badge autor"; stare.textContent = "Publicat de tine"; top.appendChild(stare); }
-      if (a.important) { const b = document.createElement("span"); b.className = "badge wait"; b.textContent = "Important"; top.appendChild(b); }
+      const stare = document.createElement("span"); top.appendChild(stare);
+      const arataStare = (necitit) => {
+        stare.className = "badge " + (necitit ? "necitit" : "citit"); stare.textContent = necitit ? "● Necitit" : "✓ Citit";
+        r.classList.toggle("anunt-necitit", necitit); r.classList.toggle("anunt-citit", !necitit);
+      };
+      arataStare(nou);
       const sub = document.createElement("div"); sub.className = "sub";
       sub.textContent = "Publicat la " + dataAnunt(a.creat_la) + (a.expira_la ? " · " + (expirat ? "expirat" : "afișat până la") + " " + dataAnunt(a.expira_la) : "") +
         (poatePublica() ? " · pentru: " + a.pentru.map((x) => PENTRU[x] || x).join(", ") : "");
@@ -1350,14 +1352,19 @@
         });
         r.appendChild(z);
       }
-      if (nou === true) {
-        const cit = document.createElement("button"); cit.type = "button"; cit.textContent = "✓ Am citit";
+      {
+        let necitit = nou;
+        const cit = document.createElement("button"); cit.type = "button";
+        const eticheta = () => { cit.textContent = necitit ? "✓ Marchează ca citit" : "Marchează ca necitit"; cit.className = necitit ? "" : "secondary"; };
+        eticheta();
         cit.addEventListener("click", async () => {
           cit.disabled = true;
-          const { error } = await db.from("anunturi_citite").upsert({ anunt_id: a.id, user_id: euId }, { onConflict: "anunt_id,user_id", ignoreDuplicates: true });
-          if (error) { cit.disabled = false; return mesajAnunt("Nu s-a putut marca anunțul ca citit."); }
-          stare.className = "badge citit"; stare.textContent = "✓ Citit"; r.classList.remove("anunt-necitit"); r.classList.add("anunt-citit"); cit.remove();
-          actualizeazaClopot();
+          const { error } = necitit
+            ? await db.from("anunturi_citite").upsert({ anunt_id: a.id, user_id: euId }, { onConflict: "anunt_id,user_id", ignoreDuplicates: true })
+            : await db.from("anunturi_citite").delete().eq("anunt_id", a.id).eq("user_id", euId);
+          cit.disabled = false;
+          if (error) return mesajAnunt("Nu s-a putut schimba starea anunțului.");
+          necitit = !necitit; arataStare(necitit); eticheta(); actualizeazaClopot();
         });
         const z = document.createElement("div"); z.className = "ctl"; z.appendChild(cit); r.appendChild(z);
       }
@@ -1431,6 +1438,7 @@
         let id = a && a.id;
         if (a) { const { error } = await db.from("anunturi").update(rand).eq("id", a.id); if (error) { salv.disabled = false; return mesajAnunt("Salvarea nu a reușit."); } }
         else { const { data, error } = await db.from("anunturi").insert(rand).select("id").single(); if (error || !data) { salv.disabled = false; return mesajAnunt("Publicarea nu a reușit."); } id = data.id; }
+        if (!a) await db.from("anunturi_citite").upsert({ anunt_id: id, user_id: euId }, { onConflict: "anunt_id,user_id", ignoreDuplicates: true });
         let esuate = 0;
         for (const x of [...sterse]) {
           await db.storage.from("anunturi").remove([x.cale]);
