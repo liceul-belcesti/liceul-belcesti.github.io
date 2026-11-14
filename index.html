@@ -316,6 +316,7 @@
     #pontaj #rand-an-luna #an-select { width:auto; min-width:150px; min-height:44px; font-size:1.05rem; font-weight:800; color:var(--accent); background:var(--teal-100); border:2px solid var(--accent); }
     #pontaj #rand-an-luna .luna-bara { flex:1 1 280px; margin:0; }
     #pontaj:has(#pont-principal.hidden) #rand-an-luna .luna-bara, #pontaj:has(#pont-principal.hidden) #rand-an-luna .inreg-bara { display:none; }
+    #pontaj.mod-propriu .inreg-bara, #pontaj.mod-propriu #bara-foaie { display:none !important; }
     #pontaj .inreg-bara { display:flex; align-items:center; gap:8px; flex:0 1 auto; }
     #pontaj .inreg-bara input { width:auto; min-height:44px; padding:6px 10px; font:inherit; font-weight:700; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
     #pontaj .inreg-bara #inreg-nr { width:110px; }
@@ -796,7 +797,7 @@
       director:      ["utilizatori", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
       secretariat:   ["pontaj", "structura", "anunturi", "orar", "registru"],
       contabilitate: ["pontaj", "structura"],
-      profesor:      ["anunturi", "orar", "altfel", "registru"],
+      profesor:      ["pontaj"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -867,6 +868,7 @@
         const text = document.createElement("div"); text.className = "txt";
         const t = document.createElement("div"); t.className = "t"; t.textContent = m.t; text.appendChild(t);
         (m.sub || [m.d]).forEach((x) => { const d = document.createElement("div"); d.className = "d"; d.textContent = x; text.appendChild(d); });
+        if (cheie === "pontaj" && !roluri.some((r) => ["administrator", "director", "secretariat", "contabilitate"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Pontajele închise ale tale" })); }
         if (m.activ) c.append(ico, text); else c.append(soon, ico, text);
         if (cheie === "utilizatori" && inAsteptare > 0) {
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = inAsteptare;
@@ -1185,21 +1187,43 @@
     }
     const anulScolarZilei = () => { const d = new Date(); const y = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; return y + "–" + (y + 1); };
 
+    // Profesorul (fără drepturi de pontaj) vede doar propriile pontaje închise, fără modificări.
+    let modPropriu = false, inchiseMele = [];
     async function deschidePontaj() {
+      modPropriu = !poatePontaj() && euRoluri.includes("profesor");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("pontaj").classList.remove("hidden");
+      $("pontaj").classList.toggle("mod-propriu", modPropriu);
+      document.querySelector("#pontaj .hello").textContent = modPropriu ? "Pontajul meu" : "Pontaj";
       mesajPontaj("");
       $("ang-form-loc").replaceChildren();
       $("an-nou-form").classList.add("hidden");
       $("an-actiuni").classList.toggle("hidden", !poateAni());
       $("administrare").classList.add("hidden");
       $("pont-principal").classList.remove("hidden");
-      $("btn-admin").classList.remove("hidden"); $("btn-pco").classList.remove("hidden");
+      $("btn-admin").classList.toggle("hidden", modPropriu); $("btn-pco").classList.toggle("hidden", modPropriu);
       $("plata-ora").classList.add("hidden");
       await incarcaAni();
     }
 
+    async function incarcaAniPropriu(alege) {
+      const { data, error } = await db.rpc("pontaj_inchise_mele");
+      if (error) return mesajPontaj("Nu s-au putut încărca pontajele. Încearcă din nou.");
+      inchiseMele = (data || []).map((x) => ({ an_id: x.an_id, denumire: x.denumire, luna: String(x.luna).slice(0, 10) }));
+      const ani = new Map(); inchiseMele.forEach((x) => ani.set(x.an_id, { id: x.an_id, denumire: x.denumire, inchis: false }));
+      aniScolari = [...ani.values()].sort((a, b) => b.denumire.localeCompare(a.denumire));
+      const sel = $("an-select"); sel.replaceChildren();
+      if (!aniScolari.length) {
+        anId = null; foaie = null; $("luna-select").replaceChildren(); $("luna-info").textContent = ""; $("luna-stare").replaceChildren(); $("foaie-numar").textContent = "";
+        $("foaie").replaceChildren(el("p", "who", "Nu există încă pontaje închise.")); return;
+      }
+      anId = (aniScolari.find((x) => x.id === (alege || anId)) || aniScolari[0]).id;
+      aniScolari.forEach((x) => sel.add(new Option(x.denumire, x.id)));
+      sel.value = anId;
+      incarcaFoaie();
+    }
     async function incarcaAni(alege) {
+      if (modPropriu) return incarcaAniPropriu(alege);
       const { data, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false });
       if (error) return mesajPontaj("Nu s-au putut încărca anii școlari. Încearcă din nou.");
       aniScolari = data;
@@ -1498,6 +1522,7 @@
     // Ani școlari: creare (cu copierea listei) și închidere.
     $("an-select").addEventListener("change", () => {
       anId = $("an-select").value;
+      if (modPropriu) { incarcaFoaie(); return; }
       try { localStorage.setItem("anPontaj", anId); } catch (e) {}
       mesajPontaj("");
       actualizeazaAn(); incarcaTab();
@@ -1934,12 +1959,12 @@
     }
     function pregatesteLuni() {
       const a = anCurent(); if (!a) return;
-      const luni = luniAn(a);
+      const luni = modPropriu ? inchiseMele.filter((x) => x.an_id === anId).map((x) => x.luna).sort() : luniAn(a);
       const sel = $("luna-select"); sel.replaceChildren();
       luni.forEach((t) => sel.add(new Option(numeLuna(t), t)));
       let salvat = ""; try { salvat = localStorage.getItem("lunaPontaj") || ""; } catch (e) {}
       const azi = iso(new Date()).slice(0, 7) + "-01";
-      lunaSel = luni.includes(lunaSel) ? lunaSel : luni.includes(salvat) ? salvat : luni.includes(azi) ? azi : luni[0];
+      lunaSel = luni.includes(lunaSel) ? lunaSel : luni.includes(salvat) ? salvat : luni.includes(azi) ? azi : modPropriu ? luni[luni.length - 1] : luni[0];
       sel.value = lunaSel;
     }
     async function incarcaFoaie() {
@@ -1954,6 +1979,15 @@
       cont.replaceChildren(el("p", "who", "Se încarcă…"));
       const cerere = ++cerereFoaie;
       try {
+        let D, r0, snap, stareLuna, pr = null;
+        if (modPropriu) {
+          const { data: rp, error: e0 } = await db.rpc("pontaj_propriu", { p_an: anId, p_luna: start });
+          if (e0) throw e0;
+          if (cerere !== cerereFoaie) return;
+          if (!rp || !rp.gasit) { cont.replaceChildren(el("p", "who", rp ? "Nu figurezi în lista de angajați a acestei luni." : "Pontajul acestei luni nu este închis.")); return; }
+          pr = rp; snap = true; stareLuna = "inchis"; r0 = { nr_inregistrare: rp.nr_inregistrare, data_inregistrare: rp.data_inregistrare };
+          D = { ang: rp.ang, manual: rp.manual, libere: rp.libere, inloc: rp.inloc, pco: rp.pco, faraPco: !!rp.faraPco, orar: rp.orar, pract: rp.pract, vac: rp.vac, ccc: rp.ccc, fp: rp.fp };
+        } else {
         const [ang, manual, libere, tabele, luniRand, inloc, orarRows, practRows, vacRows, cccRows, fpRows] = await Promise.all([
           toate(() => db.from("angajati").select("id, nume, norme(id, loc, categorie, functie, ordine, doar_pco, angajat_de_la, angajat_pana_la, ore_lu, ore_ma, ore_mi, ore_jo, ore_vi)").eq("an_id", anId).is("sters_la", null).order("nume")),
           toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare, ore_n").gte("zi", start).lte("zi", sfarsit).order("norma_id").order("zi")),
@@ -1971,9 +2005,11 @@
         const tab = tabele.data && tabele.data[0];
         const pcoVal = tab ? await toate(() => db.from("pco_valori").select("angajat_id, loc, pco, dt, pip").eq("tabel_id", tab.id).order("angajat_id")) : [];
         if (cerere !== cerereFoaie) return;
-        const r0 = luniRand.data && luniRand.data[0];
-        const snap = r0 && r0.stare === "inchis" && r0.instantaneu && r0.instantaneu.ang ? r0.instantaneu : null;
-        const D = snap ? { ang: snap.ang, manual: snap.manual || [], libere: snap.libere || [], inloc: snap.inloc || [], pco: snap.pco || [], faraPco: !!snap.faraPco, orar: snap.orar || [], pract: snap.pract || [], vac: snap.vac || [], ccc: snap.ccc || [], fp: snap.fp || [] } : { ang, manual, libere, inloc, pco: pcoVal, faraPco: !tab, orar: orarRows, pract: practRows, vac: vacRows, ccc: cccRows, fp: fpRows };
+        r0 = luniRand.data && luniRand.data[0];
+        snap = r0 && r0.stare === "inchis" && r0.instantaneu && r0.instantaneu.ang ? r0.instantaneu : null;
+        D = snap ? { ang: snap.ang, manual: snap.manual || [], libere: snap.libere || [], inloc: snap.inloc || [], pco: snap.pco || [], faraPco: !!snap.faraPco, orar: snap.orar || [], pract: snap.pract || [], vac: snap.vac || [], ccc: snap.ccc || [], fp: snap.fp || [] } : { ang, manual, libere, inloc, pco: pcoVal, faraPco: !tab, orar: orarRows, pract: practRows, vac: vacRows, ccc: cccRows, fp: fpRows };
+        stareLuna = (luniRand.data && luniRand.data[0] && luniRand.data[0].stare) || "in_lucru";
+        }
         foaie = {
           start, nz, ang: D.ang, deLaInstantaneu: !!snap,
           manual: new Map(D.manual.map((x) => [x.norma_id + "|" + x.zi, x.valoare])),
@@ -1982,7 +2018,7 @@
           libere: new Map(D.libere.map((x) => [x.data, x])),
           inloc: D.inloc,
           pco: new Map(D.pco.map((v) => [v.angajat_id + "|" + v.loc, v])),
-          stare: (luniRand.data && luniRand.data[0] && luniRand.data[0].stare) || "in_lucru",
+          stare: stareLuna, propriuId: pr ? pr.propriu_id : null,
           faraPco: D.faraPco, orar: D.orar, pract: D.pract, vacRanduri: D.vac, ccc: D.ccc
         };
         foaie.ajust = calculeazaAjustari(D, start, sfarsit);
@@ -2015,7 +2051,7 @@
           }
         });
         deseneazaFoaia();
-        incarcaCCC();
+        if (!modPropriu) incarcaCCC();
       } catch (e) {
         if (cerere === cerereFoaie) cont.replaceChildren(el("p", "who", "Nu s-a putut încărca foaia. Încearcă din nou."));
       }
@@ -2158,7 +2194,7 @@
       const { start, nz } = foaie;
       const zile = []; for (let d = 1; d <= nz; d++) { const t = start.slice(0, 8) + String(d).padStart(2, "0"); zile.push({ d, t, dow: dinIso(t).getUTCDay() }); }
       const randuri = [];
-      foaie.ang.forEach((p) => (p.norme || []).forEach((n) => randuri.push({ p, n })));
+      foaie.ang.filter((p) => !foaie.propriuId || p.id === foaie.propriuId).forEach((p) => (p.norme || []).forEach((n) => randuri.push({ p, n })));
       const primar = new Map();
       randuri.forEach((r) => { const k = r.p.id + "|" + r.n.loc; const c = primar.get(k); if (!c || r.n.ordine < c.ordine) primar.set(k, r.n); });
       const edit = foaieDeschisa();
@@ -2224,7 +2260,7 @@
         return { p: rs[0].p, n: rs[0].n, celule, val };
       }).sort((x, y) => colator.compare(x.p.nume, y.p.nume));
       const sectiuni = LOCURI.map((l) => ({ loc: l, rows: randuri.filter((r) => r.n.loc === l), general: false }));
-      sectiuni.push({ loc: "Pontaj general", rows: general, general: true });
+      if (!foaie.propriuId) sectiuni.push({ loc: "Pontaj general", rows: general, general: true });
       sectiuni.forEach(({ loc, rows: dinLoc, general: esteGeneral }) => {
         if (!dinLoc.length) return;
         const vizibile = COL.filter(([, k, mereu]) => mereu || randuri.some((r) => r.val[k] !== "" && r.val[k] !== undefined));
