@@ -487,6 +487,11 @@
     #pontaj table.foaie-t td.zi.ajust { color:#c2410c; font-weight:800; }
     #structura .ang-rand { border-left:5px solid var(--line); }
     #structura .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
+    #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
+    #orarmeu .orar-t { border-collapse:collapse; width:100%; min-width:560px; font-size:.95rem; }
+    #orarmeu .orar-t th, #orarmeu .orar-t td { border:1px solid var(--line); padding:10px 4px; text-align:center; }
+    #orarmeu .orar-t td.plin { background:color-mix(in srgb, var(--accent) 22%, var(--card)); font-weight:700; }
+    #orarmeu .orar-t thead th { background:var(--bg); }
     #structura .orar-t { border-collapse:collapse; width:100%; min-width:560px; font-size:.9rem; }
     #structura .orar-t th, #structura .orar-t td { border:1px solid var(--line); padding:8px 4px; text-align:center; }
     #structura .orar-t td.plin { background:color-mix(in srgb, var(--accent) 22%, var(--card)); font-weight:700; }
@@ -793,6 +798,13 @@
       <div id="anunt-lista"></div>
     </main>
 
+    <main id="orarmeu" class="wrap hidden">
+      <button id="inapoi-orarmeu" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Orarul meu</h1>
+      <div id="orarmeu-msg" class="panel-msg" role="alert"></div>
+      <div id="orarmeu-corp"></div>
+    </main>
+
     <main id="panou" class="wrap hidden">
       <button id="inapoi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Utilizatori</h1>
@@ -827,6 +839,7 @@
       utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și atribuie roluri", sub: ["Conturi în așteptare", "Roluri"], activ: true },
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
+      orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orarul meu"], activ: true },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul claselor și al profesorilor", sub: ["Orarul claselor", "Orarul profesorilor"] },
       structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii", sub: ["Programul săptămânii"] },
@@ -839,7 +852,7 @@
       director:      ["utilizatori", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
       secretariat:   ["pontaj", "structura", "anunturi", "orar", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
-      profesor:      ["pontaj", "anunturi"],
+      profesor:      ["pontaj", "orarmeu", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -941,6 +954,7 @@
       $("pontaj").classList.add("hidden");
       $("structura").classList.add("hidden");
       $("anunturi").classList.add("hidden");
+      $("orarmeu").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -948,8 +962,9 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu") return;
       if (cheie === "anunturi") return deschideAnunturi();
+      if (cheie === "orarmeu") return deschideOrarMeu();
       memoreazaVedere(cheie);
       if (cheie === "pontaj") return deschidePontaj();
       if (cheie === "structura") {
@@ -1302,6 +1317,42 @@
     $("clopot").addEventListener("click", () => deschideModul("anunturi"));
     setInterval(() => { if (euId && !document.hidden) actualizeazaClopot(); }, 300000);
     document.addEventListener("visibilitychange", () => { if (euId && !document.hidden) actualizeazaClopot(); });
+
+    // Orarul meu: doar al contului legat de un angajat (funcția orar_propriu filtrează în baza de date).
+    $("inapoi-orarmeu").addEventListener("click", arataPrincipal);
+    async function deschideOrarMeu() {
+      memoreazaVedere("orarmeu");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("orarmeu").classList.remove("hidden");
+      const msg = $("orarmeu-msg"), corp = $("orarmeu-corp"); msg.textContent = ""; corp.replaceChildren();
+      const { data, error } = await db.rpc("orar_propriu");
+      if (error) { msg.textContent = "Orarul nu a putut fi încărcat. Încearcă din nou."; return; }
+      if (!data || !data.length) { corp.appendChild(el("p", "who", "Nu există încă un orar pentru contul tău. Dacă ești profesor, cere administratorului să îți lege contul de numele tău din lista de angajați.")); return; }
+      const ani = []; data.forEach((r) => { if (!ani.find((x) => x.id === r.an_id)) ani.push({ id: r.an_id, den: r.denumire }); });
+      const zona = el("div", "");
+      let sel = null;
+      if (ani.length > 1) { sel = document.createElement("select"); sel.setAttribute("aria-label", "An școlar"); ani.forEach((x) => sel.add(new Option(x.den, x.id))); corp.appendChild(sel); }
+      corp.appendChild(zona);
+      const deseneaza = () => {
+        zona.replaceChildren();
+        const id = sel ? sel.value : ani[0].id;
+        const ore = data.filter((r) => r.an_id === id);
+        const ZL = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
+        const max = Math.max(8, ...ore.map((r) => r.ora));
+        zona.appendChild(el("p", "who", ani.find((x) => x.id === id).den + " · " + ore.length + (ore.length === 1 ? " oră" : " ore") + " pe săptămână"));
+        const t = el("table", "orar-t"); const th = el("tr"); th.appendChild(el("th", "", ""));
+        for (let h = 1; h <= max; h++) th.appendChild(el("th", "", String(h)));
+        t.appendChild(el("thead")).appendChild(th);
+        const tb = el("tbody");
+        ZL.forEach((zn, i) => { const tr = el("tr"); tr.appendChild(el("th", "", zn)); for (let h = 1; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); tr.appendChild(el("td", r ? "plin" : "", r ? r.clasa : "")); } tb.appendChild(tr); });
+        t.appendChild(tb);
+        const sc = el("div", "foaie-scroll"); sc.appendChild(t); zona.appendChild(sc);
+        const nrc = new Map(); ore.forEach((r) => nrc.set(r.clasa, (nrc.get(r.clasa) || 0) + 1));
+        zona.appendChild(el("p", "who", "Ore pe clase: " + [...nrc].sort((x, y) => x[0].localeCompare(y[0], "ro", { numeric: true })).map(([c, n]) => c + " – " + n).join(" · ")));
+      };
+      if (sel) sel.addEventListener("change", deseneaza);
+      deseneaza();
+    }
 
     function deschideAnunturi() {
       memoreazaVedere("anunturi");
@@ -3891,7 +3942,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
