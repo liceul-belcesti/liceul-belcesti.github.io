@@ -2800,7 +2800,7 @@
         document.querySelectorAll("#foaie section.bloc-loc").forEach((sec) => {
           if (sec.classList.contains("anexa")) {
             const linii = [["Anexa 1"], [], ...[...sec.querySelectorAll(".det-p, .det-pers b, .det-zi")].map((x) => [x.textContent.trim()])];
-            X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(linii), "Anexa 1"); return;
+            const wa = X.utils.aoa_to_sheet(linii); wa["!cols"] = [{ wch: 130 }]; X.utils.book_append_sheet(wb, wa, "Anexa 1"); return;
           }
           const loc = sec.dataset.foaie || sec.querySelector(".grup-loc").textContent.trim();
           const dtx = antetVal.data ? antetVal.data.slice(8, 10) + "." + antetVal.data.slice(5, 7) + "." + antetVal.data.slice(0, 4) : "";
@@ -2813,7 +2813,7 @@
               const rand = [];
               tr.querySelectorAll("th,td").forEach((td) => {
                 if (td.classList.contains("zi-cap")) rand.push(td.children[0].textContent.trim() + " " + td.children[1].textContent.trim());
-                else rand.push(valoare(td.textContent));
+                else rand.push(td.querySelector("button") ? "" : valoare(td.textContent));
                 for (let k = 1; k < (td.colSpan || 1); k++) rand.push("");
               });
               if (tr.classList.contains("cat") || tr.classList.contains("sub")) { const r = aoa.length; imbin.push({ s: { r, c: 0 }, e: { r, c: Math.max(rand.length - 1, 1) } }); }
@@ -2821,7 +2821,8 @@
             });
           });
           const ws = X.utils.aoa_to_sheet(aoa);
-          ws["!cols"] = [{ wch: 8 }, { wch: 30 }].concat(Array.from({ length: Math.max(latime - 2, 0) }, () => ({ wch: 6 })));
+          const lungNume = aoa.reduce((m, r) => (typeof r[1] === "string" && r.length > 5 ? Math.max(m, r[1].length) : m), 12);
+          ws["!cols"] = [{ wch: 8 }, { wch: Math.min(Math.max(lungNume + 2, 18), 60) }].concat(Array.from({ length: Math.max(latime - 2, 0) }, () => ({ wch: 6 })));
           ws["!merges"] = imbin;
           const sem = (i) => { const r = []; r[1] = SEMNATURI[0][i]; r[12] = SEMNATURI[1][i]; r[24] = SEMNATURI[2][i]; return Array.from(r, (x) => x || ""); };
           X.utils.sheet_add_aoa(ws, [[], [], sem(0), sem(1), [], sem(2)], { origin: -1 });
