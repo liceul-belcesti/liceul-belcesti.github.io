@@ -487,6 +487,33 @@
     #pontaj table.foaie-t td.zi.ajust { color:#c2410c; font-weight:800; }
     #structura .ang-rand { border-left:5px solid var(--line); }
     #structura .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
+    .orar-g-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
+    table.orar-g { border-collapse:collapse; width:100%; min-width:620px; font-size:.9rem; }
+    table.orar-g th, table.orar-g td { border:1px solid var(--line); padding:6px 4px; text-align:center; vertical-align:middle; }
+    table.orar-g thead th { background:var(--bg); line-height:1.25; }
+    table.orar-g thead th small { display:block; font-weight:400; font-size:.72rem; color:var(--muted); }
+    table.orar-g td.plin { background:color-mix(in srgb, var(--accent) 18%, var(--card)); font-weight:700; }
+    #orar .orar-bara { display:grid; gap:8px; margin:8px 0; }
+    #orar .orar-bara .comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    #orar .orar-bara button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
+    #tipar-orar { display:none; }
+    @media print {
+      body.tipar-orar > :not(#tipar-orar) { display:none !important; }
+      body.tipar-orar { background:#fff !important; }
+      body.tipar-orar #tipar-orar { display:block; color:#000; font-family:Arial, Helvetica, sans-serif; }
+      #tipar-orar .pag-orar { break-after:page; page-break-after:always; }
+      #tipar-orar .pag-orar:last-child { break-after:auto; page-break-after:auto; }
+      #tipar-orar .po-scoala { text-align:center; font-weight:800; font-size:13pt; text-transform:uppercase; margin:0; }
+      #tipar-orar .po-titlu { text-align:center; font-weight:800; font-size:18pt; margin:6mm 0 1mm; }
+      #tipar-orar .po-sub { text-align:center; font-size:12pt; margin:0 0 6mm; }
+      #tipar-orar table { width:100%; border-collapse:collapse; table-layout:fixed; }
+      #tipar-orar th, #tipar-orar td { border:.8pt solid #000; padding:2mm 1mm; text-align:center; vertical-align:middle; font-size:12pt; color:#000; background:#fff !important; }
+      #tipar-orar thead th { font-weight:800; }
+      #tipar-orar thead th small { display:block; font-weight:400; font-size:8pt; }
+      #tipar-orar tbody th { width:24mm; font-weight:800; text-align:left; padding-left:2mm; }
+      #tipar-orar tbody td { height:17mm; font-weight:700; }
+      #tipar-orar .po-nota { font-size:9pt; margin-top:5mm; }
+    }
     #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
     #orarmeu .orar-t { border-collapse:collapse; width:100%; min-width:620px; font-size:.95rem; }
     #orarmeu .orar-t th, #orarmeu .orar-t td { border:1px solid var(--line); padding:8px 4px; text-align:center; }
@@ -813,6 +840,13 @@
       <div id="anunt-lista"></div>
     </main>
 
+    <main id="orar" class="wrap hidden">
+      <button id="inapoi-orar" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Orar</h1>
+      <div id="orar-msg" class="panel-msg" role="alert"></div>
+      <div id="orar-corp"></div>
+    </main>
+
     <main id="orarmeu" class="wrap hidden">
       <button id="inapoi-orarmeu" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Orarul meu</h1>
@@ -855,7 +889,7 @@
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orarul meu"], activ: true },
-      orar:     { ico: "🗓️", t: "Orar", d: "Orarul claselor și al profesorilor", sub: ["Orarul claselor", "Orarul profesorilor"] },
+      orar:     { ico: "🗓️", t: "Orar", d: "Orarul profesorilor și al claselor, tipărire", sub: ["Orarul profesorilor", "Orarul claselor"], activ: true },
       structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii", sub: ["Programul săptămânii"] },
       registru: { ico: "📁", t: "Registratură", d: "Documente și numere de înregistrare", sub: ["Documente", "Numere de înregistrare"] },
@@ -970,6 +1004,7 @@
       $("structura").classList.add("hidden");
       $("anunturi").classList.add("hidden");
       $("orarmeu").classList.add("hidden");
+      $("orar").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -977,7 +1012,8 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar") return;
+      if (cheie === "orar") return deschideOrar();
       if (cheie === "anunturi") return deschideAnunturi();
       if (cheie === "orarmeu") return deschideOrarMeu();
       memoreazaVedere(cheie);
@@ -1333,6 +1369,105 @@
     setInterval(() => { if (euId && !document.hidden) actualizeazaClopot(); }, 300000);
     document.addEventListener("visibilitychange", () => { if (euId && !document.hidden) actualizeazaClopot(); });
 
+    // ---------- Orar: grile, tipărire, modulul pentru administrator / director / secretariat ----------
+    const ZILE_ORAR = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
+    const hmOrar = (m) => Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
+    const intervalOra = (h) => { const st = 480 + (h - 1) * 60; return hmOrar(st) + "–" + hmOrar(st + 50); }; // 50 de minute + pauză de 10
+    const ordClasaOrar = (x, y) => { const f = (c) => { const m = /^(\d+)(.*)$/.exec(c); return m ? [Number(m[1]), m[2]] : [99, c]; }; const p = f(x), q = f(y); return p[0] - q[0] || p[1].localeCompare(q[1], "ro", { numeric: true }); };
+    // celula(zi 1-5, ora) întoarce lista de texte (poate fi goală)
+    function grilaOrar(celula, max) {
+      const t = el("table", "orar-g"); const th = el("tr"); th.appendChild(el("th", "", ""));
+      for (let h = 1; h <= max; h++) { const c = el("th", "", String(h)); c.appendChild(el("small", "", intervalOra(h))); th.appendChild(c); }
+      t.appendChild(el("thead")).appendChild(th);
+      const tb = el("tbody");
+      ZILE_ORAR.forEach((zn, i) => {
+        const tr = el("tr"); tr.appendChild(el("th", "", zn));
+        for (let h = 1; h <= max; h++) { const v = celula(i + 1, h); const td = el("td", v.length ? "plin" : ""); v.forEach((x, k) => { if (k) td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(x)); }); tr.appendChild(td); }
+        tb.appendChild(tr);
+      });
+      t.appendChild(tb); return t;
+    }
+    // pagini: [{ titlu, sub, celula, max }]; fiecare pagină = un profesor sau o clasă (alb-negru, A4 pe lățime)
+    function tiparesteOrar(pagini, an) {
+      const vechi = document.getElementById("tipar-orar"); if (vechi) vechi.remove();
+      const cont = el("div", ""); cont.id = "tipar-orar";
+      pagini.forEach((p) => {
+        const pg = el("section", "pag-orar");
+        pg.appendChild(el("p", "po-scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești"));
+        pg.appendChild(el("p", "po-titlu", p.titlu));
+        pg.appendChild(el("p", "po-sub", [p.sub, an ? "Anul școlar " + an : ""].filter(Boolean).join(" · ")));
+        pg.appendChild(grilaOrar(p.celula, p.max));
+        pg.appendChild(el("p", "po-nota", "Ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
+        cont.appendChild(pg);
+      });
+      document.body.appendChild(cont); document.body.classList.add("tipar-orar");
+      const curata = () => { document.body.classList.remove("tipar-orar"); const c = document.getElementById("tipar-orar"); if (c) c.remove(); window.removeEventListener("afterprint", curata); };
+      window.addEventListener("afterprint", curata);
+      window.print();
+      setTimeout(curata, 1500);
+    }
+    $("inapoi-orar").addEventListener("click", arataPrincipal);
+    async function deschideOrar() {
+      memoreazaVedere("orar");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("orar").classList.remove("hidden");
+      const msg = $("orar-msg"), corp = $("orar-corp"); msg.textContent = ""; corp.replaceChildren();
+      const { data: ani, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false });
+      if (error || !ani.length) { msg.textContent = "Anii școlari nu au putut fi încărcați."; return; }
+      const selAn = document.createElement("select"); selAn.setAttribute("aria-label", "An școlar");
+      ani.forEach((x) => selAn.add(new Option(x.denumire + (x.inchis ? " · închis" : ""), x.id)));
+      selAn.value = (ani.find((x) => x.denumire === anulScolarZilei()) || ani[0]).id;
+      const bara = el("div", "orar-bara");
+      const comut = el("div", "comut");
+      let mod = "profesori";
+      const bP = el("button", "", "Profesori"), bC = el("button", "", "Clase"); bP.type = bC.type = "button";
+      comut.append(bP, bC);
+      const selX = document.createElement("select"); selX.setAttribute("aria-label", "Alege");
+      const ctl = el("div", "ctl");
+      const bUnu = el("button", "", "🖨 Tipărește"); bUnu.type = "button";
+      const bToti = el("button", "secondary", ""); bToti.type = "button";
+      ctl.append(bUnu, bToti);
+      bara.append(selAn, comut, selX, ctl);
+      const zona = el("div", "");
+      corp.append(bara, zona);
+      let date = null; // { an, rows, nume(Map), profesori[], clase[] }
+      const incarca = async () => {
+        zona.replaceChildren(el("p", "who", "Se încarcă…"));
+        const a = ani.find((x) => x.id === selAn.value);
+        try {
+          const [ang, rows] = await Promise.all([angajatiAn(a), toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa").eq("an_id", a.id).order("angajat_id").order("zi").order("ora"))]);
+          const nume = new Map(ang.map((x) => [x.id, x.nume]));
+          const pe = new Map(); rows.forEach((r) => { if (!pe.has(r.angajat_id)) pe.set(r.angajat_id, []); pe.get(r.angajat_id).push(r); });
+          const profesori = ang.filter((x) => pe.has(x.id)).sort((x, y) => x.nume.localeCompare(y.nume, "ro"));
+          const clase = [...new Set(rows.map((r) => r.clasa))].sort(ordClasaOrar);
+          date = { an: a.denumire, rows, nume, pe, profesori, clase };
+        } catch (e) { date = null; zona.replaceChildren(); msg.textContent = "Orarul nu a putut fi încărcat."; return; }
+        msg.textContent = ""; umple();
+      };
+      const pagProf = (x) => { const ore = date.pe.get(x.id) || []; return { titlu: "Orarul profesorului", sub: x.nume, max: Math.max(8, ...ore.map((r) => r.ora)), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => r.clasa) }; };
+      const pagClasa = (c) => { const ore = date.rows.filter((r) => r.clasa === c); return { titlu: "Orarul clasei " + c, sub: "", max: Math.max(8, ...ore.map((r) => r.ora)), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => date.nume.get(r.angajat_id) || "?").sort((x, y) => x.localeCompare(y, "ro")) }; };
+      function umple() {
+        bP.setAttribute("aria-pressed", String(mod === "profesori")); bC.setAttribute("aria-pressed", String(mod === "clase"));
+        selX.replaceChildren();
+        if (mod === "profesori") { selX.add(new Option("Alege profesorul", "")); date.profesori.forEach((x) => selX.add(new Option(x.nume + " (" + date.pe.get(x.id).length + " ore)", x.id))); bToti.textContent = "🖨 Tipărește toți profesorii (" + date.profesori.length + ")"; }
+        else { selX.add(new Option("Alege clasa", "")); date.clase.forEach((c) => selX.add(new Option("Clasa " + c, c))); bToti.textContent = "🖨 Tipărește toate clasele (" + date.clase.length + ")"; }
+        arata();
+      }
+      function arata() {
+        zona.replaceChildren(); bUnu.disabled = !selX.value;
+        if (!selX.value) return zona.appendChild(el("p", "who", mod === "profesori" ? "Alege un profesor ca să vezi și să tipărești orarul lui." : "Alege o clasă ca să vezi și să tipărești orarul ei."));
+        const p = mod === "profesori" ? pagProf(date.profesori.find((x) => x.id === selX.value)) : pagClasa(selX.value);
+        zona.appendChild(el("p", "who", p.titlu + (p.sub ? " · " + p.sub : "") + " · " + date.an));
+        const sc = el("div", "orar-g-scroll"); sc.appendChild(grilaOrar(p.celula, p.max)); zona.appendChild(sc);
+      }
+      bP.addEventListener("click", () => { mod = "profesori"; umple(); });
+      bC.addEventListener("click", () => { mod = "clase"; umple(); });
+      selX.addEventListener("change", arata); selAn.addEventListener("change", incarca);
+      bUnu.addEventListener("click", () => { if (!date || !selX.value) return; tiparesteOrar([mod === "profesori" ? pagProf(date.profesori.find((x) => x.id === selX.value)) : pagClasa(selX.value)], date.an); });
+      bToti.addEventListener("click", () => { if (!date) return; tiparesteOrar(mod === "profesori" ? date.profesori.map(pagProf) : date.clase.map(pagClasa), date.an); });
+      incarca();
+    }
+
     // Orarul meu: doar al contului legat de un angajat (funcția orar_propriu filtrează în baza de date).
     $("inapoi-orarmeu").addEventListener("click", arataPrincipal);
     async function deschideOrarMeu() {
@@ -1366,6 +1501,9 @@
           b.addEventListener("click", () => { mod = k; deseneaza(); }); comut.appendChild(b);
         });
         zona.appendChild(comut);
+        const tp = el("button", "secondary", "🖨 Tipărește orarul"); tp.type = "button";
+        tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: ($("cine").textContent || "").split(" · ")[0], max, celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => r.clasa) }], ani.find((x) => x.id === id).den));
+        zona.appendChild(tp);
         if (mod === "zile") {
           ZL.forEach((zn, i) => {
             const zi = ore.filter((r) => r.zi === i + 1).sort((x, y) => x.ora - y.ora);
@@ -3987,7 +4125,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
