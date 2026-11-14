@@ -107,6 +107,12 @@
     .alerta { display:block; width:100%; margin:0 0 16px; padding:14px 16px; min-height:48px; text-align:left; font-weight:700;
               color:#fff; background:var(--err); border:0; border-radius:12px; cursor:pointer; }
     .alerta.hidden { display:none; }
+    #anunturi textarea { display:block; width:100%; box-sizing:border-box; padding:10px 12px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
+    .anunt .anunt-text { white-space:pre-wrap; margin:8px 0; line-height:1.45; }
+    .anunt .anunt-fis { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+    .anunt .anunt-fis button { width:auto; margin:0; }
+    .anunt-imp { border-left:5px solid #b42318; }
+    .anunt-exp { opacity:.65; }
     .popup-copie { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.5); }
     .popup-copie .popup-cutie { width:100%; max-width:440px; background:var(--card); color:var(--text); border-radius:16px; padding:20px; box-shadow:0 8px 30px rgba(0,0,0,.35); }
     .popup-copie h3 { margin:0 0 8px; }
@@ -758,6 +764,15 @@
       <div id="str-lista"></div>
     </main>
 
+    <main id="anunturi" class="wrap hidden">
+      <button id="inapoi-anunturi" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Anunțuri</h1>
+      <div id="anunt-msg" class="panel-msg" role="alert"></div>
+      <button id="anunt-nou" type="button" class="hidden">+ Anunț nou</button>
+      <div id="anunt-form"></div>
+      <div id="anunt-lista"></div>
+    </main>
+
     <main id="panou" class="wrap hidden">
       <button id="inapoi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Utilizatori</h1>
@@ -791,7 +806,7 @@
     const MODULE = {
       utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și atribuie roluri", sub: ["Conturi în așteptare", "Roluri"], activ: true },
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
-      anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"] },
+      anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul claselor și al profesorilor", sub: ["Orarul claselor", "Orarul profesorilor"] },
       structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii", sub: ["Programul săptămânii"] },
@@ -803,8 +818,8 @@
     const PE_ROL = {
       director:      ["utilizatori", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
       secretariat:   ["pontaj", "structura", "anunturi", "orar", "registru"],
-      contabilitate: ["pontaj", "structura"],
-      profesor:      ["pontaj"],
+      contabilitate: ["pontaj", "structura", "anunturi"],
+      profesor:      ["pontaj", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -901,6 +916,7 @@
       $("panou").classList.add("hidden");
       $("pontaj").classList.add("hidden");
       $("structura").classList.add("hidden");
+      $("anunturi").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -908,7 +924,8 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi") return;
+      if (cheie === "anunturi") return deschideAnunturi();
       memoreazaVedere(cheie);
       if (cheie === "pontaj") return deschidePontaj();
       if (cheie === "structura") {
@@ -1232,6 +1249,150 @@
       return rand;
     }
 
+
+    // ---------- Anunțuri: publicare de către administrator, director, secretariat; fișiere în depozit privat ----------
+    const PENTRU = { toti: "Toți", profesor: "Profesori", parinte: "Părinți", elev: "Elevi", contabilitate: "Contabilitate" };
+    const FISIERE_OK = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
+    const MAX_FISIER = 10 * 1024 * 1024;
+    const poatePublica = () => ["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r));
+    const mesajAnunt = (t, ok) => { $("anunt-msg").textContent = t || ""; $("anunt-msg").className = "panel-msg" + (ok ? " ok" : ""); };
+    const marimeText = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
+    const dataAnunt = (t) => new Date(t).toLocaleDateString("ro-RO");
+    const extensia = (nume) => (nume.split(".").pop() || "").toLowerCase();
+
+    function deschideAnunturi() {
+      memoreazaVedere("anunturi");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("anunturi").classList.remove("hidden");
+      mesajAnunt(""); $("anunt-form").replaceChildren();
+      $("anunt-nou").classList.toggle("hidden", !poatePublica());
+      incarcaAnunturi();
+    }
+    async function incarcaAnunturi() {
+      const lista = $("anunt-lista");
+      const { data, error } = await db.from("anunturi")
+        .select("id, titlu, continut, important, pentru, expira_la, creat_la, anunturi_fisiere(id, cale, nume, marime)")
+        .is("sters_la", null).order("important", { ascending: false }).order("creat_la", { ascending: false }).limit(100);
+      if (error) return mesajAnunt("Nu s-au putut încărca anunțurile. Încearcă din nou.");
+      lista.replaceChildren();
+      if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există anunțuri."; lista.appendChild(p); return; }
+      data.forEach((a) => lista.appendChild(randAnunt(a)));
+    }
+    function randAnunt(a) {
+      const azi = new Date().toISOString().slice(0, 10);
+      const expirat = !!a.expira_la && a.expira_la < azi;
+      const r = document.createElement("div"); r.className = "user anunt" + (a.important ? " anunt-imp" : "") + (expirat ? " anunt-exp" : "");
+      const top = document.createElement("div"); top.className = "top";
+      const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = a.titlu;
+      top.appendChild(nm);
+      if (a.important) { const b = document.createElement("span"); b.className = "badge wait"; b.textContent = "Important"; top.appendChild(b); }
+      const sub = document.createElement("div"); sub.className = "sub";
+      sub.textContent = "Publicat la " + dataAnunt(a.creat_la) + (a.expira_la ? " · " + (expirat ? "expirat" : "afișat până la") + " " + dataAnunt(a.expira_la) : "") +
+        (poatePublica() ? " · pentru: " + a.pentru.map((x) => PENTRU[x] || x).join(", ") : "");
+      r.append(top, sub);
+      if (a.continut) { const t = document.createElement("div"); t.className = "anunt-text"; t.textContent = a.continut; r.appendChild(t); }
+      const fis = a.anunturi_fisiere || [];
+      if (fis.length) {
+        const z = document.createElement("div"); z.className = "anunt-fis";
+        fis.forEach((f) => {
+          const b = document.createElement("button"); b.type = "button"; b.className = "secondary mic"; b.textContent = "📎 " + f.nume + " (" + marimeText(f.marime) + ")";
+          b.addEventListener("click", async () => {
+            b.disabled = true;
+            const { data, error } = await db.storage.from("anunturi").download(f.cale);
+            b.disabled = false;
+            if (error || !data) return mesajAnunt("Fișierul nu a putut fi descărcat.");
+            const url = URL.createObjectURL(data);
+            const l = document.createElement("a"); l.href = url; l.download = f.nume; document.body.appendChild(l); l.click(); l.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+          });
+          z.appendChild(b);
+        });
+        r.appendChild(z);
+      }
+      if (poatePublica()) {
+        const ctl = document.createElement("div"); ctl.className = "ctl";
+        const mod = document.createElement("button"); mod.type = "button"; mod.textContent = "Modifică";
+        mod.addEventListener("click", () => { formAnunt(a); window.scrollTo({ top: 0, behavior: "smooth" }); });
+        const del = document.createElement("button"); del.type = "button"; del.className = "off"; del.textContent = "Șterge";
+        let armat = false, timer = null;
+        del.addEventListener("click", async () => {
+          if (!armat) { armat = true; del.textContent = "Sigur? Apasă din nou"; timer = setTimeout(() => { armat = false; del.textContent = "Șterge"; }, 5000); return; }
+          clearTimeout(timer); del.disabled = true;
+          if (fis.length) await db.storage.from("anunturi").remove(fis.map((f) => f.cale));
+          await db.from("anunturi_fisiere").delete().eq("anunt_id", a.id);
+          const { error } = await db.from("anunturi").update({ sters_la: new Date().toISOString() }).eq("id", a.id);
+          if (error) { del.disabled = false; return mesajAnunt("Ștergerea nu a reușit."); }
+          mesajAnunt("Anunțul a fost șters.", true); incarcaAnunturi();
+        });
+        ctl.append(mod, del); r.appendChild(ctl);
+      }
+      return r;
+    }
+    function formAnunt(a) {
+      const zona = $("anunt-form"); zona.replaceChildren(); mesajAnunt("");
+      const f = document.createElement("div"); f.className = "ang-form";
+      const h = document.createElement("h3"); h.textContent = a ? "Modifică anunțul" : "Anunț nou"; f.appendChild(h);
+      const camp = (et, el0) => { const l = document.createElement("label"); l.textContent = et; f.append(l, el0); return el0; };
+      const titlu = camp("Titlu", Object.assign(document.createElement("input"), { maxLength: 150, autocomplete: "off", value: a ? a.titlu : "" }));
+      const text = camp("Text", Object.assign(document.createElement("textarea"), { maxLength: 5000, rows: 6, value: a ? a.continut : "" }));
+      const l1 = document.createElement("label"); l1.textContent = "Cui se adresează"; f.appendChild(l1);
+      const grup = document.createElement("div"); grup.className = "roluri"; const cb = {};
+      Object.keys(PENTRU).forEach((k) => {
+        const et = document.createElement("label"); const c = document.createElement("input"); c.type = "checkbox"; c.value = k;
+        c.checked = a ? a.pentru.includes(k) : k === "toti"; cb[k] = c; et.append(c, document.createTextNode(PENTRU[k])); grup.appendChild(et);
+      });
+      f.appendChild(grup);
+      const exp = camp("Afișat până la data de (opțional)", Object.assign(document.createElement("input"), { type: "date", value: a && a.expira_la ? a.expira_la : "" }));
+      const li = document.createElement("label"); li.className = "ang-inactivi";
+      const imp = Object.assign(document.createElement("input"), { type: "checkbox", checked: !!(a && a.important) });
+      li.append(imp, document.createTextNode(" Important (apare primul)")); f.appendChild(li);
+      const sterse = new Set();
+      if (a && (a.anunturi_fisiere || []).length) {
+        const lf = document.createElement("label"); lf.textContent = "Fișiere atașate (bifează pentru a le elimina)"; f.appendChild(lf);
+        a.anunturi_fisiere.forEach((x) => {
+          const et = document.createElement("label"); et.className = "ang-inactivi"; const c = Object.assign(document.createElement("input"), { type: "checkbox" });
+          c.addEventListener("change", () => (c.checked ? sterse.add(x) : sterse.delete(x))); et.append(c, document.createTextNode(" " + x.nume)); f.appendChild(et);
+        });
+      }
+      const fis = camp("Adaugă fișiere (PDF, PNG, JPG, DOCX, XLSX; cel mult 10 MB fiecare)", Object.assign(document.createElement("input"), { type: "file", multiple: true, accept: ".pdf,.png,.jpg,.jpeg,.docx,.xlsx" }));
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      const salv = document.createElement("button"); salv.type = "button"; salv.textContent = a ? "Salvează" : "Publică";
+      const nu = document.createElement("button"); nu.type = "button"; nu.className = "secondary"; nu.textContent = "Renunță";
+      nu.addEventListener("click", () => zona.replaceChildren());
+      salv.addEventListener("click", async () => {
+        const t = titlu.value.trim(); if (!t) return mesajAnunt("Scrie un titlu.");
+        let pentru = Object.keys(cb).filter((k) => cb[k].checked); if (pentru.includes("toti")) pentru = ["toti"];
+        if (!pentru.length) return mesajAnunt("Alege cui se adresează anunțul.");
+        const noi = [...fis.files];
+        for (const x of noi) {
+          if (!FISIERE_OK[extensia(x.name)]) return mesajAnunt("Fișierul „" + x.name + "” nu are un tip permis.");
+          if (x.size > MAX_FISIER) return mesajAnunt("Fișierul „" + x.name + "” depășește 10 MB.");
+        }
+        salv.disabled = true; mesajAnunt("Se salvează…");
+        const rand = { titlu: t, continut: text.value.trim(), pentru, expira_la: exp.value || null, important: imp.checked };
+        let id = a && a.id;
+        if (a) { const { error } = await db.from("anunturi").update(rand).eq("id", a.id); if (error) { salv.disabled = false; return mesajAnunt("Salvarea nu a reușit."); } }
+        else { const { data, error } = await db.from("anunturi").insert(rand).select("id").single(); if (error || !data) { salv.disabled = false; return mesajAnunt("Publicarea nu a reușit."); } id = data.id; }
+        let esuate = 0;
+        for (const x of [...sterse]) {
+          await db.storage.from("anunturi").remove([x.cale]);
+          const { error } = await db.from("anunturi_fisiere").delete().eq("id", x.id); if (error) esuate++;
+        }
+        for (const x of noi) {
+          const ext = extensia(x.name), cale = id + "/" + crypto.randomUUID() + "." + ext;
+          const { error: e1 } = await db.storage.from("anunturi").upload(cale, x, { contentType: FISIERE_OK[ext], upsert: false });
+          if (e1) { esuate++; continue; }
+          const { error: e2 } = await db.from("anunturi_fisiere").insert({ anunt_id: id, cale, nume: x.name.slice(0, 200), tip: FISIERE_OK[ext], marime: x.size });
+          if (e2) { esuate++; await db.storage.from("anunturi").remove([cale]); }
+        }
+        zona.replaceChildren();
+        mesajAnunt(esuate ? "Anunțul a fost salvat, dar " + esuate + (esuate === 1 ? " fișier nu a putut fi procesat." : " fișiere nu au putut fi procesate.") : (a ? "Anunțul a fost modificat." : "Anunțul a fost publicat."), !esuate);
+        incarcaAnunturi();
+      });
+      ctl.append(salv, nu); f.appendChild(ctl); zona.appendChild(f);
+    }
+    $("anunt-nou").addEventListener("click", () => formAnunt(null));
+    $("inapoi-anunturi").addEventListener("click", arataPrincipal);
     // ---------- Pontaj: aniScolari școlari, lista de angajați și normele lor ----------
     const LOCURI = ["Centru", "Tansa", "Munteni"];
     const NUME_LOC = { Centru: "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești și Grădinița cu program normal Belcești", Munteni: "Școala Gimnazială „Victor Iamandi” Munteni", Tansa: "Școala Primară Tansa" };
@@ -3623,7 +3784,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
