@@ -243,6 +243,12 @@
     #pontaj table.foaie-t td.zi.man { box-shadow:inset 0 0 0 2px var(--accent); font-weight:800; }
     #pontaj table.foaie-t td.zi.cod { font-weight:800; color:#000; }
     #pontaj table.foaie-t td.zi.fp { text-decoration:underline; text-decoration-color:#7c3aed; text-decoration-thickness:2px; text-underline-offset:2px; }
+    #cel-editor .cutie .pco-bifa { display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-weight:800; margin:6px 0 8px; cursor:pointer; }
+    #cel-editor .cutie .pco-bifa input { width:28px; height:28px; min-height:0; margin:0; accent-color:#15803d; flex:none; }
+    #cel-editor .cutie .pco-stare { padding:4px 12px; border-radius:999px; font-size:.82rem; font-weight:900; letter-spacing:.03em; }
+    #cel-editor .cutie .pco-stare.da { background:#dcfce7; color:#166534; border:2px solid #16a34a; }
+    #cel-editor .cutie .pco-stare.nu { background:#fee2e2; color:#991b1b; border:2px solid #dc2626; }
+    #cel-editor .cutie .zona-pco.scos { border-color:#dc2626; background:#fff5f5; }
     #cel-editor .cutie .zona-pco { border:2px solid #7c3aed; background:#f7f3ff; border-radius:10px; padding:10px; margin:10px 0; }
     #pontaj table.foaie-t td.zi.cod.ccc { font-weight:400; font-size:.78em; letter-spacing:-.02em; }
     #pontaj table.foaie-t th, #pontaj table.foaie-t td { color:#000 !important; }
@@ -2894,25 +2900,27 @@
       const panaP = document.createElement("select");
       { const d0 = Number(t.slice(8, 10)); for (let d = d0; d <= foaie.nz; d++) { const z = foaie.start.slice(0, 8) + String(d).padStart(2, "0"); panaP.add(new Option(d === d0 ? "Doar această zi" : dataLunga(z), z)); } }
       zonaP.appendChild(panaP);
-      const bP = el("div", "ctl");
       const toateNormele = () => foaie.ang.flatMap((p) => (p.norme || []).filter((n) => foaie.pco.has(p.id + "|" + n.loc)).map((n) => n.id));
       const zileP = () => { const out = []; for (let d = dinIso(t); iso(d) <= panaP.value; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(), z = iso(d); if (w !== 0 && w !== 6 && !foaie.libere.has(z)) out.push(z); } return out; };
-      const schimbaTotiFp = async (adauga) => {
-        const ids = toateNormele(), zile = zileP(); if (!ids.length || !zile.length) { msg.textContent = "Nu sunt angajați cu plata cu ora în zilele alese."; return; }
-        eb.disabled = ei.disabled = true;
-        let error = null;
+      const nrScosi = () => toateNormele().filter((id) => foaie.fp.has(id + "|" + t)).length;
+      const randP = el("label", "pco-bifa"); const cbP = document.createElement("input"); cbP.type = "checkbox"; cbP.checked = nrScosi() === 0;
+      const stareP = el("span", "pco-stare");
+      const arataStareP = () => { const n = nrScosi(), tot = toateNormele().length; stareP.textContent = n === 0 ? "SE NUMĂRĂ" : n === tot ? "NU SE NUMĂRĂ" : n + " din " + tot + " NU SE NUMĂRĂ"; stareP.className = "pco-stare " + (n === 0 ? "da" : "nu"); zonaP.classList.toggle("scos", n > 0); cbP.checked = n === 0; };
+      randP.append(cbP, el("span", "pco-txt", "Se numără la plata cu ora (PCO, DT, PIP), pentru toți"), stareP); zonaP.appendChild(randP); arataStareP();
+      cbP.addEventListener("change", async () => {
+        const adauga = !cbP.checked; const ids = toateNormele(), zile = zileP();
+        if (!ids.length || !zile.length) { cbP.checked = !cbP.checked; msg.textContent = "Nu sunt angajați cu plata cu ora în zilele alese."; return; }
+        cbP.disabled = true; let error = null;
         if (adauga) {
           const rows = ids.flatMap((id) => zile.map((z) => ({ norma_id: id, zi: z })));
           for (let i = 0; i < rows.length && !error; i += 500) ({ error } = await db.from("pontaj_fara_pco").upsert(rows.slice(i, i + 500), { onConflict: "norma_id,zi" }));
         } else {
           for (let i = 0; i < ids.length && !error; i += 100) ({ error } = await db.from("pontaj_fara_pco").delete().in("norma_id", ids.slice(i, i + 100)).in("zi", zile));
         }
-        eb.disabled = ei.disabled = false;
+        cbP.disabled = false;
         gata(error, adauga ? "Zilele alese nu se numără la plata cu ora." : "Zilele alese se numără din nou la plata cu ora.");
-      };
-      const eb = el("button", "secondary", "Nu se numără la plata cu ora, pentru toți"); eb.type = "button"; eb.addEventListener("click", () => schimbaTotiFp(true));
-      const ei = el("button", "secondary", "Se numără din nou, pentru toți"); ei.type = "button"; ei.addEventListener("click", () => schimbaTotiFp(false));
-      bP.append(eb, ei); zonaP.appendChild(bP); cutie.appendChild(zonaP);
+      });
+      cutie.appendChild(zonaP);
       const grup = el("button", "secondary", "Setează concediu pentru mai mulți angajați"); grup.type = "button";
       grup.addEventListener("click", () => deschideGrup(t));
       ctl.appendChild(grup);
@@ -3076,22 +3084,22 @@
       cutie.appendChild(pana);
       const msg = el("div", "panel-msg"); msg.setAttribute("role", "alert");
       const zonaP = el("div", "zona-pco");
-      zonaP.appendChild(el("div", "who", "Plata cu ora (PCO, DT, PIP): zilele alese mai sus " + (foaie.fp.has(r.n.id + "|" + t) ? "sunt scoase acum din calcul." : "se numără acum.")));
-      const bP = el("div", "ctl");
-      const scoate = el("button", "secondary", "Nu se numără la plata cu ora"); scoate.type = "button";
-      const reia = el("button", "secondary", "Se numără din nou la plata cu ora"); reia.type = "button";
-      const schimbaFp = async (adauga) => {
-        const zile = lista(); scoate.disabled = reia.disabled = true;
+      const rand = el("label", "pco-bifa"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !foaie.fp.has(r.n.id + "|" + t);
+      const stare = el("span", "pco-stare"); const txt = el("span", "pco-txt", "Se numără la plata cu ora (PCO, DT, PIP)");
+      const arataStare = () => { stare.textContent = cb.checked ? "SE NUMĂRĂ" : "NU SE NUMĂRĂ"; stare.className = "pco-stare " + (cb.checked ? "da" : "nu"); zonaP.classList.toggle("scos", !cb.checked); };
+      rand.append(cb, txt, stare); zonaP.appendChild(rand); arataStare();
+      zonaP.appendChild(el("div", "who", "Bifa se aplică imediat zilelor alese mai sus (de la această zi până la data aleasă)."));
+      cb.addEventListener("change", async () => {
+        const adauga = !cb.checked; const zile = lista(); cb.disabled = true;
         const { error } = adauga
           ? await db.from("pontaj_fara_pco").upsert(zile.map((z) => ({ norma_id: r.n.id, zi: z })), { onConflict: "norma_id,zi" })
           : await db.from("pontaj_fara_pco").delete().eq("norma_id", r.n.id).in("zi", zile);
-        scoate.disabled = reia.disabled = false;
-        if (error) { msg.textContent = "Nu s-a putut salva. Încearcă din nou."; return; }
+        cb.disabled = false;
+        if (error) { cb.checked = !cb.checked; arataStare(); msg.textContent = "Nu s-a putut salva. Încearcă din nou."; return; }
         zile.forEach((z) => { if (adauga) foaie.fp.add(r.n.id + "|" + z); else foaie.fp.delete(r.n.id + "|" + z); });
-        zona.classList.add("hidden"); deseneazaFoaia();
-      };
-      scoate.addEventListener("click", () => schimbaFp(true)); reia.addEventListener("click", () => schimbaFp(false));
-      bP.append(scoate, reia); zonaP.appendChild(bP); cutie.appendChild(zonaP); cutie.appendChild(msg);
+        arataStare(); deseneazaFoaia();
+      });
+      cutie.appendChild(zonaP); cutie.appendChild(msg);
       const lista = () => {
         const sf = pana.value || t; const out = [];
         for (let d = dinIso(t); iso(d) <= sf; d.setUTCDate(d.getUTCDate() + 1)) {
