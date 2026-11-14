@@ -314,6 +314,10 @@
     .bar #bar-inapoi button { background:#fff; color:var(--accent); border:0; font-weight:800; }
     .bar .name { flex:1 1 200px; }
     .bar .bar-dreapta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .bar .clopot { position:relative; width:auto; min-height:38px; margin:0; padding:4px 12px; font-size:1.15rem; background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); }
+    .bar .clopot.hidden { display:none; }
+    .bar .clopot-nr { position:absolute; top:-7px; right:-7px; min-width:20px; height:20px; padding:0 5px; border-radius:10px; background:#d92d20; color:#fff; font-size:.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #0e7c86; }
+    .bar .clopot-nr.hidden { display:none; }
     .bar #bar-pontaj { display:flex; gap:8px; }
     .bar #bar-pontaj.hidden { display:none; }
     .bar #bar-pontaj #btn-admin { background:#fff; color:var(--accent); border:0; font-weight:800; }
@@ -613,6 +617,7 @@
       <div id="bar-inapoi"></div>
       <div class="name">Spațiul virtual al școlii<small>Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești</small></div>
       <div class="bar-dreapta">
+        <button id="clopot" class="clopot hidden" type="button" aria-label="Anunțuri noi">🔔<span id="clopot-nr" class="clopot-nr hidden"></span></button>
         <div id="bar-pontaj" class="hidden">
           <button id="btn-pco" class="secondary" type="button">Plata cu ora</button>
           <button id="btn-admin" type="button">⚙ Administrare</button>
@@ -847,7 +852,7 @@
       a.textContent = n === 1 ? "🔔 1 cont nou așteaptă aprobarea. Apasă ca să îl vezi." : "🔔 " + n + " conturi noi așteaptă aprobarea. Apasă ca să le vezi.";
       const sel = $("activ-ca");
       deseneazaModule(sel && sel.value ? [sel.value] : euRoluri);
-      verificaCopie();
+      verificaCopie(); actualizeazaClopot();
       document.querySelectorAll("#tab-panou button[data-v=conturi] .pt").forEach((x) => x.remove());
       if (n > 0) { const p = document.createElement("span"); p.className = "pt"; p.textContent = n; document.querySelector("#tab-panou button[data-v=conturi]").appendChild(p); }
     }
@@ -893,6 +898,10 @@
         (m.sub || [m.d]).forEach((x) => { const d = document.createElement("div"); d.className = "d"; d.textContent = x; text.appendChild(d); });
         if (cheie === "pontaj" && !roluri.some((r) => ["administrator", "director", "secretariat", "contabilitate"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Pontajele închise ale tale" })); }
         if (m.activ) c.append(ico, text); else c.append(soon, ico, text);
+        if (cheie === "anunturi" && anunturiNoi > 0) {
+          const k = document.createElement("span"); k.className = "cnt"; k.textContent = anunturiNoi;
+          k.setAttribute("aria-label", anunturiNoi + " anunțuri noi"); c.appendChild(k);
+        }
         if (cheie === "utilizatori" && inAsteptare > 0) {
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = inAsteptare;
           k.setAttribute("aria-label", inAsteptare + " conturi de aprobat"); c.appendChild(k);
@@ -1260,6 +1269,25 @@
     const dataAnunt = (t) => new Date(t).toLocaleDateString("ro-RO");
     const extensia = (nume) => (nume.split(".").pop() || "").toLowerCase();
 
+    // Clopoțelul: anunțuri noi (necitite) pentru contul curent; se actualizează la intrare, la revenirea în filă și din 5 în 5 minute.
+    let anunturiNoi = 0;
+    async function actualizeazaClopot() {
+      const b = $("clopot");
+      if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); return; }
+      const azi = new Date().toISOString().slice(0, 10);
+      const [a, c] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id")]);
+      if (a.error || c.error) return;
+      const citite = new Set(c.data.map((x) => x.anunt_id));
+      const n = a.data.filter((x) => x.creat_de !== euId && !citite.has(x.id) && (!x.expira_la || x.expira_la >= azi)).length;
+      b.classList.remove("hidden");
+      $("clopot-nr").textContent = n > 99 ? "99+" : String(n); $("clopot-nr").classList.toggle("hidden", n < 1);
+      b.setAttribute("aria-label", n ? n + " anunțuri noi" : "Anunțuri");
+      if (n !== anunturiNoi) { anunturiNoi = n; const sel = $("activ-ca"); deseneazaModule(sel && sel.value ? [sel.value] : euRoluri); }
+    }
+    $("clopot").addEventListener("click", () => deschideModul("anunturi"));
+    setInterval(() => { if (euId && !document.hidden) actualizeazaClopot(); }, 300000);
+    document.addEventListener("visibilitychange", () => { if (euId && !document.hidden) actualizeazaClopot(); });
+
     function deschideAnunturi() {
       memoreazaVedere("anunturi");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
@@ -1271,20 +1299,28 @@
     async function incarcaAnunturi() {
       const lista = $("anunt-lista");
       const { data, error } = await db.from("anunturi")
-        .select("id, titlu, continut, important, pentru, expira_la, creat_la, anunturi_fisiere(id, cale, nume, marime)")
+        .select("id, titlu, continut, important, pentru, expira_la, creat_la, creat_de, anunturi_fisiere(id, cale, nume, marime)")
         .is("sters_la", null).order("important", { ascending: false }).order("creat_la", { ascending: false }).limit(100);
       if (error) return mesajAnunt("Nu s-au putut încărca anunțurile. Încearcă din nou.");
+      const { data: cit } = await db.from("anunturi_citite").select("anunt_id");
+      const citite = new Set((cit || []).map((x) => x.anunt_id));
       lista.replaceChildren();
       if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există anunțuri."; lista.appendChild(p); return; }
-      data.forEach((a) => lista.appendChild(randAnunt(a)));
+      const necitite = data.filter((a) => a.creat_de !== euId && !citite.has(a.id));
+      data.forEach((a) => lista.appendChild(randAnunt(a, necitite.includes(a))));
+      if (necitite.length) { // după afișare, anunțurile se marchează ca citite
+        await db.from("anunturi_citite").upsert(necitite.map((a) => ({ anunt_id: a.id, user_id: euId })), { onConflict: "anunt_id,user_id", ignoreDuplicates: true });
+        actualizeazaClopot();
+      }
     }
-    function randAnunt(a) {
+    function randAnunt(a, nou) {
       const azi = new Date().toISOString().slice(0, 10);
       const expirat = !!a.expira_la && a.expira_la < azi;
       const r = document.createElement("div"); r.className = "user anunt" + (a.important ? " anunt-imp" : "") + (expirat ? " anunt-exp" : "");
       const top = document.createElement("div"); top.className = "top";
       const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = a.titlu;
       top.appendChild(nm);
+      if (nou) { const b = document.createElement("span"); b.className = "badge"; b.textContent = "Nou"; top.appendChild(b); }
       if (a.important) { const b = document.createElement("span"); b.className = "badge wait"; b.textContent = "Important"; top.appendChild(b); }
       const sub = document.createElement("div"); sub.className = "sub";
       sub.textContent = "Publicat la " + dataAnunt(a.creat_la) + (a.expira_la ? " · " + (expirat ? "expirat" : "afișat până la") + " " + dataAnunt(a.expira_la) : "") +
