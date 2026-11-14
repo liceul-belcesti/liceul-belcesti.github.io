@@ -192,6 +192,8 @@
                      border:1.5px solid var(--line); border-radius:10px; }
     .roluri { display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:12px; }
     .roluri label { display:flex; align-items:center; gap:8px; margin:0; font-weight:500; font-size:.95rem; min-height:36px; }
+    .leg-ang { display:block; margin-top:10px; font-size:.9rem; font-weight:600; }
+    .leg-ang select { display:block; width:100%; max-width:360px; margin-top:4px; }
     .roluri input { width:20px; height:20px; min-height:0; margin:0; padding:0; accent-color:var(--accent); }
     .user .em { margin-top:4px; color:var(--muted); font-size:.88rem; word-break:break-all; }
     .user .info { margin-top:4px; font-size:.88rem; }
@@ -916,7 +918,7 @@
 
     async function incarcaUtilizatori() {
       const lista = $("lista");
-      const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de";
+      const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de, angajat_nume";
       if (vedere === "istoric") {
         const { data, error } = await db.from("istoric_conturi")
           .select("id, la, cine_nume, cont_nume, cont_email, actiune, detalii").order("la", { ascending: false }).limit(150);
@@ -953,7 +955,13 @@
         if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există conturi șterse."; lista.appendChild(p); }
         const nume = Object.fromEntries(data.map((x) => [x.id, x.nume]));
         data.forEach((u) => lista.appendChild(randSters(u, nume)));
-      } else data.forEach((u) => lista.appendChild(randUtilizator(u)));
+      } else {
+        // Lista angajaților (fără dubluri), pentru a lega fiecare cont de o persoană.
+        const { data: ang } = await db.from("angajati").select("nume").is("sters_la", null);
+        numeAngajati = [...new Set((ang || []).map((x) => x.nume))].sort((a, b) => colator.compare(a, b));
+        const luate = new Map(data.filter((x) => x.angajat_nume).map((x) => [x.angajat_nume.toLowerCase(), x.id]));
+        data.forEach((u) => lista.appendChild(randUtilizator(u, luate)));
+      }
       actualizeazaNotificari();
     }
 
@@ -1038,7 +1046,8 @@
       incarcaUtilizatori();
     });
 
-    function randUtilizator(u) {
+    let numeAngajati = [];
+    function randUtilizator(u, luate) {
       const eu = u.id === euId;
       const euAdmin = euRoluri.includes("administrator");
       const roluriU = u.roluri || [];
@@ -1070,20 +1079,37 @@
         grup.appendChild(et); casete.push(cb);
       });
 
+      // Legătura cu angajatul: se alege din listă cine este persoana care s-a înscris.
+      const legAng = document.createElement("label"); legAng.className = "leg-ang";
+      legAng.append(document.createTextNode("Cine este (angajat)"));
+      const selAng = document.createElement("select");
+      const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "— nealocat —"; selAng.appendChild(o0);
+      numeAngajati.forEach((n) => {
+        const idLuat = luate && luate.get(n.toLowerCase());
+        if (idLuat && idLuat !== u.id) return; // deja alocat altui cont
+        const o = document.createElement("option"); o.value = n; o.textContent = n; selAng.appendChild(o);
+      });
+      if (u.angajat_nume && !numeAngajati.includes(u.angajat_nume)) {
+        const o = document.createElement("option"); o.value = u.angajat_nume; o.textContent = u.angajat_nume; selAng.appendChild(o);
+      }
+      selAng.value = u.angajat_nume || "";
+      if (blocat) selAng.disabled = true;
+      legAng.appendChild(selAng);
+
       const ctl = document.createElement("div"); ctl.className = "ctl";
       const salvare = document.createElement("button"); salvare.type = "button";
-      salvare.textContent = u.activ ? "Salvează rolurile" : "Aprobă contul";
+      salvare.textContent = u.activ ? "Salvează" : "Aprobă contul";
       const dezactiv = document.createElement("button"); dezactiv.type = "button"; dezactiv.className = "off";
       dezactiv.textContent = "Dezactivează";
       if (blocat) { salvare.disabled = true; dezactiv.disabled = true; }
       if (eu || protejat) dezactiv.disabled = true; // conturile protejate și propriul cont nu se dezactivează
 
       async function salveaza(camp) {
-        casete.forEach((c) => (c.disabled = true)); salvare.disabled = dezactiv.disabled = true;
+        casete.forEach((c) => (c.disabled = true)); selAng.disabled = true; salvare.disabled = dezactiv.disabled = true;
         const { error } = await db.from("profiluri").update(camp).eq("id", u.id);
         if (error) {
           const m = error.message || "";
-          mesajPanou(/^(Trebuie|Doar|Nu îți|Contul)/.test(m) ? m : "Modificarea nu a reușit.");
+          mesajPanou(/^(Trebuie|Doar|Nu îți|Contul)/.test(m) ? m : (/profiluri_angajat_nume_unic/.test(m) ? "Angajatul este deja alocat altui cont." : "Modificarea nu a reușit."));
         } else {
           mesajPanou("Salvat: " + u.nume, true);
           if (eu && camp.roluri) aplicaRoluri(camp.roluri);
@@ -1094,7 +1120,8 @@
       salvare.addEventListener("click", () => {
         const r = alese();
         if (!r.length) return mesajPanou("Alege cel puțin un rol.");
-        salveaza(u.activ ? { roluri: r } : { activ: true, roluri: r });
+        const ang = selAng.value || null;
+        salveaza(u.activ ? { roluri: r, angajat_nume: ang } : { activ: true, roluri: r, angajat_nume: ang });
       });
       dezactiv.addEventListener("click", () => salveaza({ activ: false }));
 
@@ -1122,7 +1149,7 @@
       if (u.activ) ctl.append(salvare, dezactiv); else ctl.append(salvare, sterge);
       rand.append(top, em);
       if (info.textContent) rand.append(info);
-      rand.append(grup, ctl);
+      rand.append(grup, legAng, ctl);
       return rand;
     }
 
