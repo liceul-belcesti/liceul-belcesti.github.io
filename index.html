@@ -504,21 +504,21 @@
       body.tipar-orar #tipar-orar { display:block; color:#000; font-family:Arial, Helvetica, sans-serif; }
       #tipar-orar .pag-orar { break-after:page; page-break-after:always; }
       #tipar-orar .pag-orar:last-child { break-after:auto; page-break-after:auto; }
-      #tipar-orar .po-cap { display:flex; align-items:center; gap:7mm; padding-bottom:4mm; border-bottom:2.2mm solid #0e7c86; }
-      #tipar-orar .po-logo { height:24mm; width:auto; display:block; }
-      #tipar-orar .po-scoala { font-weight:800; font-size:15pt; text-transform:uppercase; line-height:1.25; color:#0b5f67; margin:0; }
-      #tipar-orar .po-scoala small { display:block; font-size:10.5pt; font-weight:700; text-transform:none; color:#444; margin-top:1mm; }
-      #tipar-orar .po-titlu { text-align:center; font-weight:800; font-size:20pt; color:#0e7c86; letter-spacing:.03em; text-transform:uppercase; margin:7mm 0 1mm; }
-      #tipar-orar .po-nume { text-align:center; font-weight:800; font-size:24pt; color:#111; margin:0 0 1mm; text-transform:uppercase; }
+      #tipar-orar .po-cap { display:flex; align-items:center; gap:8mm; padding-bottom:4mm; border-bottom:1.6mm solid #1c7fc4; }
+      #tipar-orar .po-logo { height:30mm; width:auto; display:block; }
+      #tipar-orar .po-scoala { font-family:Georgia, "Times New Roman", serif; font-weight:700; color:#12275a; line-height:1.15; margin:0; }
+      #tipar-orar .po-scoala .l1 { display:block; font-size:15pt; letter-spacing:.14em; }
+      #tipar-orar .po-scoala .l2 { display:block; font-size:25pt; font-weight:800; letter-spacing:.01em; }
+      #tipar-orar .po-scoala .l3 { display:block; font-size:14pt; letter-spacing:.5em; margin-top:1mm; }
+      #tipar-orar .po-titlu { text-align:center; font-weight:800; font-size:19pt; color:#1c7fc4; letter-spacing:.03em; text-transform:uppercase; margin:7mm 0 1mm; }
+      #tipar-orar .po-nume { text-align:center; font-weight:800; font-size:24pt; color:#12275a; margin:0 0 1mm; text-transform:uppercase; }
       #tipar-orar .po-sub { text-align:center; font-size:12pt; color:#555; margin:0 0 6mm; }
-      #tipar-orar table { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; border:.8pt solid #0e7c86; border-radius:2mm; overflow:hidden; }
-      #tipar-orar th, #tipar-orar td { border-right:.6pt solid #b9d6d9; border-bottom:.6pt solid #b9d6d9; padding:2mm 1mm; text-align:center; vertical-align:middle; font-size:12pt; color:#111; }
-      #tipar-orar thead th { background:#0e7c86 !important; color:#fff !important; font-weight:800; border-color:#0b5f67; }
-      #tipar-orar thead th small { display:block; font-weight:400; font-size:8pt; color:#dff3f4 !important; }
-      #tipar-orar tbody th { width:26mm; font-weight:800; text-align:left; padding-left:3mm; background:#e3f2f3 !important; color:#0b5f67 !important; }
-      #tipar-orar tbody tr:nth-child(even) td { background:#f6fbfb; }
-      #tipar-orar tbody td { height:18mm; font-weight:700; }
-      #tipar-orar tbody td.plin { background:hsl(var(--h, 190) 65% 86%) !important; }
+      #tipar-orar table { width:100%; border-collapse:collapse; table-layout:fixed; }
+      #tipar-orar th, #tipar-orar td { border:.7pt solid #8aa9c4; padding:2mm 1mm; text-align:center; vertical-align:middle; font-size:12pt; color:#111; background:#fff; }
+      #tipar-orar thead th { background:#1c7fc4 !important; color:#fff !important; font-weight:800; border-color:#1c7fc4; }
+      #tipar-orar thead th small { display:block; font-weight:400; font-size:8pt; color:#e3f0fa !important; }
+      #tipar-orar tbody th { width:26mm; font-weight:800; text-align:left; padding-left:3mm; background:#e6f1fa !important; color:#12275a !important; }
+      #tipar-orar tbody td { height:18mm; font-weight:700; background:#fff !important; }
     }
     #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
     #orarmeu .orar-t { border-collapse:collapse; width:100%; min-width:620px; font-size:.95rem; }
@@ -1400,8 +1400,8 @@
       const cont = el("div", ""); cont.id = "tipar-orar";
       pagini.forEach((p) => {
         const pg = el("section", "pag-orar");
-        const cap = el("div", "po-cap"); const lg = el("img", "po-logo"); lg.src = "logo-scoala.jpg"; lg.alt = "";
-        const sc = el("p", "po-scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu”"); sc.appendChild(el("small", "", "Comuna Belcești, județul Iași"));
+        const cap = el("div", "po-cap"); const lg = el("img", "po-logo"); lg.src = "logo-sigla.png"; lg.alt = "";
+        const sc = el("p", "po-scoala"); sc.append(el("span", "l1", "LICEUL TEHNOLOGIC"), el("span", "l2", "VICTOR MIHĂILESCU CRAIU"), el("span", "l3", "BELCEȘTI"));
         cap.append(lg, sc); pg.appendChild(cap);
         pg.appendChild(el("p", "po-titlu", p.titlu));
         if (p.sub) pg.appendChild(el("p", "po-nume", p.sub));
