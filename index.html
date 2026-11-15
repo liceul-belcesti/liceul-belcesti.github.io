@@ -603,6 +603,53 @@
     #orarmeu .oz-tipar { width:auto; margin:10px 0 0; min-height:42px; padding:0 20px; border-radius:999px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:700; }
     #orarmeu .oz-mic2 { color:var(--muted); font-size:.8rem; margin:10px 0 0; }
     @media (prefers-reduced-motion: reduce) { #orarmeu .oz-ora, #orarmeu .oz-pill.live::before, #orarmeu .oz-zi, #orarmeu .oz-card { animation:none; transition:none; } }
+    /* Calendar: navigare pe zile, avize (zi liberă, vacanță, program special, practică), agenda săptămânii */
+    #orarmeu .oz-comut { margin-bottom:10px; }
+    #orarmeu .oz-nav { display:flex; align-items:center; gap:8px; margin:0 0 14px; }
+    #orarmeu .oz-sg { width:44px; min-width:44px; height:44px; min-height:44px; margin:0; padding:0; border-radius:50%; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-size:1.5rem; line-height:1; font-weight:700; }
+    #orarmeu .oz-data-in { flex:1; min-width:0; height:44px; margin:0; padding:0 14px; border-radius:999px; border:0; background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.1); font:inherit; font-weight:700; text-align:center; }
+    #orarmeu .oz-azi { width:auto; min-height:44px; height:44px; margin:0; padding:0 16px; border-radius:999px; border:0; background:var(--text); color:var(--card); font-weight:700; }
+    #orarmeu .oz-azi:disabled { opacity:.35; }
+    #orarmeu .oz-h2 { margin:12px 0 2px; font-size:1.9rem; line-height:1.1; letter-spacing:-.02em; font-weight:800; color:#fff; }
+    #orarmeu .oz-hero.t-liber { background:radial-gradient(120% 140% at 100% 0%, #ffb35c 0%, transparent 55%), linear-gradient(135deg,#c2410c 0%,#9a2f6b 100%); }
+    #orarmeu .oz-hero.t-vacanta { background:radial-gradient(120% 140% at 100% 0%, #7dd3a8 0%, transparent 55%), linear-gradient(135deg,#0f766e 0%,#1d4ed8 100%); }
+    #orarmeu .oz-hero.t-program { background:radial-gradient(120% 140% at 100% 0%, #c4b5fd 0%, transparent 55%), linear-gradient(135deg,#6d28d9 0%,#1e3a8a 100%); }
+    #orarmeu .oz-hero.t-weekend, #orarmeu .oz-hero.t-afara { background:linear-gradient(135deg,#475569 0%,#1e293b 100%); }
+    #orarmeu .oz-avize { display:grid; gap:8px; margin:12px 0 0; }
+    #orarmeu .oz-aviz { display:flex; flex-direction:column; gap:1px; padding:10px 14px; border-radius:16px; background:var(--card); box-shadow:inset 4px 0 0 var(--c, var(--accent)), 0 1px 3px rgba(0,0,0,.06); font-size:.88rem; }
+    #orarmeu .oz-aviz b { color:var(--c, var(--accent)); }
+    #orarmeu .oz-aviz span { color:var(--muted); }
+    #orarmeu .t-liber { --c:#c2410c; } #orarmeu .t-vacanta { --c:#0f766e; } #orarmeu .t-program { --c:#6d28d9; } #orarmeu .t-practica { --c:#b45309; } #orarmeu .t-afara { --c:#64748b; }
+    @media (prefers-color-scheme: dark) { #orarmeu .t-liber { --c:#fb923c; } #orarmeu .t-vacanta { --c:#5eead4; } #orarmeu .t-program { --c:#c4b5fd; } #orarmeu .t-practica { --c:#fbbf24; } }
+    #orarmeu .oz-zi { min-width:70px; gap:5px; }
+    #orarmeu .oz-zi .nr { font-size:1.35rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
+    #orarmeu .oz-zi.sus { opacity:.8; }
+    #orarmeu .oz-zi .pct i.x { width:14px; height:4px; border-radius:2px; background:var(--c, var(--muted)); }
+    #orarmeu .oz-zi .pct i.pr { background:#f59e0b; box-shadow:0 0 0 1.5px var(--card); }
+    #orarmeu .oz-ora.lapr { opacity:.6; }
+    #orarmeu .oz-ora.lapr .oz-card { border:1.5px dashed #f59e0b; box-shadow:none; background:transparent; }
+    #orarmeu .oz-ora.lapr .oz-nod::after { border-color:#f59e0b; }
+    #orarmeu .oz-pr { background:color-mix(in srgb, #f59e0b 20%, transparent); color:#b45309; }
+    @media (prefers-color-scheme: dark) { #orarmeu .oz-pr { color:#fbbf24; } }
+    #orarmeu .oz-sapt-cap { display:flex; flex-direction:column; gap:2px; margin:0 0 12px; }
+    #orarmeu .oz-sapt-cap b { font-size:1.5rem; letter-spacing:-.02em; }
+    #orarmeu .oz-sapt-cap span { color:var(--muted); font-size:.9rem; }
+    #orarmeu .oz-zi-card { margin:0 0 12px; padding:14px 16px 10px; border-radius:22px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); animation:om-intra .4s ease both; animation-delay:calc(var(--k, 0) * 60ms); }
+    #orarmeu .oz-zi-card.azi { box-shadow:0 0 0 2px var(--accent), 0 10px 24px -12px rgba(11,127,138,.5); }
+    #orarmeu .oz-zi-card.sus { background:color-mix(in srgb, var(--c, var(--muted)) 7%, var(--card)); }
+    #orarmeu .oz-zc-cap { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+    #orarmeu .oz-zc-t b { display:block; font-size:1.15rem; letter-spacing:-.01em; }
+    #orarmeu .oz-zc-t span { font-size:.8rem; color:var(--muted); }
+    #orarmeu .oz-zc-r { display:flex; align-items:center; gap:8px; text-align:right; }
+    #orarmeu .oz-zc-n { font-weight:700; font-size:.88rem; color:var(--muted); }
+    #orarmeu .oz-zi-card .oz-avize { margin:6px 0 8px; }
+    #orarmeu .oz-sr { display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+    #orarmeu .oz-sr-t { flex:0 0 42px; font-variant-numeric:tabular-nums; font-weight:700; font-size:.9rem; color:var(--muted); }
+    #orarmeu .oz-clasa.mic { font-size:.95rem; padding:1px 10px 2px; border-radius:11px; color:var(--accent); }
+    #orarmeu .oz-sr .oz-disc { font-size:.88rem; }
+    #orarmeu .oz-sr.lapr { opacity:.6; }
+    #orarmeu .oz-sr.lapr .oz-clasa { border-style:dashed; border-color:#f59e0b; color:#b45309; }
+    #orarmeu .oz-vezi { width:auto; min-height:34px; margin:6px 0 2px; padding:0 4px; background:transparent; border:0; box-shadow:none; color:var(--accent); font-weight:700; font-size:.85rem; }
     #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
     #orarmeu .orar-t { border-collapse:separate; border-spacing:5px; width:100%; min-width:640px; font-size:.92rem; }
     #orarmeu .orar-t th, #orarmeu .orar-t td { border:0; padding:8px 4px; text-align:center; }
@@ -1609,103 +1656,172 @@
       if (error) { msg.textContent = "Orarul nu a putut fi încărcat. Încearcă din nou."; return; }
       if (!data || !data.length) { corp.appendChild(el("p", "who", "Nu există încă un orar pentru contul tău. Dacă ești profesor, cere administratorului să îți lege contul de numele tău din lista de angajați.")); return; }
       const { data: numeProf } = await db.rpc("nume_angajat_propriu");
+      const { data: calDb } = await db.rpc("orar_calendar");
+      const cal = calDb && calDb.structura ? calDb : { structura: [], libere: [], practica: [] };
       const ani = []; data.forEach((r) => { if (!ani.find((x) => x.id === r.an_id)) ani.push({ id: r.an_id, den: r.denumire }); });
       const zona = el("div", "");
-      let sel = null;
-      if (ani.length > 1) { sel = document.createElement("select"); sel.setAttribute("aria-label", "An școlar"); ani.forEach((x) => sel.add(new Option(x.den, x.id))); corp.appendChild(sel); }
       corp.appendChild(zona);
       const ZL = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
-      const hm = (m) => Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
-      const interval = (h) => { const st = 480 + (h - 1) * 60; return hm(st) + "–" + hm(st + 50); }; // 50 de minute + pauză de 10
-      const nuanta = (c) => { let h = 0; for (const ch of c) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
-      const azi = (new Date().getDay() + 6) % 7; // 0 = luni … 6 = duminică
-      let mod = "zile";
-      let ziSel = azi < 5 ? azi : 0;
       const ZL7 = [...ZL, "Sâmbătă", "Duminică"];
       const LUNI_RO = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+      const hm = (m) => Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
+      const interval = (h) => { const st = 480 + (h - 1) * 60; return hm(st) + "–" + hm(st + 50); }; // 50 de minute + pauză de 10
+      const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
+      const adauga = (d, n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x; };
+      const ziSapt = (d) => (d.getDay() + 6) % 7; // 0 = luni … 6 = duminică
+      const luniDe = (d) => adauga(d, -ziSapt(d));
+      const textData = (d) => ZL7[ziSapt(d)] + ", " + d.getDate() + " " + LUNI_RO[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? " " + d.getFullYear() : "");
       const durata = (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? h + (h === 1 ? " oră" : " ore") + (r ? " și " + r + " min" : "") : r + " min"; };
       const oraS = (n) => n + (n === 1 ? " oră" : " ore");
       const stOra = (r) => 480 + (r.ora - 1) * 60;
       const randClasa = (r, cls) => { const d = el("div", cls); d.appendChild(el("span", "oz-clasa", r.clasa)); if (r.complet) d.appendChild(el("span", "oz-disc", r.complet)); return d; };
+      const anPentru = (f) => {
+        const interv = new Map(); cal.structura.forEach((x) => { const v = interv.get(x.an_id) || [x.de_la, x.pana_la]; interv.set(x.an_id, [x.de_la < v[0] ? x.de_la : v[0], x.pana_la > v[1] ? x.pana_la : v[1]]); });
+        const g = ani.find((x) => interv.has(x.id) && interv.get(x.id)[0] <= f && f <= interv.get(x.id)[1]);
+        return g ? g.id : ani[0].id;
+      };
+      const TIP_LIBER = { legala: "Zi liberă legală", men: "Zi liberă stabilită de minister" };
+      // Ce este special într-o zi: zi liberă, vacanță, program special, practică, modulul în curs
+      const infoZi = (d, claseMele) => {
+        const f = iso(d), w = ziSapt(d);
+        const lib = cal.libere.find((x) => x.data === f);
+        const per = cal.structura.filter((x) => x.de_la <= f && f <= x.pana_la);
+        const vac = per.find((x) => /vacanta/.test(x.tip));
+        const alt = per.find((x) => x.tip === "scoala_altfel" || x.tip === "saptamana_verde");
+        const cur = per.find((x) => x.tip === "cursuri");
+        const prim = cal.structura.length ? cal.structura.reduce((m, x) => (x.de_la < m ? x.de_la : m), "9999") : "0000";
+        const practica = [...new Map(cal.practica.filter((x) => x.de_la <= f && f <= x.pana_la && (claseMele.has(x.clasa) || x.al_meu)).map((x) => [x.clasa, x])).values()].sort((x, y) => ordClasaOrar(x.clasa, y.clasa));
+        const i = { f, w, modul: cur ? cur.denumire : "", practica, suspendat: false, tip: "cursuri", titlu: "", sub: "" };
+        if (lib) Object.assign(i, { suspendat: true, tip: "liber", titlu: lib.motiv || "Zi liberă", sub: TIP_LIBER[lib.tip] || "Zi liberă" });
+        else if (w > 4) Object.assign(i, { suspendat: true, tip: "weekend", titlu: ZL7[w], sub: "Weekend" });
+        else if (vac) Object.assign(i, { suspendat: true, tip: "vacanta", titlu: vac.denumire, sub: "Nu se țin ore" });
+        else if (alt) Object.assign(i, { suspendat: true, tip: "program", titlu: alt.denumire, sub: "Program special – orele nu se țin după orar" });
+        else if (!per.length) Object.assign(i, { suspendat: true, tip: "afara", titlu: f < prim ? "Înainte de începutul anului școlar" : "În afara anului școlar", sub: "Nu se țin ore" });
+        return i;
+      };
+      let mod = "zile";
+      let dataSel = new Date(); dataSel = new Date(dataSel.getFullYear(), dataSel.getMonth(), dataSel.getDate());
       const deseneaza = () => {
         zona.replaceChildren();
-        const id = sel ? sel.value : ani[0].id;
+        const acum = new Date(), mN = acum.getHours() * 60 + acum.getMinutes(), azi = new Date(acum.getFullYear(), acum.getMonth(), acum.getDate());
+        const fSel = iso(dataSel), eAzi = fSel === iso(azi);
+        const id = anPentru(fSel);
+        const an = ani.find((x) => x.id === id);
         const ore = data.filter((r) => r.an_id === id);
-        const { de: deO, max } = limiteOrar(ore);
-        const oreZi = (i) => ore.filter((r) => r.zi === i + 1).sort((x, y) => x.ora - y.ora);
-        const acum = new Date(), mN = acum.getHours() * 60 + acum.getMinutes();
-        zona.appendChild(el("p", "oz-sub", ani.find((x) => x.id === id).den + " · " + oraS(ore.length) + " pe săptămână"));
+        const claseMele = new Set(ore.map((r) => r.clasa));
+        const oreZi = (d) => { const w = ziSapt(d); return w > 4 ? [] : ore.filter((r) => r.zi === w + 1).sort((x, y) => x.ora - y.ora); };
+        const tit = (r) => r.complet || "Ora " + r.ora;
+        // ---- Comutator Ziua / Săptămâna
         const comut = el("div", "oz-comut");
-        [["zile", "Ziua"], ["tabel", "Săptămâna"]].forEach(([k, et]) => {
+        [["zile", "Ziua"], ["sapt", "Săptămâna"]].forEach(([k, et]) => {
           const bt = el("button", "", et); bt.type = "button"; bt.setAttribute("aria-pressed", String(mod === k));
           bt.addEventListener("click", () => { mod = k; deseneaza(); }); comut.appendChild(bt);
         });
-        zona.appendChild(comut);
-        const tp = el("button", "oz-tipar", "🖨 Tipărește orarul"); tp.type = "button";
-        tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, de: deO, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], ani.find((x) => x.id === id).den));
+        // ---- Navigare în calendar: ‹ data › + alegere oricare zi
+        const nav = el("div", "oz-nav");
+        const pas = mod === "zile" ? 1 : 7;
+        const bPrev = el("button", "oz-sg", "‹"); bPrev.type = "button"; bPrev.setAttribute("aria-label", mod === "zile" ? "Ziua precedentă" : "Săptămâna precedentă");
+        const bNext = el("button", "oz-sg", "›"); bNext.type = "button"; bNext.setAttribute("aria-label", mod === "zile" ? "Ziua următoare" : "Săptămâna următoare");
+        const inp = document.createElement("input"); inp.type = "date"; inp.value = fSel; inp.className = "oz-data-in"; inp.setAttribute("aria-label", "Alege o zi din an");
+        const bAzi = el("button", "oz-azi", "Azi"); bAzi.type = "button"; bAzi.disabled = eAzi && mod === "zile";
+        bPrev.addEventListener("click", () => { dataSel = adauga(dataSel, -pas); deseneaza(); });
+        bNext.addEventListener("click", () => { dataSel = adauga(dataSel, pas); deseneaza(); });
+        inp.addEventListener("change", () => { if (inp.value) { dataSel = dinIso(inp.value); deseneaza(); } });
+        bAzi.addEventListener("click", () => { dataSel = azi; deseneaza(); });
+        nav.append(bPrev, inp, bNext, bAzi);
+        zona.append(comut, nav);
+        const aviz = (info, faraZi) => { // bannere discrete: zi liberă / vacanță / program special / practică
+          const w = el("div", "oz-avize");
+          if (!faraZi && info.suspendat && info.tip !== "weekend") { const b = el("div", "oz-aviz t-" + info.tip); b.append(el("b", "", info.titlu), el("span", "", info.sub)); w.appendChild(b); }
+          if (info.practica.length) { const b = el("div", "oz-aviz t-practica"); b.append(el("b", "", "Practică"), el("span", "", (info.practica.length === 1 ? "Clasa " : "Clasele ") + info.practica.map((x) => x.clasa).join(", ") + " " + (info.practica.length === 1 ? "este" : "sunt") + " la practică" + (info.practica.some((x) => x.al_meu) ? " · ești coordonator" : ""))); w.appendChild(b); }
+          return w.childNodes.length ? w : null;
+        };
         if (mod === "zile") {
-          // ---- Cartea de vizită a zilei: ce se întâmplă acum
-          const oreAzi = azi < 5 ? oreZi(azi) : [];
-          const cur = oreAzi.find((r) => mN >= stOra(r) && mN < stOra(r) + 50);
-          const urm = cur ? null : oreAzi.find((r) => stOra(r) > mN);
-          const tit = (r) => r.complet || "Ora " + r.ora;
-          const hero = el("div", "oz-hero");
-          hero.appendChild(el("div", "oz-data", ZL7[azi] + ", " + acum.getDate() + " " + LUNI_RO[acum.getMonth()]));
+          const info = infoZi(dataSel, claseMele);
+          const prac = new Set(info.practica.map((x) => x.clasa));
+          const lista = info.suspendat ? [] : oreZi(dataSel);
+          const active = lista.filter((r) => !prac.has(r.clasa));
+          // ---- Cartea de vizită a zilei
+          const cur = eAzi ? active.find((r) => mN >= stOra(r) && mN < stOra(r) + 50) : null;
+          const urm = eAzi && !cur ? active.find((r) => stOra(r) > mN) : null;
+          const hero = el("div", "oz-hero" + (info.suspendat ? " t-" + info.tip : ""));
+          hero.appendChild(el("div", "oz-data", textData(dataSel) + (info.modul ? " · " + info.modul : "")));
           if (cur) {
             hero.append(el("span", "oz-pill live", "Acum"), randClasa(cur, "oz-rand"), el("div", "oz-meta", interval(cur.ora)));
             const bar = el("div", "oz-bar"); const bi = el("i"); bi.style.width = Math.round(((mN - stOra(cur)) / 50) * 100) + "%"; bar.appendChild(bi);
             hero.append(bar, el("div", "oz-mic", "Mai sunt " + (stOra(cur) + 50 - mN) + " min din oră"));
           } else if (urm) {
             hero.append(el("span", "oz-pill", "Urmează"), randClasa(urm, "oz-rand"), el("div", "oz-meta", interval(urm.ora)), el("div", "oz-mic", "Începe peste " + durata(stOra(urm) - mN)));
-          } else if (oreAzi.length) {
-            hero.append(el("span", "oz-pill", "Gata pentru azi"), el("h2", "", "Orele de azi s-au încheiat"), el("div", "oz-meta", "Ai avut " + oraS(oreAzi.length) + " azi."));
+          } else if (info.suspendat) {
+            hero.append(el("span", "oz-pill", info.sub), el("h2", "oz-h2", info.titlu));
+          } else if (!lista.length) {
+            hero.append(el("span", "oz-pill", "Zi liberă"), el("h2", "oz-h2", "Nicio oră în această zi"));
+          } else if (eAzi && active.length) {
+            hero.append(el("span", "oz-pill", "Gata pentru azi"), el("h2", "oz-h2", "Orele de azi s-au încheiat"));
           } else {
-            hero.append(el("span", "oz-pill", azi < 5 ? "Zi liberă" : "Weekend"), el("h2", "", "Nicio oră azi"));
-            for (let d = 1; d <= 7; d++) { const j = (azi + d) % 7; if (j < 5 && oreZi(j).length) { const f = oreZi(j)[0]; hero.appendChild(el("div", "oz-meta", "Următoarea oră: " + ZL7[j] + ", " + interval(f.ora).split("–")[0] + " · " + f.clasa + (f.complet ? " · " + f.complet : ""))); break; } }
+            hero.append(el("span", "oz-pill", "Orarul zilei"), el("h2", "oz-h2", active.length ? oraS(active.length) : "Nicio oră de predat"), el("div", "oz-meta", active.length ? "de la " + interval(active[0].ora).split("–")[0] + " până la " + interval(active[active.length - 1].ora).split("–")[1] : "Toate clasele sunt la practică"));
           }
-          if (oreAzi.length) { const ch = el("div", "oz-chips"); ch.append(el("span", "", oraS(oreAzi.length) + " azi"), el("span", "", "de la " + interval(oreAzi[0].ora).split("–")[0]), el("span", "", "până la " + interval(oreAzi[oreAzi.length - 1].ora).split("–")[1])); hero.appendChild(ch); }
+          if (active.length) { const ch = el("div", "oz-chips"); ch.append(el("span", "", oraS(active.length) + (eAzi ? " azi" : "")), el("span", "", "de la " + interval(active[0].ora).split("–")[0]), el("span", "", "până la " + interval(active[active.length - 1].ora).split("–")[1])); hero.appendChild(ch); }
           zona.appendChild(hero);
-          // ---- Alegerea zilei
+          const av = aviz(info, true); if (av) zona.appendChild(av);
+          // ---- Zilele săptămânii selectate (pastile)
+          const lu = luniDe(dataSel);
           const zile = el("div", "oz-zile");
-          ZL.forEach((zn, i) => {
-            const n = oreZi(i).length; const bz = el("button", "oz-zi" + (i === azi ? " azi" : "")); bz.type = "button"; bz.setAttribute("aria-pressed", String(i === ziSel)); bz.setAttribute("aria-label", zn + ", " + (n ? oraS(n) : "liber"));
-            bz.appendChild(el("b", "", zn)); const pct = el("span", "pct"); for (let k = 0; k < n; k++) pct.appendChild(el("i")); bz.appendChild(pct);
-            bz.addEventListener("click", () => { ziSel = i; deseneaza(); }); zile.appendChild(bz);
-          });
+          for (let k = 0; k < 5; k++) {
+            const d = adauga(lu, k), inf = infoZi(d, claseMele), n = inf.suspendat ? 0 : oreZi(d).length;
+            const bz = el("button", "oz-zi" + (iso(d) === iso(azi) ? " azi" : "") + (inf.suspendat ? " sus t-" + inf.tip : "")); bz.type = "button"; bz.setAttribute("aria-pressed", String(iso(d) === fSel));
+            bz.setAttribute("aria-label", ZL[k] + " " + d.getDate() + ", " + (inf.suspendat ? inf.titlu : oraS(n)));
+            bz.append(el("b", "", ZL[k]), el("span", "nr", String(d.getDate())));
+            const pct = el("span", "pct"); if (inf.suspendat) pct.appendChild(el("i", "x")); else for (let q = 0; q < n; q++) pct.appendChild(el("i")); if (inf.practica.some((p) => (inf.suspendat ? [] : oreZi(d)).some((r) => r.clasa === p.clasa) || p.al_meu)) pct.appendChild(el("i", "pr")); bz.appendChild(pct);
+            bz.addEventListener("click", () => { dataSel = d; deseneaza(); }); zile.appendChild(bz);
+          }
           zona.appendChild(zile);
-          // ---- Linia timpului pentru ziua aleasă
-          const zi = oreZi(ziSel);
+          // ---- Linia timpului
           const tl = el("div", "oz-tl");
-          if (!zi.length) tl.appendChild(el("div", "oz-gol", "Nicio oră în ziua de " + ZL[ziSel].toLowerCase() + "."));
-          zi.forEach((r, k) => {
-            if (k && r.ora - zi[k - 1].ora > 1) { const g = r.ora - zi[k - 1].ora - 1; tl.appendChild(el("div", "oz-pauza", "Fereastră · " + oraS(g) + " (" + interval(zi[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")")); }
-            const aziZi = ziSel === azi, eCur = aziZi && r === cur, eUrm = aziZi && r === urm, eTrecut = aziZi && !eCur && stOra(r) + 50 <= mN;
-            const o = el("div", "oz-ora" + (eCur ? " acum" : "") + (eUrm ? " urm" : "") + (eTrecut ? " trecut" : "")); o.style.setProperty("--k", k);
+          if (!lista.length) tl.appendChild(el("div", "oz-gol", info.suspendat ? "Nu sunt ore în această zi." : "Nicio oră în ziua de " + ZL7[info.w].toLowerCase() + "."));
+          lista.forEach((r, k) => {
+            if (k && r.ora - lista[k - 1].ora > 1) { const g = r.ora - lista[k - 1].ora - 1; tl.appendChild(el("div", "oz-pauza", "Fereastră · " + oraS(g) + " (" + interval(lista[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")")); }
+            const lp = prac.has(r.clasa), eCur = r === cur, eUrm = r === urm, eTrecut = eAzi && !lp && !eCur && stOra(r) + 50 <= mN;
+            const o = el("div", "oz-ora" + (eCur ? " acum" : "") + (eUrm ? " urm" : "") + (eTrecut ? " trecut" : "") + (lp ? " lapr" : "")); o.style.setProperty("--k", k);
             const t = el("div", "oz-t"); t.append(el("b", "", interval(r.ora).split("–")[0]), el("span", "", interval(r.ora).split("–")[1]));
             const card = el("div", "oz-card"); card.appendChild(randClasa(r, "oz-rand"));
-            const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
+            const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (lp) mt.appendChild(el("span", "oz-cl oz-pr", "clasa este la practică")); else if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
             card.appendChild(mt); o.append(t, el("div", "oz-nod"), card); tl.appendChild(o);
           });
           zona.appendChild(tl);
         } else {
-          const t = el("table", "orar-t"); const th = el("tr"); th.appendChild(el("th", "", ""));
-          for (let h = deO; h <= max; h++) { const c = el("th", "", String(h)); c.appendChild(el("small", "", interval(h))); th.appendChild(c); }
-          t.appendChild(el("thead")).appendChild(th);
-          const tb = el("tbody");
-          ZL.forEach((zn, i) => { const tr = el("tr"); const zh = el("th", i === azi ? "azi" : "", zn); tr.appendChild(zh); for (let h = deO; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); const st1 = 480 + (h - 1) * 60;
-            const td = el("td", (r ? "cl" : "") + (i === azi ? " azi" : "") + (r && i === azi && mN >= st1 && mN < st1 + 50 ? " acum" : ""), r && !r.scurt ? r.clasa : ""); if (r && r.scurt) { td.appendChild(el("span", "ab", r.scurt)); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(r.clasa)); } tr.appendChild(td); } tb.appendChild(tr); });
-          t.appendChild(tb);
-          const sc = el("div", "foaie-scroll"); sc.appendChild(t); zona.appendChild(sc);
-          const lgm = legendaOrar(ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet])); if (lgm) zona.appendChild(lgm);
+          // ---- Săptămâna ca agendă: o carte pentru fiecare zi
+          const lu = luniDe(dataSel), vi = adauga(lu, 4);
+          const cap = el("div", "oz-sapt-cap"); cap.append(el("b", "", lu.getDate() + (lu.getMonth() !== vi.getMonth() ? " " + LUNI_RO[lu.getMonth()] : "") + " – " + vi.getDate() + " " + LUNI_RO[vi.getMonth()] + " " + vi.getFullYear()));
+          const totS = Array.from({ length: 5 }, (_, k) => { const d = adauga(lu, k), inf = infoZi(d, claseMele), p = new Set(inf.practica.map((x) => x.clasa)); return inf.suspendat ? 0 : oreZi(d).filter((r) => !p.has(r.clasa)).length; }).reduce((x, y) => x + y, 0);
+          cap.appendChild(el("span", "", oraS(totS) + " de predat în această săptămână")); zona.appendChild(cap);
+          for (let k = 0; k < 5; k++) {
+            const d = adauga(lu, k), info = infoZi(d, claseMele), prac = new Set(info.practica.map((x) => x.clasa));
+            const lista = info.suspendat ? [] : oreZi(d);
+            const infoR = { ...info, practica: info.practica.filter((p) => lista.some((r) => r.clasa === p.clasa) || p.al_meu) };
+            const card = el("section", "oz-zi-card" + (iso(d) === iso(azi) ? " azi" : "") + (info.suspendat ? " sus t-" + info.tip : "")); card.style.setProperty("--k", k);
+            const h = el("div", "oz-zc-cap"); const st = el("div", "oz-zc-t"); st.append(el("b", "", ZL[k]), el("span", "", d.getDate() + " " + LUNI_RO[d.getMonth()])); h.appendChild(st);
+            const dr = el("div", "oz-zc-r"); if (iso(d) === iso(azi)) dr.appendChild(el("span", "oz-cl oz-ac", "azi")); dr.appendChild(el("span", "oz-zc-n", info.suspendat ? info.titlu : (lista.length ? oraS(lista.length) : "liber"))); h.appendChild(dr);
+            card.appendChild(h);
+            const av = aviz(infoR, false); if (av) card.appendChild(av);
+            lista.forEach((r) => { const lp = prac.has(r.clasa); const rd = el("div", "oz-sr" + (lp ? " lapr" : "")); rd.append(el("span", "oz-sr-t", interval(r.ora).split("–")[0]), el("span", "oz-clasa mic", r.clasa), el("span", "oz-disc", lp ? "este la practică" : (r.complet || "Ora " + r.ora))); card.appendChild(rd); });
+            card.addEventListener("click", (e) => { if (e.target.closest("button")) return; });
+            const bz = el("button", "oz-vezi", "Deschide ziua ›"); bz.type = "button"; bz.addEventListener("click", () => { dataSel = d; mod = "zile"; deseneaza(); window.scrollTo({ top: 0, behavior: "smooth" }); }); card.appendChild(bz);
+            zona.appendChild(card);
+          }
         }
         const nrc = new Map(); ore.forEach((r) => nrc.set(r.clasa, (nrc.get(r.clasa) || 0) + 1));
         const rc = el("div", "oz-clase"); rc.appendChild(el("span", "oz-et", "Ore pe clase"));
-        [...nrc].sort((x, y) => x[0].localeCompare(y[0], "ro", { numeric: true })).forEach(([c, n]) => rc.appendChild(el("span", "oz-cl", c + " · " + n)));
-        zona.appendChild(rc); zona.appendChild(tp);
+        [...nrc].sort((x, y) => ordClasaOrar(x[0], y[0])).forEach(([c, n]) => rc.appendChild(el("span", "oz-cl", c + " · " + n)));
+        zona.appendChild(rc);
+        const { de: deO, max } = limiteOrar(ore);
+        const tp = el("button", "oz-tipar", "🖨 Tipărește orarul"); tp.type = "button";
+        tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, de: deO, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], an.den));
+        zona.appendChild(tp);
         zona.appendChild(el("p", "oz-mic2", "Ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
       };
-      clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { if (mod === "zile" && !document.hidden && !$("orarmeu").classList.contains("hidden")) deseneaza(); }, 60000);
-      if (sel) sel.addEventListener("change", deseneaza);
+      clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { const n = new Date(); if (!document.hidden && !$("orarmeu").classList.contains("hidden") && iso(n) === iso(dataSel)) deseneaza(); }, 60000);
       deseneaza();
     }
 
