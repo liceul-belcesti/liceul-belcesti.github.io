@@ -1691,7 +1691,12 @@
           const rez = el("div", "orm"); zona.appendChild(rez);
           const ore = mod === "profesori" ? date.pe.get(selX.value) || [] : date.rows.filter((r) => r.clasa === selX.value);
           const rd = ore.map((r) => { const d = dsc(r); const baza = { an_id: selAn.value, zi: r.zi, ora: r.ora, clasa: r.clasa, scurt: d ? d.scurt : "", complet: d ? d.complet : "" }; return mod === "profesori" ? baza : { ...baza, eticheta: (d && d.scurt) || "Ora " + r.ora, text: date.nume.get(r.angajat_id) || "", grup: date.nume.get(r.angajat_id) || "?" }; });
-          randeazaOrarModern({ zona: rez, data: rd, numeProf: "", cal: date.cal, ani: [{ id: selAn.value, den: date.an }], tipar: false, etGrup: mod === "clase" ? "Ore pe profesori" : "" });
+          const updA = randeazaOrarModern({ zona: rez, data: rd, numeProf: "", cal: date.cal, ani: [{ id: selAn.value, den: date.an }], tipar: false, etGrup: mod === "clase" ? "Ore pe profesori" : "" });
+          let sC = JSON.stringify(date.cal);
+          window.__ozRef = async () => {
+            if (!rez.isConnected || rez.offsetParent === null) return;
+            try { const r = await db.rpc("orar_calendar"); if (!r.error && r.data && r.data.structura && JSON.stringify(r.data) !== sC) { sC = JSON.stringify(r.data); date.cal = r.data; updA(null, r.data); } } catch (e) { /* la următoarea încercare */ }
+          };
         }
       }
       bP.addEventListener("click", () => { mod = "profesori"; umple(); });
@@ -1718,7 +1723,18 @@
       const ani = []; data.forEach((r) => { if (!ani.find((x) => x.id === r.an_id)) ani.push({ id: r.an_id, den: r.denumire }); });
       const zona = el("div", "");
       corp.appendChild(zona);
-      randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar: true });
+      const upd = randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar: true });
+      let sD = JSON.stringify(data), sC = JSON.stringify(cal);
+      window.__ozRef = async () => {
+        if (!zona.isConnected || zona.offsetParent === null) return;
+        try {
+          const [r1, r2] = await Promise.all([db.rpc("orar_propriu_disc"), db.rpc("orar_calendar")]);
+          const nd = !r1.error && r1.data && r1.data.length ? r1.data : null;
+          const nc = !r2.error && r2.data && r2.data.structura ? r2.data : null;
+          const dD = nd && JSON.stringify(nd) !== sD, dC = nc && JSON.stringify(nc) !== sC;
+          if (dD || dC) { if (dD) sD = JSON.stringify(nd); if (dC) sC = JSON.stringify(nc); upd(dD ? nd : null, dC ? nc : null); }
+        } catch (e) { /* la următoarea încercare */ }
+      };
     }
     // Vedere modernă (zi / săptămână, calendar, practică): folosită la „Orarul meu” și la ecranul de orar al administratorului.
     // data: rânduri { an_id, zi, ora, clasa, scurt, complet, eticheta?, text?, grup? }
@@ -1895,7 +1911,15 @@
       };
       clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { const n = new Date(); if (!document.hidden && zona.isConnected && zona.offsetParent !== null && iso(n) === iso(dataSel)) deseneaza(); }, 60000);
       deseneaza();
+      return (nd, nc) => { if (nd) data = nd; if (nc) cal = nc; deseneaza(); }; // actualizare fără reîncărcarea paginii
     }
+    // Reîmprospătare automată: la 5 minute și când revii în pagină, calendarul (practică, zile libere, vacanțe) și orarul se citesc din nou
+    // și ecranul se redesenează doar dacă s-a schimbat ceva; ziua și modul alese rămân.
+    window.__ozRef = null;
+    const reimprospateazaOrar = () => { if (window.__ozRef && !document.hidden) window.__ozRef(); };
+    setInterval(reimprospateazaOrar, 300000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) reimprospateazaOrar(); });
+    window.addEventListener("focus", reimprospateazaOrar);
 
     function deschideAnunturi() {
       memoreazaVedere("anunturi");
