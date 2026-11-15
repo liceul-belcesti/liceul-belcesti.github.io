@@ -2222,14 +2222,15 @@
       const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
       const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
-      let cereri, orar, colegi, cal = { structura: [], libere: [] }, acc = new Map(), pentruMine = [], deDecis = [];
+      let cereri, orar, colegi, cal = { structura: [], libere: [] }, acc = new Map(), pentruMine = [], deDecis = [], lim = new Map();
       const poateDecide = ["administrator", "director"].some((r) => euRoluri.includes(r));
       const incarca = async () => {
-        const [c, o, g, k, ac, pm, dd] = await Promise.all([
-          db.from("cereri_invoire").select("id, an_id, de_la, pana_la, ore_alese, motiv, inlocuitor_propus, propuneri, stare, nota_decizie, decis_la, creat_la").order("creat_la", { ascending: false }).limit(100),
+        const [c, o, g, k, ac, pm, dd, lm] = await Promise.all([
+          db.from("cereri_invoire").select("id, an_id, de_la, pana_la, ore_alese, motiv, inlocuitor_propus, propuneri, optiuni_clasa, stare, nota_decizie, decis_la, creat_la").order("creat_la", { ascending: false }).limit(100),
           db.rpc("orar_propriu_disc"), db.rpc("colegi_invoire"), db.rpc("orar_calendar"),
-          db.rpc("acceptari_cereri_mele"), db.rpc("cereri_pentru_mine"), poateDecide ? db.rpc("cereri_de_decis") : Promise.resolve({ data: [] })
+          db.rpc("acceptari_cereri_mele"), db.rpc("cereri_pentru_mine"), poateDecide ? db.rpc("cereri_de_decis_v2") : Promise.resolve({ data: [] }), db.rpc("limite_clase_zile")
         ]);
+        lim = new Map((lm.error ? [] : (lm.data || [])).map((x) => [x.clasa + "|" + x.zi, { p: Number(x.prima), u: Number(x.ultima) }]));
         acc = new Map(); (ac.error ? [] : (ac.data || [])).forEach((x) => { if (!acc.has(x.cerere_id)) acc.set(x.cerere_id, []); acc.get(x.cerere_id).push(x); });
         pentruMine = pm.error ? [] : (pm.data || []); deDecis = dd.error ? [] : (dd.data || []);
         cal = !k.error && k.data && k.data.structura ? k.data : { structura: [], libere: [] };
@@ -2245,6 +2246,12 @@
       const ACC = { in_asteptare: ["așteaptă răspunsul", "cr-st att"], acceptat: ["a acceptat", "cr-st ok"], refuzat: ["a refuzat", "cr-st rau"] };
       const fOra = (k) => { const p = k.split("|"); return NZ[dinIso(p[0]).getDay()] + " " + fd(p[0]) + " · ora " + p[1] + " (" + intervalOra(Number(p[1])) + ") · " + p.slice(2).join("|"); };
       const listaOre = (ore) => { const d = el("details", "cr-det-ore"); d.appendChild(el("summary", "", ore.length + (ore.length === 1 ? " oră" : " ore"))); const ul = el("div", "cr-ore-lista"); [...ore].sort().forEach((k) => ul.appendChild(el("div", "", /^\d{4}-/.test(k) ? fOra(k) : k))); d.appendChild(ul); return d; };
+      const optiuniClasa = (o, dir) => {
+        const d = el("div", "cr-det-ore"); d.appendChild(el("p", "cr-nota", dir ? "Include ore în care clasa vine mai târziu sau pleacă acasă – doar directorul poate soluționa cererea." : "Include ore în care clasa vine mai târziu sau pleacă acasă – cererea este aprobată doar de director."));
+        const ul = el("div", "cr-ore-lista");
+        Object.keys(o).sort().forEach((k) => { const v = o[k]; ul.appendChild(el("div", "", fOra(k) + " → " + (v.tip === "vine" ? "clasa vine de la ora " : "clasa pleacă acasă de la ora ") + intervalOra(v.ora).split("–")[0])); });
+        d.appendChild(ul); return d;
+      };
       const reincarca = async (txt, ok) => { try { await incarca(); } catch (e) { /* rămâne lista veche */ } mesaj(txt, ok); desenLista(); };
       // Cererile la care sunt propus ca înlocuitor
       const sectiunePentruMine = () => {
@@ -2283,8 +2290,9 @@
           const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
           cp.append(el("b", "", c.solicitant), el("span", "cr-det", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)));
           k.appendChild(cp); k.appendChild(el("p", "cr-motiv", c.motiv));
-          const ore = c.ore_alese || [], nrProp = Object.keys(c.propuneri || {}).length;
-          k.appendChild(el("p", "cr-det", ore.length + (ore.length === 1 ? " oră" : " ore") + " · cu înlocuitor propus: " + nrProp + " · fără înlocuitor: " + (ore.length - nrProp)));
+          const ore = c.ore_alese || [], nrProp = Object.keys(c.propuneri || {}).length, no = Object.keys(c.optiuni_clasa || {}).length;
+          k.appendChild(el("p", "cr-det", ore.length + (ore.length === 1 ? " oră" : " ore") + " · cu înlocuitor propus: " + nrProp + (no ? " · clasa vine mai târziu / pleacă acasă: " + no : "") + " · fără înlocuitor: " + (ore.length - nrProp - no)));
+          if (no) k.appendChild(optiuniClasa(c.optiuni_clasa, true));
           k.appendChild(listaOre(ore));
           const ac = c.acceptari || [];
           ac.forEach((x) => { const r = el("div", "cr-acc"); r.append(el("span", "", x.nume), el("span", ACC[x.stare][1], ACC[x.stare][0])); k.appendChild(r); });
@@ -2355,6 +2363,7 @@
           k.appendChild(el("p", "cr-motiv", c.motiv));
           const det = [c.ore_alese ? c.ore_alese.length + (c.ore_alese.length === 1 ? " oră aleasă" : " ore alese") : "Toate orele", ""].filter(Boolean).join(" · ");
           k.appendChild(el("p", "cr-det", det));
+          if (c.optiuni_clasa) k.appendChild(optiuniClasa(c.optiuni_clasa, false));
           (acc.get(c.id) || []).forEach((x) => { const r = el("div", "cr-acc"); r.append(el("span", "", x.nume), el("span", ACC[x.stare][1], ACC[x.stare][0])); k.appendChild(r); });
           if (c.nota_decizie) k.appendChild(el("p", "cr-nota", "Răspuns: " + c.nota_decizie));
           if (c.stare === "in_asteptare") {
@@ -2394,7 +2403,8 @@
         r3.append(lT, lP); f.appendChild(r3);
         const zileBox = el("div", "cr-zile"); f.appendChild(zileBox);
         const struct = (c) => /Mun/i.test(c) ? "Munteni" : /Tan/i.test(c) ? "Tanșa" : "Centru";
-        const alese = new Set(), propuneri = new Map(), alt = new Set();
+        const alese = new Set(), propuneri = new Map(), alt = new Set(), opt = new Map();
+        const ora0 = (n) => intervalOra(n).split("–")[0];
         let lectii = [], sug = null, cerereSug = 0, timer = null, depasit = false;
         const cheie = (z, o) => z + "|" + o.ora + "|" + o.clasa;
         // zilele din perioadă care au ore, fără zile libere, vacanțe și programe speciale
@@ -2415,6 +2425,29 @@
         const toateCheile = () => lectii.flatMap((x) => x.ore.filter((o) => !o.practica).map((o) => o.k));
         const sincMod = () => { const t = toateCheile(); const tot = t.length > 0 && t.every((k) => alese.has(k)); cbT.checked = tot; cbP.checked = !tot; };
         const optiune = (sl, titlu, lista) => { if (!lista.length) return; const og = document.createElement("optgroup"); og.label = titlu; lista.forEach((r) => og.appendChild(new Option(r.detaliu ? r.nume + " — " + r.detaliu : r.nume, r.id))); sl.appendChild(og); };
+        const optiuniPosibile = (x, o) => {
+          const L = lim.get(o.clasa + "|" + x.w); if (!L) return [];
+          const Lc = new Set(x.ore.filter((q) => q.clasa === o.clasa && !q.practica).map((q) => q.ora));
+          const res = []; let R = L.p - 1; while (Lc.has(R + 1)) R++;
+          if (o.ora >= L.p && o.ora <= R) for (let X = o.ora + 1; X <= Math.min(R + 1, L.u); X++) res.push({ tip: "vine", ora: X });
+          let S = L.u + 1; while (Lc.has(S - 1)) S--;
+          if (o.ora <= L.u && o.ora >= S) for (let X = S; X <= o.ora; X++) res.push({ tip: "pleaca", ora: X });
+          return res;
+        };
+        const oreOpt = (v, x, clasa) => { const L = lim.get(clasa + "|" + x.w), r = []; if (!L) return r; if (v.tip === "vine") for (let g = L.p; g < v.ora; g++) r.push(g); else for (let g = v.ora; g <= L.u; g++) r.push(g); return r; };
+        const textOpt = (v) => v.tip === "vine" ? "Clasa vine de la ora " + ora0(v.ora) + " (ora " + v.ora + ")" : "Clasa pleacă acasă de la ora " + ora0(v.ora) + " (ora " + v.ora + ")";
+        const stergeOpt = (x, o) => { const cur = opt.get(o.k); if (cur) oreOpt(cur, x, o.clasa).forEach((g) => opt.delete(x.z + "|" + g + "|" + o.clasa)); };
+        const puneOpt = (x, o, v) => { stergeOpt(x, o); if (v) oreOpt(v, x, o.clasa).forEach((g) => { const kk = x.z + "|" + g + "|" + o.clasa; alese.add(kk); propuneri.delete(kk); alt.delete(kk); opt.set(kk, { ...v }); }); sincMod(); deseneazaZile(); };
+        const blocOpt = (x, o) => {
+          const pos = optiuniPosibile(x, o), cur = opt.get(o.k);
+          if (!pos.length && !cur) return null;
+          const sl = document.createElement("select"); sl.setAttribute("aria-label", "Cum se acoperă ora " + o.ora + ", clasa " + o.clasa);
+          sl.add(new Option("Cu înlocuitor", ""));
+          pos.forEach((v) => sl.add(new Option(textOpt(v), v.tip + ":" + v.ora)));
+          if (cur) sl.value = cur.tip + ":" + cur.ora;
+          sl.addEventListener("change", () => { if (!sl.value) return puneOpt(x, o, null); const [t, n] = sl.value.split(":"); puneOpt(x, o, { tip: t, ora: Number(n) }); });
+          return sl;
+        };
         const blocProp = (z, o) => {
           const k = o.k, bloc = el("div", "cr-prop");
           const rec = sug ? sug.filter((r) => r.data === z && Number(r.ora) === o.ora && r.clasa === o.clasa) : [];
@@ -2456,8 +2489,13 @@
               lb.append(cb, document.createTextNode(" ora " + o.ora + " (" + intervalOra(o.ora) + ") · " + o.clasa + " · " + struct(o.clasa)));
               rd.appendChild(lb);
               if (o.practica) rd.appendChild(el("p", "cr-det", "Clasa este la practică – nu este nevoie de suplinire."));
-              else if (cb.checked) rd.appendChild(blocProp(x.z, o));
-              cb.addEventListener("change", () => { if (cb.checked) alese.add(o.k); else { alese.delete(o.k); propuneri.delete(o.k); alt.delete(o.k); } sincMod(); deseneazaZile(); });
+              else if (cb.checked) {
+                const bo = blocOpt(x, o), cur = opt.get(o.k);
+                if (bo) { const w = el("div", "cr-prop"); w.appendChild(el("p", "cr-det", "Cum se acoperă ora")); w.appendChild(bo); rd.appendChild(w); }
+                if (cur) rd.appendChild(el("p", "cr-det", textOpt(cur) + ". Nu este nevoie de înlocuitor; cererea o aprobă doar directorul."));
+                else rd.appendChild(blocProp(x.z, o));
+              }
+              cb.addEventListener("change", () => { if (cb.checked) alese.add(o.k); else { stergeOpt(x, o); alese.delete(o.k); propuneri.delete(o.k); alt.delete(o.k); } sincMod(); deseneazaZile(); });
               card.appendChild(rd);
             });
             zileBox.appendChild(card);
@@ -2479,11 +2517,12 @@
           mesaj(""); calculeaza();
           const valide = new Set(toateCheile());
           [...alese].forEach((k) => { if (!valide.has(k)) { alese.delete(k); propuneri.delete(k); alt.delete(k); } });
+          [...opt.keys()].forEach((k) => { if (!valide.has(k)) opt.delete(k); });
           if (cbT.checked) valide.forEach((k) => alese.add(k));
           sincMod(); deseneazaZile(); incarcaSug();
         };
         cbT.addEventListener("change", () => { if (!cbT.checked) { cbT.checked = true; return; } cbP.checked = false; toateCheile().forEach((k) => alese.add(k)); deseneazaZile(); });
-        cbP.addEventListener("change", () => { if (!cbP.checked) { cbP.checked = true; return; } cbT.checked = false; alese.clear(); propuneri.clear(); alt.clear(); deseneazaZile(); });
+        cbP.addEventListener("change", () => { if (!cbP.checked) { cbP.checked = true; return; } cbT.checked = false; alese.clear(); propuneri.clear(); alt.clear(); opt.clear(); deseneazaZile(); });
         de.addEventListener("change", () => { if (pana.value < de.value) pana.value = de.value; pana.min = de.value || azi; dupaDate(); });
         pana.addEventListener("change", dupaDate);
         const ctl = el("div", "ctl");
@@ -2495,9 +2534,10 @@
           if (motiv.value.trim().length < 3) return mesaj("Scrie motivul învoirii.");
           const ore = toateCheile().filter((k) => alese.has(k));
           if (!ore.length) return mesaj("Bifează cel puțin o oră.");
-          const prop = {}; ore.forEach((k) => { if (propuneri.has(k)) prop[k] = propuneri.get(k); });
+          const prop = {}; ore.forEach((k) => { if (propuneri.has(k) && !opt.has(k)) prop[k] = propuneri.get(k); });
           ok.disabled = true;
-          const { error } = await db.rpc("cerere_invoire_trimite_zile", { p_de: de.value, p_pana: pana.value, p_ore: ore, p_motiv: motiv.value.trim(), p_propuneri: Object.keys(prop).length ? prop : null });
+          const op = {}; ore.forEach((k) => { if (opt.has(k)) op[k] = opt.get(k); });
+          const { error } = await db.rpc("cerere_invoire_trimite_v2", { p_de: de.value, p_pana: pana.value, p_ore: ore, p_motiv: motiv.value.trim(), p_propuneri: Object.keys(prop).length ? prop : null, p_optiuni: Object.keys(op).length ? op : null });
           ok.disabled = false;
           if (error) return mesaj(error.message || "Cererea nu a putut fi trimisă.");
           try { await incarca(); } catch (e) { /* lista se reîncarcă la următoarea deschidere */ }
