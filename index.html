@@ -601,7 +601,10 @@
     #orarmeu .oz-ora.urm .oz-card { box-shadow:0 0 0 2px var(--accent); }
     #orarmeu .oz-ac { background:var(--accent); color:var(--on-accent); text-transform:uppercase; letter-spacing:.06em; font-size:.68rem; }
     #orarmeu .oz-ora.acum .oz-ac { background:#fff; color:#124a86; }
-    #orarmeu .oz-pauza { margin:0 0 12px 84px; padding:9px 14px; border-radius:16px; border:1.5px dashed var(--line); color:var(--muted); font-size:.82rem; }
+    #orarmeu .oz-pauza { margin:0 0 12px 84px; padding:11px 14px; border-radius:16px; display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#fff3d6,#ffe2a8); color:#6b3f00; border:2px solid #f0a31a; box-shadow:0 6px 14px -8px rgba(240,163,26,.8); font-size:.85rem; }
+    #orarmeu .oz-pauza::before { content:"\23F3"; font-size:1.15rem; }
+    #orarmeu .oz-pauza b { font-size:.95rem; font-weight:800; letter-spacing:.01em; text-transform:uppercase; }
+    #orarmeu .oz-pauza span { font-weight:700; background:rgba(255,255,255,.65); border-radius:999px; padding:3px 10px; margin-left:auto; white-space:nowrap; }
     #orarmeu .oz-gol { padding:22px; text-align:center; color:var(--muted); background:var(--card); border-radius:20px; }
     #orarmeu .oz-clase { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:18px 0 6px; }
     #orarmeu .oz-et { font-size:.8rem; color:var(--muted); font-weight:700; margin-right:4px; }
@@ -1823,7 +1826,7 @@
           const tl = el("div", "oz-tl");
           if (!lista.length && info.tip !== "weekend") tl.appendChild(el("div", "oz-gol", info.suspendat ? "Nu sunt ore în această zi." : "Nicio oră în ziua de " + ZL7[info.w].toLowerCase() + "."));
           lista.forEach((r, k) => {
-            if (k && r.ora - lista[k - 1].ora > 1) { const g = r.ora - lista[k - 1].ora - 1; tl.appendChild(el("div", "oz-pauza", "Fereastră · " + oraS(g) + " (" + interval(lista[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")")); }
+            if (k && r.ora - lista[k - 1].ora > 1) { const g = r.ora - lista[k - 1].ora - 1; { const fz = el("div", "oz-pauza"); fz.append(el("b", "", "Fereastră"), el("span", "", oraS(g) + " · " + interval(lista[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1])); tl.appendChild(fz); } }
             const lp = prac.has(r.clasa), eCur = r === cur, eUrm = r === urm, eTrecut = eAzi && !lp && !eCur && stOra(r) + 50 <= mN;
             const o = el("div", "oz-ora" + (eCur ? " acum" : "") + (eUrm ? " urm" : "") + (eTrecut ? " trecut" : "") + (lp ? " lapr" : "")); o.style.setProperty("--k", k);
             const t = el("div", "oz-t"); t.append(el("b", "", interval(r.ora).split("–")[0]), el("span", "", interval(r.ora).split("–")[1]));
