@@ -345,6 +345,9 @@
     #pontaj #rand-an-luna .luna-bara { flex:1 1 280px; margin:0; }
     #pontaj:has(#pont-principal.hidden) #rand-an-luna .luna-bara, #pontaj:has(#pont-principal.hidden) #rand-an-luna .inreg-bara { display:none; }
     #pontaj.mod-propriu .inreg-bara, #pontaj.mod-propriu #bara-foaie { display:none !important; }
+    #pontaj.mod-propriu details.legenda, #pontaj.mod-propriu #luna-stare, #pontaj.mod-propriu #luna-info, #pontaj.mod-propriu #foaie-numar, #pontaj.mod-propriu #foaie-libere, #pontaj.mod-propriu #foaie-vacante { display:none !important; }
+    #info-profesor { background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:10px 14px; font-size:.9rem; line-height:1.5; margin:6px 0 10px; }
+    #info-profesor.hidden { display:none; }
     #pontaj .inreg-bara { display:flex; align-items:center; gap:8px; flex:0 1 auto; }
     #pontaj .inreg-bara input { width:auto; min-height:44px; padding:6px 10px; font:inherit; font-weight:700; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
     #pontaj .inreg-bara #inreg-nr { width:110px; }
@@ -734,6 +737,7 @@
       <div id="pont-principal">
         <p id="luna-info" class="who"></p>
         <div id="luna-stare" class="stare-bara"></div>
+        <p id="info-profesor" class="who hidden">Pontajul tău apare aici după ce secretariatul închide luna. O cifră dintr-o căsuță înseamnă orele lucrate în ziua respectivă. Dacă în loc de cifră apare un cod: <b>CO</b> concediu de odihnă · <b>CM</b> concediu medical · <b>BP</b> boală profesională · <b>AM</b> accident de muncă · <b>M</b> maternitate · <b>CCC</b> concediu pentru creșterea copilului · <b>PRM</b> program redus maternitate · <b>PRB</b> program redus boală · <b>I</b> învoire sau concediu fără plată · <b>O</b> obligații cetățenești · <b>N</b> absență nemotivată · <b>L</b> zi liberă stabilită de minister. În dreapta foii sunt totalurile tale (ore lucrate, zile lucrate și, la plata cu ora, DT și PIP). Dacă ceva nu este corect, anunță secretariatul.</p>
         <details class="legenda"><summary>Explicații pentru coduri și calcul</summary>
           <p>O cifră înseamnă ore lucrate (număr întreg). În celule apar codurile: <b>CO</b> concediu de odihnă · <b>CM</b> concediu medical · <b>BP</b> boală profesională · <b>AM</b> accident de muncă · <b>M</b> maternitate · <b>CCC</b> concediu pentru creșterea copilului · <b>PRM</b> program redus maternitate · <b>PRB</b> program redus boală · <b>I</b> învoiri sau concediu fără plată · <b>O</b> obligații cetățenești · <b>N</b> absențe nemotivate · <b>L</b> liber stabilit de minister · <b>PCO</b> plata cu ora.</p>
           <p>Pentru cei care au doar plata cu ora: <b>Total ore lucrate</b> = suma orelor din foaie, <b>Zile lucrate</b> = zilele cu cel puțin o oră, iar DT și PIP = ore pe săptămână × (0,2 × zilele lucrătoare din lună), rotunjit; plata cu ora = DT + PIP.</p>
@@ -1783,6 +1787,7 @@
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("pontaj").classList.remove("hidden");
       $("pontaj").classList.toggle("mod-propriu", modPropriu);
+      $("info-profesor").classList.toggle("hidden", !modPropriu);
       document.querySelector("#pontaj .hello").textContent = modPropriu ? "Pontajul meu" : "Pontaj";
       mesajPontaj("");
       $("ang-form-loc").replaceChildren();
