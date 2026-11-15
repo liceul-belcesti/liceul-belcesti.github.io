@@ -496,6 +496,32 @@
     #structura .ang-rand { border-left:5px solid var(--line); }
     #structura .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
     /* Orar pe ecran: aspect curat, o singură culoare de accent, ora curentă evidențiată */
+    /* Azi în școală */
+    .orm .az-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:0 0 6px; }
+    @media (min-width:640px) { .orm .az-stats { grid-template-columns:repeat(4,1fr); } }
+    .orm .az-stat { background:var(--card); border-radius:18px; padding:12px 14px; box-shadow:0 1px 3px rgba(0,0,0,.08); border:2px solid transparent; }
+    .orm .az-stat b { display:block; font-size:2rem; font-weight:800; line-height:1.1; color:var(--text); }
+    .orm .az-stat span { font-size:.8rem; font-weight:700; color:var(--muted); }
+    .orm .az-stat.bun b { color:var(--accent); }
+    .orm .az-stat.att { border-color:#f0a31a; }
+    .orm .az-stat.rau { border-color:#dc2626; } .orm .az-stat.rau b { color:#b91c1c; }
+    .orm .az-h { margin:20px 0 8px; font-size:1.05rem; font-weight:800; }
+    .orm .az-card { background:var(--card); border-radius:18px; padding:12px 14px; margin:0 0 10px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    .orm .az-card.az-rau { border:2px solid #dc2626; }
+    .orm .az-cap { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+    .orm .az-cap b { font-size:1rem; }
+    .orm .az-motiv { font-size:.8rem; font-weight:700; padding:2px 10px; border-radius:999px; background:color-mix(in srgb, #f0a31a 22%, var(--card)); color:#7a4a00; }
+    .orm .az-ora { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:7px 0; border-top:1px solid var(--line); font-size:.9rem; }
+    .orm .az-ora:first-of-type { border-top:0; }
+    .orm .az-ora .t { font-weight:800; min-width:44px; }
+    .orm .az-disc { color:var(--muted); }
+    .orm .az-pe { margin-left:auto; font-weight:700; }
+    .orm .az-tag { font-size:.78rem; font-weight:800; padding:2px 10px; border-radius:999px; margin-left:auto; }
+    .orm .az-tag.ok { background:color-mix(in srgb, #16a34a 16%, var(--card)); color:#15803d; }
+    .orm .az-tag.rau { background:color-mix(in srgb, #dc2626 14%, var(--card)); color:#b91c1c; }
+    .orm .az-tag.pr { background:color-mix(in srgb, #f0a31a 22%, var(--card)); color:#7a4a00; }
+    .orm .az-nota { margin:4px 0 0; color:var(--muted); font-size:.88rem; }
+    @media (prefers-color-scheme: dark) { .orm .az-motiv, .orm .az-tag.pr { color:#fcd34d; } .orm .az-tag.ok { color:#86efac; } .orm .az-tag.rau, .orm .az-stat.rau b { color:#fca5a5; } }
     #orar .oz-vedere { display:inline-grid; grid-auto-flow:column; gap:4px; padding:4px; background:var(--card); border-radius:999px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin:0 0 12px; }
     #orar .oz-vedere button { margin:0; width:auto; min-height:36px; padding:0 20px; border-radius:999px; background:transparent; color:var(--muted); border:0; box-shadow:none; font-weight:700; }
     #orar .oz-vedere button[aria-pressed="true"] { background:var(--text); color:var(--card); }
@@ -1024,6 +1050,13 @@
       <div id="orar-corp"></div>
     </main>
 
+    <main id="azi" class="wrap hidden">
+      <button id="inapoi-azi" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Azi în școală</h1>
+      <div id="azi-msg" class="panel-msg" role="alert"></div>
+      <div id="azi-corp"></div>
+    </main>
+
     <main id="orarmeu" class="wrap hidden">
       <button id="inapoi-orarmeu" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Orarul meu</h1>
@@ -1057,12 +1090,14 @@
     };
     const MESAJ_ASTEPTARE = "Contul tău a fost creat și așteaptă aprobarea administratorului. Vei putea intra după aprobare.";
     const MESAJ_FARA_ACCES = "Contul tău nu are acces la platformă. Contactează administratorul.";
+    const MESAJ_EROARE_CONEXIUNE = "Nu am putut verifica contul din cauza unei probleme de conectare. Verifică data și ora dispozitivului (să fie setate automat), așteaptă un minut și încearcă din nou.";
 
     let euRoluri = [];
 
     // Modulele platformei (deocamdată inactive, în afară de Utilizatori; le activăm pe rând).
     const MODULE = {
       utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și atribuie roluri", sub: ["Conturi în așteptare", "Roluri"], activ: true },
+      azi:      { ico: "🏫", t: "Azi în școală", d: "Cine lipsește, ore neacoperite, suplinitori, practică", sub: ["Situația zilei"], activ: true },
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orarul meu"], activ: true },
@@ -1075,8 +1110,8 @@
     // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      director:      ["utilizatori", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
-      secretariat:   ["pontaj", "structura", "anunturi", "orar", "registru"],
+      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
+      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
       profesor:      ["pontaj", "orarmeu", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
@@ -1182,6 +1217,7 @@
       $("anunturi").classList.add("hidden");
       $("orarmeu").classList.add("hidden");
       $("orar").classList.add("hidden");
+      $("azi").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -1189,7 +1225,8 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi") return;
+      if (cheie === "azi") return deschideAzi();
       if (cheie === "orar") return deschideOrar();
       if (cheie === "anunturi") return deschideAnunturi();
       if (cheie === "orarmeu") return deschideOrarMeu();
@@ -1920,6 +1957,205 @@
     setInterval(reimprospateazaOrar, 300000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) reimprospateazaOrar(); });
     window.addEventListener("focus", reimprospateazaOrar);
+
+    // ---------- Azi în școală: cine lipsește, ore neacoperite, suplinitori, practică — pentru oricare zi aleasă ----------
+    $("inapoi-azi").addEventListener("click", arataPrincipal);
+    async function deschideAzi() {
+      memoreazaVedere("azi");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("azi").classList.remove("hidden");
+      const msg = $("azi-msg"), corp = $("azi-corp"); msg.textContent = ""; corp.replaceChildren(el("p", "who", "Se încarcă…"));
+      const ZL = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"], ZL7 = [...ZL, "Sâmbătă", "Duminică"];
+      const LUNI_RO = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+      const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
+      const adauga = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+      const ziSapt = (d) => (d.getDay() + 6) % 7;
+      const luSapt = (d) => (ziSapt(d) > 4 ? adauga(d, 7 - ziSapt(d)) : adauga(d, -ziSapt(d)));
+      const aziD = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+      const textData = (d) => ZL7[ziSapt(d)] + ", " + d.getDate() + " " + LUNI_RO[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? " " + d.getFullYear() : "");
+      const oraS = (n) => n + (n === 1 ? " oră" : " ore");
+      const cer = async (p) => { const r = await p; if (r.error) throw r.error; return r.data; };
+      const ABS = ["CO", "CM", "BP", "AM", "M", "CCC", "I", "O", "N"];
+      const MOTIV = { CO: "Concediu de odihnă", CM: "Concediu medical", BP: "Boală profesională", AM: "Accident de muncă", M: "Maternitate", CCC: "Creșterea copilului", I: "Învoire", O: "Obligații cetățenești", N: "Absență nemotivată" };
+      let ani, struct, libere, disc;
+      try {
+        [ani, struct, libere, disc] = await Promise.all([
+          cer(db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false })),
+          toate(() => db.from("structura_an").select("an_id, tip, denumire, de_la, pana_la").is("sters_la", null).order("de_la")),
+          toate(() => db.from("zile_libere").select("data, motiv, tip").order("data")),
+          toate(() => db.from("discipline").select("id, scurt, complet").order("id"))
+        ]);
+      } catch (e) { corp.replaceChildren(); msg.textContent = "Datele nu au putut fi încărcate. Încearcă din nou."; return; }
+      if (!ani.length) { corp.replaceChildren(); msg.textContent = "Nu există ani școlari."; return; }
+      const dm = new Map(disc.map((x) => [x.id, x]));
+      const anPentru = (f) => {
+        const interv = new Map(); struct.forEach((x) => { const v = interv.get(x.an_id) || [x.de_la, x.pana_la]; interv.set(x.an_id, [x.de_la < v[0] ? x.de_la : v[0], x.pana_la > v[1] ? x.pana_la : v[1]]); });
+        const g = ani.find((x) => interv.has(x.id) && interv.get(x.id)[0] <= f && f <= interv.get(x.id)[1]);
+        return g ? g.id : ani[0].id;
+      };
+      const infoZi = (d) => {
+        const f = iso(d), w = ziSapt(d);
+        const lib = libere.find((x) => x.data === f);
+        const per = struct.filter((x) => x.de_la <= f && f <= x.pana_la);
+        const vac = per.find((x) => /vacanta/.test(x.tip)), alt = per.find((x) => x.tip === "scoala_altfel" || x.tip === "saptamana_verde"), cur = per.find((x) => x.tip === "cursuri");
+        const i = { f, w, modul: cur ? cur.denumire : "", suspendat: false, tip: "cursuri", titlu: "", sub: "" };
+        if (lib) Object.assign(i, { suspendat: true, tip: "liber", titlu: lib.motiv || "Zi liberă", sub: lib.tip === "men" ? "Zi liberă stabilită de minister" : "Zi liberă legală" });
+        else if (w > 4) Object.assign(i, { suspendat: true, tip: "weekend", titlu: ZL7[w], sub: "Weekend" });
+        else if (vac) Object.assign(i, { suspendat: true, tip: "vacanta", titlu: vac.denumire, sub: "Nu se țin ore" });
+        else if (alt) Object.assign(i, { suspendat: true, tip: "program", titlu: alt.denumire, sub: "Program special – orele nu se țin după orar" });
+        else if (!per.length) Object.assign(i, { suspendat: true, tip: "afara", titlu: "În afara anului școlar", sub: "Nu se țin ore" });
+        return i;
+      };
+      const bazaAni = new Map();
+      const baza = async (anId) => {
+        if (bazaAni.has(anId)) return bazaAni.get(anId);
+        const [ang, orar] = await Promise.all([
+          toate(() => db.from("angajati").select("id, nume, norme(id)").eq("an_id", anId).is("sters_la", null).order("nume")),
+          toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa, disciplina_id").eq("an_id", anId).order("angajat_id").order("zi").order("ora"))
+        ]);
+        const b = { ang, orar, nume: new Map(ang.map((x) => [x.id, x.nume])), dePeNorma: new Map(ang.flatMap((x) => (x.norme || []).map((n) => [n.id, x.id]))) };
+        bazaAni.set(anId, b); return b;
+      };
+      const dinamic = async (anId, f) => {
+        const [manual, inloc, ccc, pract] = await Promise.all([
+          toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare").eq("zi", f).in("valoare", ABS)),
+          toate(() => db.from("pontaj_inlocuiri").select("norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore, ore_clase").is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("de_la").order("id")),
+          toate(() => db.from("concedii_lungi").select("angajat_id, tip, de_la, pana_la, inlocuitor_angajat_id, toate_orele, clase").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f)),
+          toate(() => db.from("practica_clase").select("clasa, angajat_id, de_la, pana_la").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("clasa"))
+        ]);
+        return { manual, inloc, ccc, pract };
+      };
+      // Calculul zilei: cine lipsește, ce ore ale lor sunt acoperite și de cine
+      const calculeaza = (f, w, b, dn) => {
+        const absent = new Map(); // angajat_id -> { motive:Set, acoperiri:[] }
+        const ia = (id) => { if (!absent.has(id)) absent.set(id, { motive: new Set(), inloc: [], ccc: [] }); return absent.get(id); };
+        dn.manual.forEach((x) => { const a = b.dePeNorma.get(x.norma_id); if (a) ia(a).motive.add(x.valoare); });
+        dn.inloc.forEach((q) => { const a = b.dePeNorma.get(q.norma_id); if (a) { const r = ia(a); r.motive.add(q.tip); r.inloc.push(q); } });
+        dn.ccc.forEach((c) => { const r = ia(c.angajat_id); r.motive.add(c.tip || "CCC"); r.ccc.push(c); });
+        const practica = new Set(dn.pract.map((p) => p.clasa));
+        const numeInl = (id, nm) => (id && b.nume.get(id)) || nm || "alt coleg";
+        const rez = [], supl = new Map();
+        absent.forEach((r, id) => {
+          const ore = b.orar.filter((o) => o.angajat_id === id && Number(o.zi) === w).sort((x, y) => x.ora - y.ora).map((o) => { const d = dm.get(o.disciplina_id); return { ora: Number(o.ora), clasa: o.clasa, disc: d ? d.complet : "", status: practica.has(o.clasa) ? "practica" : "neacoperita", de: "" }; });
+          const liber = () => ore.filter((o) => o.status === "neacoperita");
+          r.inloc.forEach((q) => {
+            const nm = numeInl(q.inlocuitor_angajat_id, q.inlocuitor_nume), oc = q.ore_clase && q.ore_clase[f];
+            if (oc) oc.forEach((x) => { const ora = Number(x.split(":")[0]), cl = x.split(":").slice(1).join(":"); const o = ore.find((y) => y.ora === ora && y.clasa === cl && y.status === "neacoperita"); if (o) { o.status = "acoperita"; o.de = nm; } });
+            else { const n = Number((q.ore || {})[f]) || 0; liber().slice(0, n).forEach((o) => { o.status = "acoperita"; o.de = nm; }); }
+          });
+          r.ccc.forEach((c) => {
+            const nm = numeInl(c.inlocuitor_angajat_id, "");
+            if (!c.inlocuitor_angajat_id) return;
+            liber().forEach((o) => { if (c.toate_orele || (c.clase || []).includes(o.clasa)) { o.status = "acoperita"; o.de = nm; } });
+          });
+          ore.filter((o) => o.status === "acoperita").forEach((o) => { if (!supl.has(o.de)) supl.set(o.de, []); supl.get(o.de).push({ ora: o.ora, clasa: o.clasa, pentru: b.nume.get(id) || "?" }); });
+          rez.push({ id, nume: b.nume.get(id) || "?", motive: [...r.motive], ore });
+        });
+        rez.sort((x, y) => x.nume.localeCompare(y.nume, "ro"));
+        const profCuOre = new Set(b.orar.filter((o) => Number(o.zi) === w).map((o) => o.angajat_id)).size;
+        const neacop = rez.flatMap((r) => r.ore.filter((o) => o.status === "neacoperita").map((o) => ({ ...o, nume: r.nume }))).sort((x, y) => x.ora - y.ora || ordClasaOrar(x.clasa, y.clasa));
+        return { absenti: rez, neacop, supl, profCuOre, practica: dn.pract.map((p) => ({ clasa: p.clasa, coord: b.nume.get(p.angajat_id) || "" })).sort((x, y) => ordClasaOrar(x.clasa, y.clasa)) };
+      };
+      let dataSel = aziD(), rezultat = null, sD = "";
+      const incarca = async () => {
+        const f = iso(dataSel), anId = anPentru(f), b = await baza(anId), dn = await dinamic(anId, f);
+        sD = JSON.stringify([f, dn]);
+        rezultat = { f, b, dn, calc: calculeaza(f, ziSapt(dataSel) + 1, b, dn) };
+      };
+      const zona = el("div", "orm"); corp.replaceChildren(zona);
+      const deseneaza = () => {
+        zona.replaceChildren();
+        const azi = aziD(), fSel = iso(dataSel), eAzi = fSel === iso(azi), info = infoZi(dataSel);
+        // ---- Navigare: Azi + mesaj + data (săgeți)
+        const bAzi = el("button", "oz-azi", "Azi"); bAzi.type = "button"; bAzi.disabled = eAzi;
+        bAzi.addEventListener("click", () => seteaza(azi));
+        const bPrev = el("button", "oz-sg", "‹"), bNext = el("button", "oz-sg", "›"); bPrev.type = bNext.type = "button";
+        bPrev.setAttribute("aria-label", "Ziua precedentă"); bNext.setAttribute("aria-label", "Ziua următoare");
+        const inp = document.createElement("input"); inp.type = "date"; inp.value = fSel; inp.className = "oz-data-in"; inp.setAttribute("aria-label", "Alege o zi din an");
+        bPrev.addEventListener("click", () => seteaza(adauga(dataSel, -1))); bNext.addEventListener("click", () => seteaza(adauga(dataSel, 1)));
+        inp.addEventListener("change", () => { if (inp.value) seteaza(dinIso(inp.value)); });
+        const cap = el("div", "oz-cap"); cap.append(bPrev, inp, bNext);
+        const sus = el("div", "oz-top"); sus.append(bAzi, el("span", "oz-nav-msg", "Selectează o zi în care vrei să vezi situația școlii"), cap);
+        zona.appendChild(sus);
+        // ---- Pastilele săptămânii
+        const lu = luSapt(dataSel), zile = el("div", "oz-zile");
+        for (let k = 0; k < 5; k++) {
+          const d = adauga(lu, k), inf = infoZi(d);
+          const bz = el("button", "oz-zi" + (iso(d) === iso(azi) ? " azi" : "") + (inf.suspendat ? " sus t-" + inf.tip : "")); bz.type = "button"; bz.setAttribute("aria-pressed", String(iso(d) === fSel));
+          bz.setAttribute("aria-label", ZL[k] + " " + d.getDate());
+          bz.append(el("b", "", ZL[k]), el("span", "nr", String(d.getDate())));
+          if (inf.suspendat) { const pct = el("span", "pct"); pct.appendChild(el("i", "x")); bz.appendChild(pct); }
+          bz.addEventListener("click", () => seteaza(d)); zile.appendChild(bz);
+        }
+        const c = rezultat && rezultat.f === fSel ? rezultat.calc : null;
+        // ---- Cartea de vizită a zilei
+        const hero = el("div", "oz-hero" + (info.suspendat ? " t-" + info.tip : ""));
+        hero.appendChild(el("div", "oz-data", textData(dataSel) + (info.modul ? " · " + info.modul : "")));
+        if (info.suspendat) hero.append(el("span", "oz-pill", info.sub), el("h2", "oz-h2", info.titlu));
+        else if (c) {
+          hero.append(el("span", "oz-pill" + (c.neacop.length ? "" : " live"), c.neacop.length ? "Atenție" : "Totul acoperit"), el("h2", "oz-h2", c.neacop.length ? oraS(c.neacop.length) + (c.neacop.length === 1 ? " neacoperită" : " neacoperite") : (c.absenti.length ? "Toate orele sunt acoperite" : "Toți profesorii sunt prezenți")));
+          hero.appendChild(el("div", "oz-meta", c.absenti.length ? c.absenti.length + (c.absenti.length === 1 ? " profesor lipsește" : " profesori lipsesc") + " din " + c.profCuOre + " cu ore în această zi" : c.profCuOre + " profesori cu ore în această zi"));
+        }
+        zona.append(hero, zile);
+        if (info.suspendat || !c) return;
+        // ---- Cifre
+        const st = el("div", "az-stats");
+        const tile = (n, et, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et)); return t; };
+        st.append(tile(c.absenti.length, "Lipsesc", c.absenti.length ? "att" : "bun"), tile(c.neacop.length, "Ore neacoperite", c.neacop.length ? "rau" : "bun"), tile(c.supl.size, "Suplinesc", ""), tile(c.practica.length, "Clase la practică", ""));
+        zona.appendChild(st);
+        const ET = (r) => r.motive.map((m) => MOTIV[m] || m).join(" · ");
+        const ora = (o, extra) => { const rd = el("div", "az-ora"); rd.append(el("span", "t", intervalOra(o.ora).split("–")[0]), el("span", "oz-clasa mic", o.clasa)); if (extra) rd.appendChild(extra); return rd; };
+        // ---- Ore neacoperite
+        if (c.neacop.length) {
+          zona.appendChild(el("h3", "az-h", "Ore neacoperite"));
+          const k = el("div", "az-card az-rau");
+          c.neacop.forEach((o) => { const rd = ora(o); rd.append(el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora), el("span", "az-pe", o.nume)); k.appendChild(rd); });
+          zona.appendChild(k);
+        }
+        // ---- Cine lipsește
+        if (c.absenti.length) {
+          zona.appendChild(el("h3", "az-h", "Cine lipsește"));
+          c.absenti.forEach((r) => {
+            const k = el("div", "az-card"); const cp = el("div", "az-cap"); cp.append(el("b", "", r.nume), el("span", "az-motiv", ET(r))); k.appendChild(cp);
+            if (!r.ore.length) k.appendChild(el("p", "az-nota", "Nu are ore în această zi."));
+            r.ore.forEach((o) => { const tg = o.status === "acoperita" ? el("span", "az-tag ok", "suplinește " + o.de) : o.status === "practica" ? el("span", "az-tag pr", "clasa este la practică") : el("span", "az-tag rau", "neacoperită"); k.appendChild(ora(o, el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora))); k.lastChild.appendChild(tg); });
+            zona.appendChild(k);
+          });
+        }
+        // ---- Suplinitori
+        if (c.supl.size) {
+          zona.appendChild(el("h3", "az-h", "Cine suplinește"));
+          [...c.supl].sort((x, y) => x[0].localeCompare(y[0], "ro")).forEach(([nm, l]) => {
+            const k = el("div", "az-card"); const cp = el("div", "az-cap"); cp.append(el("b", "", nm), el("span", "az-motiv", oraS(l.length))); k.appendChild(cp);
+            l.sort((x, y) => x.ora - y.ora).forEach((o) => k.appendChild(ora(o, el("span", "az-disc", "în locul lui " + o.pentru))));
+            zona.appendChild(k);
+          });
+        }
+        // ---- Clase la practică
+        if (c.practica.length) {
+          zona.appendChild(el("h3", "az-h", "Clase la practică"));
+          const rc = el("div", "oz-clase");
+          c.practica.forEach((p) => rc.appendChild(el("span", "oz-cl", p.clasa + (p.coord ? " · " + p.coord : ""))));
+          zona.appendChild(rc);
+        }
+        if (!c.absenti.length && !c.practica.length) zona.appendChild(el("p", "oz-mic2", "Nicio absență sau practică în această zi."));
+      };
+      const seteaza = async (d) => {
+        dataSel = d;
+        zona.style.opacity = ".55";
+        try { await incarca(); } catch (e) { msg.textContent = "Situația zilei nu a putut fi încărcată."; zona.style.opacity = ""; return; }
+        msg.textContent = ""; zona.style.opacity = ""; deseneaza();
+      };
+      await seteaza(dataSel);
+      window.__ozRef = async () => {
+        if (!zona.isConnected || zona.offsetParent === null) return;
+        try {
+          const f = iso(dataSel), anId = anPentru(f), b = await baza(anId), dn = await dinamic(anId, f);
+          if (JSON.stringify([f, dn]) !== sD) { sD = JSON.stringify([f, dn]); rezultat = { f, b, dn, calc: calculeaza(f, ziSapt(dataSel) + 1, b, dn) }; deseneaza(); }
+        } catch (e) { /* la următoarea încercare */ }
+      };
+    }
 
     function deschideAnunturi() {
       memoreazaVedere("anunturi");
@@ -4510,7 +4746,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
@@ -4616,7 +4852,7 @@
       }
 
       if (error || !data) {
-        mesajRamas = MESAJ_FARA_ACCES;
+        mesajRamas = error ? MESAJ_EROARE_CONEXIUNE : MESAJ_FARA_ACCES;
         await db.auth.signOut();
         return arataLogin(mesajRamas);
       }
