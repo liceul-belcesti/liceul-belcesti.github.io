@@ -1701,7 +1701,9 @@
         return i;
       };
       let mod = "zile";
-      let dataSel = new Date(); dataSel = new Date(dataSel.getFullYear(), dataSel.getMonth(), dataSel.getDate());
+      const aziD = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+      const ziDeStart = () => { const a = aziD(); return ziSapt(a) > 4 ? adauga(a, 7 - ziSapt(a)) : a; }; // sâmbătă/duminică → luni următoare
+      let dataSel = ziDeStart();
       const deseneaza = () => {
         zona.replaceChildren();
         const acum = new Date(), mN = acum.getHours() * 60 + acum.getMinutes(), azi = new Date(acum.getFullYear(), acum.getMonth(), acum.getDate());
@@ -1724,11 +1726,12 @@
         const bPrev = el("button", "oz-sg", "‹"); bPrev.type = "button"; bPrev.setAttribute("aria-label", mod === "zile" ? "Ziua precedentă" : "Săptămâna precedentă");
         const bNext = el("button", "oz-sg", "›"); bNext.type = "button"; bNext.setAttribute("aria-label", mod === "zile" ? "Ziua următoare" : "Săptămâna următoare");
         const inp = document.createElement("input"); inp.type = "date"; inp.value = fSel; inp.className = "oz-data-in"; inp.setAttribute("aria-label", "Alege o zi din an");
-        const bAzi = el("button", "oz-azi", "Azi"); bAzi.type = "button"; bAzi.disabled = eAzi && mod === "zile";
+        const tinta = ziDeStart(), arataLuni = iso(tinta) !== iso(azi);
+        const bAzi = el("button", "oz-azi", arataLuni ? ZL7[ziSapt(tinta)] : "Azi"); bAzi.type = "button"; bAzi.disabled = fSel === iso(tinta) && mod === "zile";
         bPrev.addEventListener("click", () => { dataSel = adauga(dataSel, -pas); deseneaza(); });
         bNext.addEventListener("click", () => { dataSel = adauga(dataSel, pas); deseneaza(); });
         inp.addEventListener("change", () => { if (inp.value) { dataSel = dinIso(inp.value); deseneaza(); } });
-        bAzi.addEventListener("click", () => { dataSel = azi; deseneaza(); });
+        bAzi.addEventListener("click", () => { dataSel = tinta; deseneaza(); });
         nav.append(bPrev, inp, bNext, bAzi);
         zona.append(comut, nav);
         const aviz = (info, faraZi) => { // bannere discrete: zi liberă / vacanță / program special / practică
