@@ -338,6 +338,8 @@
     .bar .clopot.hidden { display:none; }
     .bar .clopot-nr { position:absolute; top:-7px; right:-7px; min-width:20px; height:20px; padding:0 5px; border-radius:10px; background:#d92d20; color:#fff; font-size:.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #0e7c86; }
     .bar .clopot-nr.hidden { display:none; }
+    .clopot-meniu { position:fixed; z-index:50; background:var(--card); color:var(--text); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,.25); padding:6px; display:flex; flex-direction:column; gap:4px; min-width:220px; }
+    .clopot-meniu button { width:100%; margin:0; text-align:left; background:transparent; color:var(--text); border:0; padding:10px 12px; min-height:44px; font-weight:700; }
     .bar #bar-pontaj { display:flex; gap:8px; }
     .bar #bar-pontaj.hidden { display:none; }
     .bar #bar-pontaj #btn-admin { background:#fff; color:var(--accent); border:0; font-weight:800; }
@@ -1242,6 +1244,10 @@
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = anunturiNoi;
           k.setAttribute("aria-label", anunturiNoi + " anunțuri noi"); c.appendChild(k);
         }
+        if (cheie === "cereri" && cereriNoi > 0) {
+          const k = document.createElement("span"); k.className = "cnt"; k.textContent = cereriNoi;
+          k.setAttribute("aria-label", cereriNoi + " cereri de învoire care așteaptă răspunsul tău"); c.appendChild(k);
+        }
         if (cheie === "utilizatori" && inAsteptare > 0) {
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = inAsteptare;
           k.setAttribute("aria-label", inAsteptare + " conturi de aprobat"); c.appendChild(k);
@@ -1636,21 +1642,39 @@
     const extensia = (nume) => (nume.split(".").pop() || "").toLowerCase();
 
     // Clopoțelul: anunțuri noi (necitite) pentru contul curent; se actualizează la intrare, la revenirea în filă și din 5 în 5 minute.
-    let anunturiNoi = 0;
+    let anunturiNoi = 0, cereriNoi = 0, cereriDeDecis = 0, cereriDeRaspuns = 0;
     async function actualizeazaClopot() {
       const b = $("clopot");
       if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); return; }
       const azi = new Date().toISOString().slice(0, 10);
-      const [a, c] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id, necitit")]);
+      const decide = ["administrator", "director"].some((r) => euRoluri.includes(r)) && moduleleMele(euRoluri).includes("cereri");
+      const [a, c, cd, cm] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id, necitit"),
+        decide ? db.rpc("cereri_de_decis_v2") : Promise.resolve({ data: [] }), moduleleMele(euRoluri).includes("cereri") ? db.rpc("cereri_pentru_mine") : Promise.resolve({ data: [] })]);
       if (a.error || c.error) return;
       const citite = new Set(c.data.filter((x) => !x.necitit).map((x) => x.anunt_id));
       const n = a.data.filter((x) => x.creat_de !== euId && !citite.has(x.id) && (!x.expira_la || x.expira_la >= azi)).length;
+      cereriDeDecis = cd.error || !Array.isArray(cd.data) ? 0 : cd.data.length;
+      cereriDeRaspuns = cm.error || !Array.isArray(cm.data) ? 0 : cm.data.filter((x) => x.stare_cerere === "in_asteptare" && x.stare_mea === "in_asteptare").length;
+      const nc = cereriDeDecis + cereriDeRaspuns, tot = n + nc;
       b.classList.remove("hidden");
-      $("clopot-nr").textContent = n > 99 ? "99+" : String(n); $("clopot-nr").classList.toggle("hidden", n < 1);
-      b.setAttribute("aria-label", n ? n + " anunțuri noi" : "Anunțuri");
-      if (n !== anunturiNoi) { anunturiNoi = n; const sel = $("activ-ca"); deseneazaModule(sel && sel.value ? [sel.value] : euRoluri); }
+      $("clopot-nr").textContent = tot > 99 ? "99+" : String(tot); $("clopot-nr").classList.toggle("hidden", tot < 1);
+      b.setAttribute("aria-label", tot ? tot + " notificări" : "Notificări");
+      if (n !== anunturiNoi || nc !== cereriNoi) { anunturiNoi = n; cereriNoi = nc; const sel = $("activ-ca"); deseneazaModule(sel && sel.value ? [sel.value] : euRoluri); }
     }
-    $("clopot").addEventListener("click", () => deschideModul("anunturi"));
+    const inchideMeniuClopot = () => { const m = document.getElementById("clopot-meniu"); if (m) m.remove(); };
+    $("clopot").addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      if (document.getElementById("clopot-meniu")) return inchideMeniuClopot();
+      if (!cereriNoi) return deschideModul("anunturi");
+      if (!anunturiNoi) return deschideModul("cereri");
+      const m = document.createElement("div"); m.id = "clopot-meniu"; m.className = "clopot-meniu";
+      const r = $("clopot").getBoundingClientRect(); m.style.top = (r.bottom + 6) + "px"; m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 240)) + "px";
+      [["Cereri de învoire (" + cereriNoi + ")", "cereri"], ["Anunțuri noi (" + anunturiNoi + ")", "anunturi"]].forEach(([t, k]) => {
+        const x = document.createElement("button"); x.type = "button"; x.textContent = t; x.addEventListener("click", () => { inchideMeniuClopot(); deschideModul(k); }); m.appendChild(x);
+      });
+      document.body.appendChild(m);
+    });
+    document.addEventListener("click", inchideMeniuClopot);
     setInterval(() => { if (euId && !document.hidden) actualizeazaClopot(); }, 300000);
     document.addEventListener("visibilitychange", () => { if (euId && !document.hidden) actualizeazaClopot(); });
 
@@ -2252,7 +2276,7 @@
         Object.keys(o).sort().forEach((k) => { const v = o[k]; ul.appendChild(el("div", "", fOra(k) + " → " + (v.tip === "vine" ? "clasa vine de la ora " : "clasa pleacă acasă de la ora ") + intervalOra(v.ora).split("–")[0])); });
         d.appendChild(ul); return d;
       };
-      const reincarca = async (txt, ok) => { try { await incarca(); } catch (e) { /* rămâne lista veche */ } mesaj(txt, ok); desenLista(); };
+      const reincarca = async (txt, ok) => { try { await incarca(); } catch (e) { /* rămâne lista veche */ } mesaj(txt, ok); desenLista(); actualizeazaClopot(); };
       // Cererile la care sunt propus ca înlocuitor
       const sectiunePentruMine = () => {
         if (!pentruMine.length) return null;
@@ -2537,11 +2561,12 @@
           const prop = {}; ore.forEach((k) => { if (propuneri.has(k) && !opt.has(k)) prop[k] = propuneri.get(k); });
           ok.disabled = true;
           const op = {}; ore.forEach((k) => { if (opt.has(k)) op[k] = opt.get(k); });
-          const { error } = await db.rpc("cerere_invoire_trimite_v2", { p_de: de.value, p_pana: pana.value, p_ore: ore, p_motiv: motiv.value.trim(), p_propuneri: Object.keys(prop).length ? prop : null, p_optiuni: Object.keys(op).length ? op : null });
+          const { data: idNou, error } = await db.rpc("cerere_invoire_trimite_v2", { p_de: de.value, p_pana: pana.value, p_ore: ore, p_motiv: motiv.value.trim(), p_propuneri: Object.keys(prop).length ? prop : null, p_optiuni: Object.keys(op).length ? op : null });
           ok.disabled = false;
           if (error) return mesaj(error.message || "Cererea nu a putut fi trimisă.");
+          if (typeof idNou === "string") { try { db.functions.invoke("trimite-cerere-email", { body: { cerere_id: idNou } }).catch(() => {}); } catch (e) { /* fără e-mail */ } } // directorul primește și e-mail; clopoțelul funcționează oricum
           try { await incarca(); } catch (e) { /* lista se reîncarcă la următoarea deschidere */ }
-          mesaj("Cererea a fost trimisă.", true); desenLista();
+          mesaj("Cererea a fost trimisă. Directorul a fost anunțat.", true); desenLista(); actualizeazaClopot();
         });
         dupaDate();
       };
