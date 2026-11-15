@@ -500,6 +500,11 @@
     #orar .orar-bara { display:grid; gap:8px; margin:8px 0; }
     #orar .orar-bara .comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     #orar .orar-bara button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
+    table.orar-g .ab, #orarmeu .orar-t .ab { font-weight:800; font-size:.8rem; letter-spacing:.02em; }
+    .orar-leg { columns:2 240px; column-gap:18px; margin:10px 0 0; font-size:.82rem; color:var(--muted); }
+    .orar-leg p { margin:0 0 3px; break-inside:avoid; }
+    .orar-leg b { color:var(--text, inherit); }
+    #orarmeu .om-ora .sb { font-weight:600; font-size:.8rem; opacity:.85; }
     #tipar-orar { display:none; }
     @media print {
       body.tipar-orar > :not(#tipar-orar) { display:none !important; }
@@ -521,7 +526,11 @@
       #tipar-orar thead th { background:#1c7fc4 !important; color:#fff !important; font-weight:800; border-color:#1c7fc4; }
       #tipar-orar thead th small { display:block; font-weight:400; font-size:8pt; color:#e3f0fa !important; }
       #tipar-orar tbody th { width:26mm; font-weight:800; text-align:left; padding-left:3mm; background:#e6f1fa !important; color:#12275a !important; }
-      #tipar-orar tbody td { height:15mm; font-weight:700; background:#fff !important; line-height:1.15; }
+      #tipar-orar .ab { font-weight:800; font-size:10.5pt; color:#12275a; }
+      #tipar-orar .orar-leg { columns:3; column-gap:6mm; margin:4mm 0 0; font-size:8.5pt; color:#111; line-height:1.2; border-top:.5pt solid #8aa9c4; padding-top:1.5mm; }
+      #tipar-orar .orar-leg p { margin:0 0 .8mm; break-inside:avoid; }
+      #tipar-orar .orar-leg b { color:#12275a; }
+      #tipar-orar tbody td { height:14mm; font-weight:700; background:#fff !important; line-height:1.15; }
     }
     #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
     #orarmeu .orar-t { border-collapse:collapse; width:100%; min-width:620px; font-size:.95rem; }
@@ -1393,12 +1402,20 @@
       const tb = el("tbody");
       ZILE_ORAR.forEach((zn, i) => {
         const tr = el("tr"); tr.appendChild(el("th", "", zn));
-        for (let h = 1; h <= max; h++) { const v = celula(i + 1, h); const td = el("td", v.length ? "plin" : ""); if (v.length) td.style.setProperty("--h", nuantaOrar(v[0])); v.forEach((x, k) => { if (k) td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(x)); }); tr.appendChild(td); }
+        for (let h = 1; h <= max; h++) { const v = celula(i + 1, h); const td = el("td", v.length ? "plin" : ""); if (v.length) td.style.setProperty("--h", nuantaOrar(Array.isArray(v[0]) ? v[0][1] : v[0])); v.forEach((x, k) => { if (k) td.appendChild(document.createElement("br")); if (Array.isArray(x)) { td.appendChild(el("span", "ab", x[0])); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(x[1])); } else td.appendChild(document.createTextNode(x)); }); tr.appendChild(td); }
         tb.appendChild(tr);
       });
       t.appendChild(tb); return t;
     }
-    // pagini: [{ titlu, sub, celula, max }]; fiecare pagină = un profesor sau o clasă (alb-negru, A4 pe lățime)
+    // Legenda de sub orar: prescurtare – denumire completă (doar materiile din pagina respectivă)
+    function legendaOrar(items) {
+      const m = new Map(); (items || []).forEach((x) => { if (x && x[0]) m.set(x[0], x[1]); });
+      if (!m.size) return null;
+      const d = el("div", "orar-leg");
+      [...m].sort((a, b) => a[1].localeCompare(b[1], "ro")).forEach(([sc, c]) => { const p = el("p", ""); p.append(el("b", "", sc), " – " + c); d.appendChild(p); });
+      return d;
+    }
+    // pagini: [{ titlu, sub, celula, max, leg }]; fiecare pagină = un profesor sau o clasă (alb-negru, A4 pe lățime)
     function tiparesteOrar(pagini, an) {
       const vechi = document.getElementById("tipar-orar"); if (vechi) vechi.remove();
       const cont = el("div", ""); cont.id = "tipar-orar";
@@ -1411,6 +1428,7 @@
         if (p.sub) pg.appendChild(el("p", "po-nume", p.sub));
         pg.appendChild(el("p", "po-sub", an ? "Anul școlar " + an : ""));
         pg.appendChild(grilaOrar(p.celula, p.max));
+        const lg2 = legendaOrar(p.leg); if (lg2) pg.appendChild(lg2);
         cont.appendChild(pg);
       });
       document.body.appendChild(cont); document.body.classList.add("tipar-orar");
@@ -1448,17 +1466,20 @@
         zona.replaceChildren(el("p", "who", "Se încarcă…"));
         const a = ani.find((x) => x.id === selAn.value);
         try {
-          const [ang, rows] = await Promise.all([angajatiAn(a), toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa").eq("an_id", a.id).order("angajat_id").order("zi").order("ora"))]);
+          const [ang, rows, disc] = await Promise.all([angajatiAn(a), toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa, disciplina_id").eq("an_id", a.id).order("angajat_id").order("zi").order("ora")), toate(() => db.from("discipline").select("id, scurt, complet").order("id"))]);
+          const dm = new Map(disc.map((x) => [x.id, x]));
           const nume = new Map(ang.map((x) => [x.id, x.nume]));
           const pe = new Map(); rows.forEach((r) => { if (!pe.has(r.angajat_id)) pe.set(r.angajat_id, []); pe.get(r.angajat_id).push(r); });
           const profesori = ang.filter((x) => pe.has(x.id)).sort((x, y) => x.nume.localeCompare(y.nume, "ro"));
           const clase = [...new Set(rows.map((r) => r.clasa))].sort(ordClasaOrar);
-          date = { an: a.denumire, rows, nume, pe, profesori, clase };
+          date = { an: a.denumire, rows, nume, pe, profesori, clase, dm };
         } catch (e) { date = null; zona.replaceChildren(); msg.textContent = "Orarul nu a putut fi încărcat."; return; }
         msg.textContent = ""; umple();
       };
-      const pagProf = (x) => { const ore = date.pe.get(x.id) || []; return { titlu: "Orarul profesorului", sub: x.nume, max: Math.max(8, ...ore.map((r) => r.ora)), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => r.clasa) }; };
-      const pagClasa = (c) => { const ore = date.rows.filter((r) => r.clasa === c); return { titlu: "Orarul clasei " + c, sub: "", max: Math.max(8, ...ore.map((r) => r.ora)), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => date.nume.get(r.angajat_id) || "?").sort((x, y) => x.localeCompare(y, "ro")) }; };
+      const dsc = (r) => date.dm.get(r.disciplina_id);
+      const legDe = (ore) => ore.map((r) => { const d = dsc(r); return d ? [d.scurt, d.complet] : null; }).filter(Boolean);
+      const pagProf = (x) => { const ore = date.pe.get(x.id) || []; return { titlu: "Orarul profesorului", sub: x.nume, max: Math.max(8, ...ore.map((r) => r.ora)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const d = dsc(r); return d ? [d.scurt, r.clasa] : r.clasa; }) }; };
+      const pagClasa = (c) => { const ore = date.rows.filter((r) => r.clasa === c); return { titlu: "Orarul clasei " + c, sub: "", max: Math.max(8, ...ore.map((r) => r.ora)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const n = date.nume.get(r.angajat_id) || "?", d = dsc(r); return d ? [d.scurt, n] : n; }).sort((x, y) => String(Array.isArray(x) ? x[1] : x).localeCompare(String(Array.isArray(y) ? y[1] : y), "ro")) }; };
       function umple() {
         bP.setAttribute("aria-pressed", String(mod === "profesori")); bC.setAttribute("aria-pressed", String(mod === "clase"));
         selX.replaceChildren();
@@ -1472,6 +1493,7 @@
         const p = mod === "profesori" ? pagProf(date.profesori.find((x) => x.id === selX.value)) : pagClasa(selX.value);
         zona.appendChild(el("p", "who", p.titlu + (p.sub ? " · " + p.sub : "") + " · " + date.an));
         const sc = el("div", "orar-g-scroll"); sc.appendChild(grilaOrar(p.celula, p.max)); zona.appendChild(sc);
+        const lgz = legendaOrar(p.leg); if (lgz) zona.appendChild(lgz);
       }
       bP.addEventListener("click", () => { mod = "profesori"; umple(); });
       bC.addEventListener("click", () => { mod = "clase"; umple(); });
@@ -1488,7 +1510,7 @@
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("orarmeu").classList.remove("hidden");
       const msg = $("orarmeu-msg"), corp = $("orarmeu-corp"); msg.textContent = ""; corp.replaceChildren();
-      const { data, error } = await db.rpc("orar_propriu");
+      const { data, error } = await db.rpc("orar_propriu_disc");
       if (error) { msg.textContent = "Orarul nu a putut fi încărcat. Încearcă din nou."; return; }
       if (!data || !data.length) { corp.appendChild(el("p", "who", "Nu există încă un orar pentru contul tău. Dacă ești profesor, cere administratorului să îți lege contul de numele tău din lista de angajați.")); return; }
       const { data: numeProf } = await db.rpc("nume_angajat_propriu");
@@ -1516,7 +1538,7 @@
         });
         zona.appendChild(comut);
         const tp = el("button", "secondary", "🖨 Tipărește orarul"); tp.type = "button";
-        tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => r.clasa) }], ani.find((x) => x.id === id).den));
+        tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], ani.find((x) => x.id === id).den));
         zona.appendChild(tp);
         if (mod === "zile") {
           ZL.forEach((zn, i) => {
@@ -1530,7 +1552,7 @@
               if (k && r.ora - zi[k - 1].ora > 1) card.appendChild(el("div", "om-gol", "Fereastră: " + (r.ora - zi[k - 1].ora - 1 === 1 ? "ora " + (r.ora - 1) : "orele " + (zi[k - 1].ora + 1) + "–" + (r.ora - 1)) + " (" + interval(zi[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")"));
               const o = el("div", "om-ora cl"); o.style.setProperty("--h", nuanta(r.clasa));
               const t = el("div", "t", interval(r.ora)); t.appendChild(el("div", "n", "ora " + r.ora));
-              o.append(t, el("div", "c", r.clasa)); card.appendChild(o);
+              const cc = el("div", "c", r.clasa); if (r.complet) cc.appendChild(el("div", "sb", r.complet)); o.append(t, cc); card.appendChild(o);
             });
             zona.appendChild(card);
           });
@@ -1539,9 +1561,10 @@
           for (let h = 1; h <= max; h++) { const c = el("th", "", String(h)); c.appendChild(el("small", "", interval(h))); th.appendChild(c); }
           t.appendChild(el("thead")).appendChild(th);
           const tb = el("tbody");
-          ZL.forEach((zn, i) => { const tr = el("tr"); const zh = el("th", i === azi ? "azi" : "", zn); tr.appendChild(zh); for (let h = 1; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); const td = el("td", (r ? "cl" : "") + (i === azi ? " azi" : ""), r ? r.clasa : ""); if (r) td.style.setProperty("--h", nuanta(r.clasa)); tr.appendChild(td); } tb.appendChild(tr); });
+          ZL.forEach((zn, i) => { const tr = el("tr"); const zh = el("th", i === azi ? "azi" : "", zn); tr.appendChild(zh); for (let h = 1; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); const td = el("td", (r ? "cl" : "") + (i === azi ? " azi" : ""), r && !r.scurt ? r.clasa : ""); if (r && r.scurt) { td.appendChild(el("span", "ab", r.scurt)); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(r.clasa)); } if (r) td.style.setProperty("--h", nuanta(r.clasa)); tr.appendChild(td); } tb.appendChild(tr); });
           t.appendChild(tb);
           const sc = el("div", "foaie-scroll"); sc.appendChild(t); zona.appendChild(sc);
+          const lgm = legendaOrar(ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet])); if (lgm) zona.appendChild(lgm);
         }
         const nrc = new Map(); ore.forEach((r) => nrc.set(r.clasa, (nrc.get(r.clasa) || 0) + 1));
         zona.appendChild(el("p", "who", "Ore pe clase: " + [...nrc].sort((x, y) => x[0].localeCompare(y[0], "ro", { numeric: true })).map(([c, n]) => c + " – " + n).join(" · ")));
