@@ -1808,7 +1808,7 @@
           zona.appendChild(zile);
           // ---- Linia timpului
           const tl = el("div", "oz-tl");
-          if (!lista.length) tl.appendChild(el("div", "oz-gol", info.tip === "weekend" ? "Alege o zi din săptămâna următoare ca să vezi orarul ei." : info.suspendat ? "Nu sunt ore în această zi." : "Nicio oră în ziua de " + ZL7[info.w].toLowerCase() + "."));
+          if (!lista.length) tl.appendChild(el("div", "oz-gol", info.tip === "weekend" ? "Selectează o zi în care vrei să vizualizezi orarul." : info.suspendat ? "Nu sunt ore în această zi." : "Nicio oră în ziua de " + ZL7[info.w].toLowerCase() + "."));
           lista.forEach((r, k) => {
             if (k && r.ora - lista[k - 1].ora > 1) { const g = r.ora - lista[k - 1].ora - 1; tl.appendChild(el("div", "oz-pauza", "Fereastră · " + oraS(g) + " (" + interval(lista[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")")); }
             const lp = prac.has(r.clasa), eCur = r === cur, eUrm = r === urm, eTrecut = eAzi && !lp && !eCur && stOra(r) + 50 <= mN;
