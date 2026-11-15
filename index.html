@@ -496,6 +496,9 @@
     #structura .ang-rand { border-left:5px solid var(--line); }
     #structura .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
     /* Orar pe ecran: aspect curat, o singură culoare de accent, ora curentă evidențiată */
+    #orar .oz-vedere { display:inline-grid; grid-auto-flow:column; gap:4px; padding:4px; background:var(--card); border-radius:999px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin:0 0 12px; }
+    #orar .oz-vedere button { margin:0; width:auto; min-height:36px; padding:0 20px; border-radius:999px; background:transparent; color:var(--muted); border:0; box-shadow:none; font-weight:700; }
+    #orar .oz-vedere button[aria-pressed="true"] { background:var(--text); color:var(--card); }
     #orar table.orar-g { border-collapse:separate; border-spacing:5px; width:100%; min-width:640px; font-size:.9rem; }
     #orar table.orar-g th, #orar table.orar-g td { border:0; padding:8px 4px; text-align:center; vertical-align:middle; }
     #orar table.orar-g thead th { background:transparent; line-height:1.25; font-weight:800; color:var(--text); }
@@ -515,11 +518,11 @@
     #orar .orar-bara { display:grid; gap:8px; margin:8px 0; }
     #orar .orar-bara .comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     #orar .orar-bara button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
-    #orarmeu .orar-t .ab { display:block; color:var(--accent); font-weight:800; font-size:.88rem; }
+    :is(#orarmeu,.orm) .orar-t .ab { display:block; color:var(--accent); font-weight:800; font-size:.88rem; }
     .orar-leg { columns:2 240px; column-gap:18px; margin:10px 0 0; font-size:.82rem; color:var(--muted); }
     .orar-leg p { margin:0 0 3px; break-inside:avoid; }
     .orar-leg b { color:var(--text, inherit); }
-    #orarmeu .om-ora .sb { font-weight:600; font-size:.8rem; opacity:.85; }
+    :is(#orarmeu,.orm) .om-ora .sb { font-weight:600; font-size:.8rem; opacity:.85; }
     #tipar-orar { display:none; }
     @media print {
       body.tipar-orar > :not(#tipar-orar) { display:none !important; }
@@ -548,165 +551,165 @@
       #tipar-orar tbody td { height:14mm; font-weight:700; background:#fff !important; line-height:1.15; }
     }
     /* Orarul meu — design nou: carte de vizită a zilei, zile ca pastile, linia timpului */
-    #orarmeu .oz-sub { margin:2px 0 8px; color:var(--muted); font-weight:600; }
-    #orarmeu .oz-comut { display:inline-grid; grid-auto-flow:column; gap:4px; padding:4px; background:var(--card); border-radius:999px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin:0 0 14px; }
-    #orarmeu .oz-comut button { margin:0; width:auto; min-height:40px; padding:0 22px; border-radius:999px; background:transparent; color:var(--muted); border:0; box-shadow:none; font-weight:700; }
-    #orarmeu .oz-comut button[aria-pressed="true"] { background:var(--text); color:var(--card); }
-    #orarmeu .oz-hero { position:relative; overflow:hidden; border-radius:28px; padding:22px 22px 20px; color:#fff; background:radial-gradient(120% 140% at 100% 0%, #34d1c0 0%, transparent 55%), linear-gradient(135deg,#0b7f8a 0%,#124a86 55%,#251f6e 100%); box-shadow:0 18px 40px -14px rgba(18,74,134,.6); }
-    #orarmeu .oz-hero::after { content:""; position:absolute; right:-50px; bottom:-70px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,.08); pointer-events:none; }
-    #orarmeu .oz-data { font-size:.85rem; opacity:.85; font-weight:600; }
-    #orarmeu .oz-pill { display:inline-flex; align-items:center; gap:7px; margin-top:14px; padding:4px 12px; border-radius:999px; background:rgba(255,255,255,.18); font-weight:800; font-size:.74rem; letter-spacing:.09em; text-transform:uppercase; }
-    #orarmeu .oz-pill.live::before { content:""; width:8px; height:8px; border-radius:50%; background:#7cffb2; animation:oz-bat 1.4s ease-in-out infinite; }
+    :is(#orarmeu,.orm) .oz-sub { margin:2px 0 8px; color:var(--muted); font-weight:600; }
+    :is(#orarmeu,.orm) .oz-comut { display:inline-grid; grid-auto-flow:column; gap:4px; padding:4px; background:var(--card); border-radius:999px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin:0 0 14px; }
+    :is(#orarmeu,.orm) .oz-comut button { margin:0; width:auto; min-height:40px; padding:0 22px; border-radius:999px; background:transparent; color:var(--muted); border:0; box-shadow:none; font-weight:700; }
+    :is(#orarmeu,.orm) .oz-comut button[aria-pressed="true"] { background:var(--text); color:var(--card); }
+    :is(#orarmeu,.orm) .oz-hero { position:relative; overflow:hidden; border-radius:28px; padding:22px 22px 20px; color:#fff; background:radial-gradient(120% 140% at 100% 0%, #34d1c0 0%, transparent 55%), linear-gradient(135deg,#0b7f8a 0%,#124a86 55%,#251f6e 100%); box-shadow:0 18px 40px -14px rgba(18,74,134,.6); }
+    :is(#orarmeu,.orm) .oz-hero::after { content:""; position:absolute; right:-50px; bottom:-70px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,.08); pointer-events:none; }
+    :is(#orarmeu,.orm) .oz-data { font-size:.85rem; opacity:.85; font-weight:600; }
+    :is(#orarmeu,.orm) .oz-pill { display:inline-flex; align-items:center; gap:7px; margin-top:14px; padding:4px 12px; border-radius:999px; background:rgba(255,255,255,.18); font-weight:800; font-size:.74rem; letter-spacing:.09em; text-transform:uppercase; }
+    :is(#orarmeu,.orm) .oz-pill.live::before { content:""; width:8px; height:8px; border-radius:50%; background:#7cffb2; animation:oz-bat 1.4s ease-in-out infinite; }
     @keyframes oz-bat { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.35; transform:scale(.7); } }
-    #orarmeu .oz-hero h2 { margin:10px 0 2px; font-size:2.6rem; line-height:1.05; letter-spacing:-.03em; font-weight:800; color:#fff; }
-    #orarmeu .oz-meta { opacity:.92; font-weight:600; }
-    #orarmeu .oz-bar { height:6px; border-radius:99px; background:rgba(255,255,255,.22); margin:16px 0 6px; overflow:hidden; }
-    #orarmeu .oz-bar i { display:block; height:100%; border-radius:inherit; background:#fff; transition:width .6s ease; }
-    #orarmeu .oz-mic { font-size:.85rem; opacity:.85; margin-top:4px; }
-    #orarmeu .oz-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
-    #orarmeu .oz-chips span { padding:4px 11px; border-radius:999px; background:rgba(255,255,255,.14); font-size:.8rem; font-weight:700; }
-    #orarmeu .oz-zile { display:flex; gap:8px; overflow-x:auto; padding:16px 2px 8px; scrollbar-width:none; }
-    #orarmeu .oz-zile::-webkit-scrollbar { display:none; }
-    #orarmeu .oz-zi { flex:1 0 auto; width:auto; min-width:78px; min-height:0; margin:0; display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 12px 11px; border-radius:20px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.07); font-weight:700; font-size:.86rem; transition:transform .15s ease; }
-    #orarmeu .oz-zi:hover { transform:translateY(-2px); }
-    #orarmeu .oz-zi[aria-pressed="true"] { background:var(--text); color:var(--card); }
-    #orarmeu .oz-zi.azi b::after { content:""; display:inline-block; width:7px; height:7px; margin-left:6px; border-radius:50%; background:var(--accent); vertical-align:middle; }
-    #orarmeu .oz-zi .pct { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; max-width:60px; min-height:6px; }
-    #orarmeu .oz-zi .pct i { width:6px; height:6px; border-radius:50%; background:var(--accent); }
-    #orarmeu .oz-zi[aria-pressed="true"] .pct i { background:#5eead4; }
-    #orarmeu .oz-tl { margin-top:14px; }
-    #orarmeu .oz-ora { display:grid; grid-template-columns:54px 22px 1fr; gap:0 8px; animation:om-intra .4s ease both; animation-delay:calc(var(--k, 0) * 60ms); }
-    #orarmeu .oz-t { text-align:right; padding-top:16px; font-variant-numeric:tabular-nums; }
-    #orarmeu .oz-t b { display:block; font-size:1.05rem; }
-    #orarmeu .oz-t span { font-size:.75rem; color:var(--muted); }
-    #orarmeu .oz-nod { position:relative; }
-    #orarmeu .oz-nod::before { content:""; position:absolute; left:50%; top:0; bottom:0; border-left:2px solid var(--line); transform:translateX(-1px); }
-    #orarmeu .oz-nod::after { content:""; position:absolute; left:50%; top:20px; width:12px; height:12px; margin-left:-6px; box-sizing:border-box; border-radius:50%; background:var(--card); border:3px solid var(--accent); }
-    #orarmeu .oz-ora.acum .oz-nod::after { background:var(--accent); box-shadow:0 0 0 6px color-mix(in srgb, var(--accent) 25%, transparent); }
-    #orarmeu .oz-ora.trecut { opacity:.5; }
-    #orarmeu .oz-card { margin:0 0 12px; padding:14px 16px; border-radius:20px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); transition:transform .15s ease; }
-    #orarmeu .oz-card:hover { transform:translateX(3px); }
-    #orarmeu .oz-ora.acum .oz-card { background:linear-gradient(135deg,#0b7f8a,#124a86); color:#fff; box-shadow:0 12px 28px -12px rgba(18,74,134,.7); }
-    #orarmeu .oz-rand { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; margin:12px 0 2px; }
-    #orarmeu .oz-clasa { display:inline-block; padding:2px 14px 3px; border-radius:14px; border:1.5px solid color-mix(in srgb, currentColor 35%, transparent); background:color-mix(in srgb, currentColor 8%, transparent); font-weight:800; font-size:1.7rem; letter-spacing:-.02em; line-height:1.25; }
-    #orarmeu .oz-hero .oz-clasa { font-size:2.1rem; border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.14); }
-    #orarmeu .oz-card .oz-rand { margin-top:0; }
-    #orarmeu .oz-card:not(.x) .oz-clasa { color:var(--accent); }
-    #orarmeu .oz-ora.acum .oz-clasa { color:#fff; border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.14); }
-    #orarmeu .oz-disc { font-size:.95rem; font-weight:400; opacity:.85; }
-    #orarmeu .oz-meta2 { display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center; }
-    #orarmeu .oz-nr { font-size:.8rem; opacity:.7; }
-    #orarmeu .oz-cl { display:inline-block; padding:3px 11px; border-radius:999px; background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent); font-weight:800; font-size:.8rem; }
-    #orarmeu .oz-ora.acum .oz-cl { background:rgba(255,255,255,.2); color:#fff; }
-    #orarmeu .oz-ora.urm .oz-card { box-shadow:0 0 0 2px var(--accent); }
-    #orarmeu .oz-ac { background:var(--accent); color:var(--on-accent); text-transform:uppercase; letter-spacing:.06em; font-size:.68rem; }
-    #orarmeu .oz-ora.acum .oz-ac { background:#fff; color:#124a86; }
-    #orarmeu .oz-pauza { margin:0 0 12px 84px; padding:11px 14px; border-radius:16px; display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#fff3d6,#ffe2a8); color:#6b3f00; border:2px solid #f0a31a; box-shadow:0 6px 14px -8px rgba(240,163,26,.8); font-size:.85rem; }
-    #orarmeu .oz-pauza::before { content:"\23F3"; font-size:1.15rem; }
-    #orarmeu .oz-pauza b { font-size:.95rem; font-weight:800; letter-spacing:.01em; text-transform:uppercase; }
-    #orarmeu .oz-pauza span { font-weight:700; background:rgba(255,255,255,.65); border-radius:999px; padding:3px 10px; margin-left:auto; white-space:nowrap; }
-    #orarmeu .oz-gol { padding:22px; text-align:center; color:var(--muted); background:var(--card); border-radius:20px; }
-    #orarmeu .oz-clase { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:18px 0 6px; }
-    #orarmeu .oz-et { font-size:.8rem; color:var(--muted); font-weight:700; margin-right:4px; }
-    #orarmeu .oz-tipar { width:auto; margin:10px 0 0; min-height:42px; padding:0 20px; border-radius:999px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:700; }
-    #orarmeu .oz-mic2 { color:var(--muted); font-size:.8rem; margin:10px 0 0; }
-    @media (prefers-reduced-motion: reduce) { #orarmeu .oz-ora, #orarmeu .oz-pill.live::before, #orarmeu .oz-zi, #orarmeu .oz-card { animation:none; transition:none; } }
+    :is(#orarmeu,.orm) .oz-hero h2 { margin:10px 0 2px; font-size:2.6rem; line-height:1.05; letter-spacing:-.03em; font-weight:800; color:#fff; }
+    :is(#orarmeu,.orm) .oz-meta { opacity:.92; font-weight:600; }
+    :is(#orarmeu,.orm) .oz-bar { height:6px; border-radius:99px; background:rgba(255,255,255,.22); margin:16px 0 6px; overflow:hidden; }
+    :is(#orarmeu,.orm) .oz-bar i { display:block; height:100%; border-radius:inherit; background:#fff; transition:width .6s ease; }
+    :is(#orarmeu,.orm) .oz-mic { font-size:.85rem; opacity:.85; margin-top:4px; }
+    :is(#orarmeu,.orm) .oz-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
+    :is(#orarmeu,.orm) .oz-chips span { padding:4px 11px; border-radius:999px; background:rgba(255,255,255,.14); font-size:.8rem; font-weight:700; }
+    :is(#orarmeu,.orm) .oz-zile { display:flex; gap:8px; overflow-x:auto; padding:16px 2px 8px; scrollbar-width:none; }
+    :is(#orarmeu,.orm) .oz-zile::-webkit-scrollbar { display:none; }
+    :is(#orarmeu,.orm) .oz-zi { flex:1 0 auto; width:auto; min-width:78px; min-height:0; margin:0; display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 12px 11px; border-radius:20px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.07); font-weight:700; font-size:.86rem; transition:transform .15s ease; }
+    :is(#orarmeu,.orm) .oz-zi:hover { transform:translateY(-2px); }
+    :is(#orarmeu,.orm) .oz-zi[aria-pressed="true"] { background:var(--text); color:var(--card); }
+    :is(#orarmeu,.orm) .oz-zi.azi b::after { content:""; display:inline-block; width:7px; height:7px; margin-left:6px; border-radius:50%; background:var(--accent); vertical-align:middle; }
+    :is(#orarmeu,.orm) .oz-zi .pct { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; max-width:60px; min-height:6px; }
+    :is(#orarmeu,.orm) .oz-zi .pct i { width:6px; height:6px; border-radius:50%; background:var(--accent); }
+    :is(#orarmeu,.orm) .oz-zi[aria-pressed="true"] .pct i { background:#5eead4; }
+    :is(#orarmeu,.orm) .oz-tl { margin-top:14px; }
+    :is(#orarmeu,.orm) .oz-ora { display:grid; grid-template-columns:54px 22px 1fr; gap:0 8px; animation:om-intra .4s ease both; animation-delay:calc(var(--k, 0) * 60ms); }
+    :is(#orarmeu,.orm) .oz-t { text-align:right; padding-top:16px; font-variant-numeric:tabular-nums; }
+    :is(#orarmeu,.orm) .oz-t b { display:block; font-size:1.05rem; }
+    :is(#orarmeu,.orm) .oz-t span { font-size:.75rem; color:var(--muted); }
+    :is(#orarmeu,.orm) .oz-nod { position:relative; }
+    :is(#orarmeu,.orm) .oz-nod::before { content:""; position:absolute; left:50%; top:0; bottom:0; border-left:2px solid var(--line); transform:translateX(-1px); }
+    :is(#orarmeu,.orm) .oz-nod::after { content:""; position:absolute; left:50%; top:20px; width:12px; height:12px; margin-left:-6px; box-sizing:border-box; border-radius:50%; background:var(--card); border:3px solid var(--accent); }
+    :is(#orarmeu,.orm) .oz-ora.acum .oz-nod::after { background:var(--accent); box-shadow:0 0 0 6px color-mix(in srgb, var(--accent) 25%, transparent); }
+    :is(#orarmeu,.orm) .oz-ora.trecut { opacity:.5; }
+    :is(#orarmeu,.orm) .oz-card { margin:0 0 12px; padding:14px 16px; border-radius:20px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); transition:transform .15s ease; }
+    :is(#orarmeu,.orm) .oz-card:hover { transform:translateX(3px); }
+    :is(#orarmeu,.orm) .oz-ora.acum .oz-card { background:linear-gradient(135deg,#0b7f8a,#124a86); color:#fff; box-shadow:0 12px 28px -12px rgba(18,74,134,.7); }
+    :is(#orarmeu,.orm) .oz-rand { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; margin:12px 0 2px; }
+    :is(#orarmeu,.orm) .oz-clasa { display:inline-block; padding:2px 14px 3px; border-radius:14px; border:1.5px solid color-mix(in srgb, currentColor 35%, transparent); background:color-mix(in srgb, currentColor 8%, transparent); font-weight:800; font-size:1.7rem; letter-spacing:-.02em; line-height:1.25; }
+    :is(#orarmeu,.orm) .oz-hero .oz-clasa { font-size:2.1rem; border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.14); }
+    :is(#orarmeu,.orm) .oz-card .oz-rand { margin-top:0; }
+    :is(#orarmeu,.orm) .oz-card:not(.x) .oz-clasa { color:var(--accent); }
+    :is(#orarmeu,.orm) .oz-ora.acum .oz-clasa { color:#fff; border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.14); }
+    :is(#orarmeu,.orm) .oz-disc { font-size:.95rem; font-weight:400; opacity:.85; }
+    :is(#orarmeu,.orm) .oz-meta2 { display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center; }
+    :is(#orarmeu,.orm) .oz-nr { font-size:.8rem; opacity:.7; }
+    :is(#orarmeu,.orm) .oz-cl { display:inline-block; padding:3px 11px; border-radius:999px; background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent); font-weight:800; font-size:.8rem; }
+    :is(#orarmeu,.orm) .oz-ora.acum .oz-cl { background:rgba(255,255,255,.2); color:#fff; }
+    :is(#orarmeu,.orm) .oz-ora.urm .oz-card { box-shadow:0 0 0 2px var(--accent); }
+    :is(#orarmeu,.orm) .oz-ac { background:var(--accent); color:var(--on-accent); text-transform:uppercase; letter-spacing:.06em; font-size:.68rem; }
+    :is(#orarmeu,.orm) .oz-ora.acum .oz-ac { background:#fff; color:#124a86; }
+    :is(#orarmeu,.orm) .oz-pauza { margin:0 0 12px 84px; padding:11px 14px; border-radius:16px; display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#fff3d6,#ffe2a8); color:#6b3f00; border:2px solid #f0a31a; box-shadow:0 6px 14px -8px rgba(240,163,26,.8); font-size:.85rem; }
+    :is(#orarmeu,.orm) .oz-pauza::before { content:"\23F3"; font-size:1.15rem; }
+    :is(#orarmeu,.orm) .oz-pauza b { font-size:.95rem; font-weight:800; letter-spacing:.01em; text-transform:uppercase; }
+    :is(#orarmeu,.orm) .oz-pauza span { font-weight:700; background:rgba(255,255,255,.65); border-radius:999px; padding:3px 10px; margin-left:auto; white-space:nowrap; }
+    :is(#orarmeu,.orm) .oz-gol { padding:22px; text-align:center; color:var(--muted); background:var(--card); border-radius:20px; }
+    :is(#orarmeu,.orm) .oz-clase { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:18px 0 6px; }
+    :is(#orarmeu,.orm) .oz-et { font-size:.8rem; color:var(--muted); font-weight:700; margin-right:4px; }
+    :is(#orarmeu,.orm) .oz-tipar { width:auto; margin:10px 0 0; min-height:42px; padding:0 20px; border-radius:999px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:700; }
+    :is(#orarmeu,.orm) .oz-mic2 { color:var(--muted); font-size:.8rem; margin:10px 0 0; }
+    @media (prefers-reduced-motion: reduce) { :is(#orarmeu,.orm) .oz-ora, :is(#orarmeu,.orm) .oz-pill.live::before, :is(#orarmeu,.orm) .oz-zi, :is(#orarmeu,.orm) .oz-card { animation:none; transition:none; } }
     /* Calendar: navigare pe zile, avize (zi liberă, vacanță, program special, practică), agenda săptămânii */
-    #orarmeu .oz-comut { margin-bottom:10px; }
-    #orarmeu .oz-nav .dt { flex:1; min-width:0; }
-    #orarmeu .oz-nav .dt-afis { justify-content:center; left:0; right:34px; font-weight:700; }
-    #orarmeu .oz-nav .oz-data-in { width:100%; }
-    #orarmeu .oz-nav { display:flex; align-items:center; gap:8px; margin:0 0 14px; }
-    #orarmeu .oz-sg { width:44px; min-width:44px; height:44px; min-height:44px; margin:0; padding:0; border-radius:50%; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-size:1.5rem; line-height:1; font-weight:700; }
-    #orarmeu .oz-data-in { flex:1; min-width:0; height:44px; margin:0; padding:0 14px; border-radius:999px; border:0; background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.1); font:inherit; font-weight:700; text-align:center; }
-    #orarmeu .oz-azi { width:auto; min-height:44px; height:44px; margin:0; padding:0 16px; border-radius:999px; border:0; background:var(--text); color:var(--card); font-weight:700; }
-    #orarmeu .oz-azi:disabled { opacity:.35; }
+    :is(#orarmeu,.orm) .oz-comut { margin-bottom:10px; }
+    :is(#orarmeu,.orm) .oz-nav .dt { flex:1; min-width:0; }
+    :is(#orarmeu,.orm) .oz-nav .dt-afis { justify-content:center; left:0; right:34px; font-weight:700; }
+    :is(#orarmeu,.orm) .oz-nav .oz-data-in { width:100%; }
+    :is(#orarmeu,.orm) .oz-nav { display:flex; align-items:center; gap:8px; margin:0 0 14px; }
+    :is(#orarmeu,.orm) .oz-sg { width:44px; min-width:44px; height:44px; min-height:44px; margin:0; padding:0; border-radius:50%; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-size:1.5rem; line-height:1; font-weight:700; }
+    :is(#orarmeu,.orm) .oz-data-in { flex:1; min-width:0; height:44px; margin:0; padding:0 14px; border-radius:999px; border:0; background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.1); font:inherit; font-weight:700; text-align:center; }
+    :is(#orarmeu,.orm) .oz-azi { width:auto; min-height:44px; height:44px; margin:0; padding:0 16px; border-radius:999px; border:0; background:var(--text); color:var(--card); font-weight:700; }
+    :is(#orarmeu,.orm) .oz-azi:disabled { opacity:.35; }
     /* Bara de alegere a zilei: mesaj + data evidențiată, pe aceeași linie */
-    #orarmeu .oz-top { display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; margin:0 0 14px; }
-    #orarmeu .oz-top .oz-comut { margin:0; }
-    #orarmeu .oz-top .oz-azi { min-height:40px; height:40px; padding:0 18px; }
-    #orarmeu .oz-nav { gap:12px; margin:0 0 14px; }
-    #orarmeu .oz-nav-msg { flex:1 1 170px; min-width:150px; font-size:.8rem; line-height:1.3; color:var(--muted); font-weight:600; }
-    #orarmeu .oz-cap { flex:0 0 190px; width:190px; display:flex; align-items:center; border:2px solid var(--accent); border-radius:999px; background:color-mix(in srgb, var(--accent) 12%, var(--card)); box-shadow:0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent); }
-    #orarmeu .oz-cap .oz-sg { width:34px; min-width:34px; height:44px; min-height:44px; border-radius:0; background:transparent; box-shadow:none; color:var(--accent); font-size:1.4rem; }
-    #orarmeu .oz-cap .dt { flex:1; min-width:0; }
-    #orarmeu .oz-cap .oz-data-in { height:44px; min-height:44px; padding:0 4px; border:0; border-radius:0; background:transparent; box-shadow:none; }
-    #orarmeu .oz-cap .dt-afis { left:0; right:18px; justify-content:center; font-weight:800; font-size:1rem; color:var(--accent); letter-spacing:.01em; }
-    #orarmeu .oz-cap .dt-in::-webkit-calendar-picker-indicator { width:14px; padding:0; margin-left:2px; opacity:.8; }
-    #orarmeu .oz-h2 { margin:12px 0 2px; font-size:1.9rem; line-height:1.1; letter-spacing:-.02em; font-weight:800; color:#fff; }
-    #orarmeu .oz-hero.t-liber { background:radial-gradient(120% 140% at 100% 0%, #ffb35c 0%, transparent 55%), linear-gradient(135deg,#c2410c 0%,#9a2f6b 100%); }
-    #orarmeu .oz-hero.t-vacanta { background:radial-gradient(120% 140% at 100% 0%, #7dd3a8 0%, transparent 55%), linear-gradient(135deg,#0f766e 0%,#1d4ed8 100%); }
-    #orarmeu .oz-hero.t-program { background:radial-gradient(120% 140% at 100% 0%, #c4b5fd 0%, transparent 55%), linear-gradient(135deg,#6d28d9 0%,#1e3a8a 100%); }
-    #orarmeu .oz-hero.t-weekend, #orarmeu .oz-hero.t-afara { background:linear-gradient(135deg,#475569 0%,#1e293b 100%); }
-    #orarmeu .oz-avize { display:grid; gap:8px; margin:12px 0 0; }
-    #orarmeu .oz-aviz { display:flex; flex-direction:column; gap:1px; padding:10px 14px; border-radius:16px; background:var(--card); box-shadow:inset 4px 0 0 var(--c, var(--accent)), 0 1px 3px rgba(0,0,0,.06); font-size:.88rem; }
-    #orarmeu .oz-aviz b { color:var(--c, var(--accent)); }
-    #orarmeu .oz-aviz span { color:var(--muted); }
-    #orarmeu .t-liber { --c:#c2410c; } #orarmeu .t-vacanta { --c:#0f766e; } #orarmeu .t-program { --c:#6d28d9; } #orarmeu .t-practica { --c:#b45309; } #orarmeu .t-afara { --c:#64748b; }
-    @media (prefers-color-scheme: dark) { #orarmeu .t-liber { --c:#fb923c; } #orarmeu .t-vacanta { --c:#5eead4; } #orarmeu .t-program { --c:#c4b5fd; } #orarmeu .t-practica { --c:#fbbf24; } }
-    #orarmeu .oz-zi { min-width:70px; gap:5px; }
-    #orarmeu .oz-zi .nr { font-size:1.35rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
-    #orarmeu .oz-zi.sus { opacity:.8; }
-    #orarmeu .oz-zi .pct i.x { width:14px; height:4px; border-radius:2px; background:var(--c, var(--muted)); }
-    #orarmeu .oz-zi .pct i.pr { background:#f59e0b; box-shadow:0 0 0 1.5px var(--card); }
-    #orarmeu .oz-ora.lapr { opacity:.6; }
-    #orarmeu .oz-ora.lapr .oz-card { border:1.5px dashed #f59e0b; box-shadow:none; background:transparent; }
-    #orarmeu .oz-ora.lapr .oz-nod::after { border-color:#f59e0b; }
-    #orarmeu .oz-pr { background:color-mix(in srgb, #f59e0b 20%, transparent); color:#b45309; }
-    @media (prefers-color-scheme: dark) { #orarmeu .oz-pr { color:#fbbf24; } }
-    #orarmeu .oz-sapt-cap { display:flex; flex-direction:column; gap:2px; margin:0 0 12px; }
-    #orarmeu .oz-sapt-cap b { font-size:1.5rem; letter-spacing:-.02em; }
-    #orarmeu .oz-sapt-cap span { color:var(--muted); font-size:.9rem; }
-    #orarmeu .oz-zi-card { margin:0 0 12px; padding:14px 16px 10px; border-radius:22px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); animation:om-intra .4s ease both; animation-delay:calc(var(--k, 0) * 60ms); }
-    #orarmeu .oz-zi-card.azi { box-shadow:0 0 0 2px var(--accent), 0 10px 24px -12px rgba(11,127,138,.5); }
-    #orarmeu .oz-zi-card.sus { background:color-mix(in srgb, var(--c, var(--muted)) 7%, var(--card)); }
-    #orarmeu .oz-zc-cap { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
-    #orarmeu .oz-zc-t b { display:block; font-size:1.15rem; letter-spacing:-.01em; }
-    #orarmeu .oz-zc-t span { font-size:.8rem; color:var(--muted); }
-    #orarmeu .oz-zc-r { display:flex; align-items:center; gap:8px; text-align:right; }
-    #orarmeu .oz-zc-n { font-weight:700; font-size:.88rem; color:var(--muted); }
-    #orarmeu .oz-zi-card .oz-avize { margin:6px 0 8px; }
-    #orarmeu .oz-sr { display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent); }
-    #orarmeu .oz-sr-t { flex:0 0 42px; font-variant-numeric:tabular-nums; font-weight:700; font-size:.9rem; color:var(--muted); }
-    #orarmeu .oz-clasa.mic { font-size:.95rem; padding:1px 10px 2px; border-radius:11px; color:var(--accent); }
-    #orarmeu .oz-sr .oz-disc { font-size:.88rem; }
-    #orarmeu .oz-sr.lapr { opacity:.6; }
-    #orarmeu .oz-sr.lapr .oz-clasa { border-style:dashed; border-color:#f59e0b; color:#b45309; }
-    #orarmeu .oz-vezi { width:auto; min-height:34px; margin:6px 0 2px; padding:0 4px; background:transparent; border:0; box-shadow:none; color:var(--accent); font-weight:700; font-size:.85rem; }
-    #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
-    #orarmeu .orar-t { border-collapse:separate; border-spacing:5px; width:100%; min-width:640px; font-size:.92rem; }
-    #orarmeu .orar-t th, #orarmeu .orar-t td { border:0; padding:8px 4px; text-align:center; }
-    #orarmeu .orar-t thead th { background:transparent; line-height:1.25; font-weight:800; }
-    #orarmeu .orar-t thead th small { display:block; font-weight:500; font-size:.7rem; color:var(--muted); margin-top:1px; }
-    #orarmeu .orar-t tbody th { text-align:left; padding-left:12px; font-weight:700; color:var(--muted); position:sticky; left:0; background:var(--card); z-index:1; white-space:nowrap; }
-    #orarmeu .orar-t tbody th.azi { color:var(--accent); box-shadow:none; }
-    #orarmeu .orar-t td { background:var(--bg); border-radius:12px; min-width:78px; line-height:1.25; }
-    #orarmeu .orar-t td.azi { box-shadow:none; }
-    #orarmeu .cl { background:color-mix(in srgb, var(--accent) 9%, var(--card)) !important; box-shadow:inset 3px 0 0 var(--accent), 0 1px 2px rgba(0,0,0,.06) !important; font-weight:600; transition:transform .15s ease; }
-    #orarmeu .cl:hover { transform:translateY(-2px); }
-    #orarmeu td.acum { background:var(--accent) !important; color:var(--on-accent); animation:orar-puls 2.2s ease-out infinite; }
-    #orarmeu td.acum .ab { color:var(--on-accent); }
-    #orarmeu .om-comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 12px; }
-    #orarmeu .om-comut button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
-    #orarmeu .om-zi { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); animation:om-intra .35s ease both; }
-    #orarmeu .om-zi:nth-of-type(2) { animation-delay:.04s; } #orarmeu .om-zi:nth-of-type(3) { animation-delay:.08s; } #orarmeu .om-zi:nth-of-type(4) { animation-delay:.12s; } #orarmeu .om-zi:nth-of-type(5) { animation-delay:.16s; }
+    :is(#orarmeu,.orm) .oz-top { display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; margin:0 0 14px; }
+    :is(#orarmeu,.orm) .oz-top .oz-comut { margin:0; }
+    :is(#orarmeu,.orm) .oz-top .oz-azi { min-height:40px; height:40px; padding:0 18px; }
+    :is(#orarmeu,.orm) .oz-nav { gap:12px; margin:0 0 14px; }
+    :is(#orarmeu,.orm) .oz-nav-msg { flex:1 1 170px; min-width:150px; font-size:.8rem; line-height:1.3; color:var(--muted); font-weight:600; }
+    :is(#orarmeu,.orm) .oz-cap { flex:0 0 190px; width:190px; display:flex; align-items:center; border:2px solid var(--accent); border-radius:999px; background:color-mix(in srgb, var(--accent) 12%, var(--card)); box-shadow:0 6px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent); }
+    :is(#orarmeu,.orm) .oz-cap .oz-sg { width:34px; min-width:34px; height:44px; min-height:44px; border-radius:0; background:transparent; box-shadow:none; color:var(--accent); font-size:1.4rem; }
+    :is(#orarmeu,.orm) .oz-cap .dt { flex:1; min-width:0; }
+    :is(#orarmeu,.orm) .oz-cap .oz-data-in { height:44px; min-height:44px; padding:0 4px; border:0; border-radius:0; background:transparent; box-shadow:none; }
+    :is(#orarmeu,.orm) .oz-cap .dt-afis { left:0; right:18px; justify-content:center; font-weight:800; font-size:1rem; color:var(--accent); letter-spacing:.01em; }
+    :is(#orarmeu,.orm) .oz-cap .dt-in::-webkit-calendar-picker-indicator { width:14px; padding:0; margin-left:2px; opacity:.8; }
+    :is(#orarmeu,.orm) .oz-h2 { margin:12px 0 2px; font-size:1.9rem; line-height:1.1; letter-spacing:-.02em; font-weight:800; color:#fff; }
+    :is(#orarmeu,.orm) .oz-hero.t-liber { background:radial-gradient(120% 140% at 100% 0%, #ffb35c 0%, transparent 55%), linear-gradient(135deg,#c2410c 0%,#9a2f6b 100%); }
+    :is(#orarmeu,.orm) .oz-hero.t-vacanta { background:radial-gradient(120% 140% at 100% 0%, #7dd3a8 0%, transparent 55%), linear-gradient(135deg,#0f766e 0%,#1d4ed8 100%); }
+    :is(#orarmeu,.orm) .oz-hero.t-program { background:radial-gradient(120% 140% at 100% 0%, #c4b5fd 0%, transparent 55%), linear-gradient(135deg,#6d28d9 0%,#1e3a8a 100%); }
+    :is(#orarmeu,.orm) .oz-hero.t-weekend, :is(#orarmeu,.orm) .oz-hero.t-afara { background:linear-gradient(135deg,#475569 0%,#1e293b 100%); }
+    :is(#orarmeu,.orm) .oz-avize { display:grid; gap:8px; margin:12px 0 0; }
+    :is(#orarmeu,.orm) .oz-aviz { display:flex; flex-direction:column; gap:1px; padding:10px 14px; border-radius:16px; background:var(--card); box-shadow:inset 4px 0 0 var(--c, var(--accent)), 0 1px 3px rgba(0,0,0,.06); font-size:.88rem; }
+    :is(#orarmeu,.orm) .oz-aviz b { color:var(--c, var(--accent)); }
+    :is(#orarmeu,.orm) .oz-aviz span { color:var(--muted); }
+    :is(#orarmeu,.orm) .t-liber { --c:#c2410c; } :is(#orarmeu,.orm) .t-vacanta { --c:#0f766e; } :is(#orarmeu,.orm) .t-program { --c:#6d28d9; } :is(#orarmeu,.orm) .t-practica { --c:#b45309; } :is(#orarmeu,.orm) .t-afara { --c:#64748b; }
+    @media (prefers-color-scheme: dark) { :is(#orarmeu,.orm) .t-liber { --c:#fb923c; } :is(#orarmeu,.orm) .t-vacanta { --c:#5eead4; } :is(#orarmeu,.orm) .t-program { --c:#c4b5fd; } :is(#orarmeu,.orm) .t-practica { --c:#fbbf24; } }
+    :is(#orarmeu,.orm) .oz-zi { min-width:70px; gap:5px; }
+    :is(#orarmeu,.orm) .oz-zi .nr { font-size:1.35rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
+    :is(#orarmeu,.orm) .oz-zi.sus { opacity:.8; }
+    :is(#orarmeu,.orm) .oz-zi .pct i.x { width:14px; height:4px; border-radius:2px; background:var(--c, var(--muted)); }
+    :is(#orarmeu,.orm) .oz-zi .pct i.pr { background:#f59e0b; box-shadow:0 0 0 1.5px var(--card); }
+    :is(#orarmeu,.orm) .oz-ora.lapr { opacity:.6; }
+    :is(#orarmeu,.orm) .oz-ora.lapr .oz-card { border:1.5px dashed #f59e0b; box-shadow:none; background:transparent; }
+    :is(#orarmeu,.orm) .oz-ora.lapr .oz-nod::after { border-color:#f59e0b; }
+    :is(#orarmeu,.orm) .oz-pr { background:color-mix(in srgb, #f59e0b 20%, transparent); color:#b45309; }
+    @media (prefers-color-scheme: dark) { :is(#orarmeu,.orm) .oz-pr { color:#fbbf24; } }
+    :is(#orarmeu,.orm) .oz-sapt-cap { display:flex; flex-direction:column; gap:2px; margin:0 0 12px; }
+    :is(#orarmeu,.orm) .oz-sapt-cap b { font-size:1.5rem; letter-spacing:-.02em; }
+    :is(#orarmeu,.orm) .oz-sapt-cap span { color:var(--muted); font-size:.9rem; }
+    :is(#orarmeu,.orm) .oz-zi-card { margin:0 0 12px; padding:14px 16px 10px; border-radius:22px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); animation:om-intra .4s ease both; animation-delay:calc(var(--k, 0) * 60ms); }
+    :is(#orarmeu,.orm) .oz-zi-card.azi { box-shadow:0 0 0 2px var(--accent), 0 10px 24px -12px rgba(11,127,138,.5); }
+    :is(#orarmeu,.orm) .oz-zi-card.sus { background:color-mix(in srgb, var(--c, var(--muted)) 7%, var(--card)); }
+    :is(#orarmeu,.orm) .oz-zc-cap { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+    :is(#orarmeu,.orm) .oz-zc-t b { display:block; font-size:1.15rem; letter-spacing:-.01em; }
+    :is(#orarmeu,.orm) .oz-zc-t span { font-size:.8rem; color:var(--muted); }
+    :is(#orarmeu,.orm) .oz-zc-r { display:flex; align-items:center; gap:8px; text-align:right; }
+    :is(#orarmeu,.orm) .oz-zc-n { font-weight:700; font-size:.88rem; color:var(--muted); }
+    :is(#orarmeu,.orm) .oz-zi-card .oz-avize { margin:6px 0 8px; }
+    :is(#orarmeu,.orm) .oz-sr { display:flex; align-items:center; gap:10px; padding:7px 0; border-top:1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+    :is(#orarmeu,.orm) .oz-sr-t { flex:0 0 42px; font-variant-numeric:tabular-nums; font-weight:700; font-size:.9rem; color:var(--muted); }
+    :is(#orarmeu,.orm) .oz-clasa.mic { font-size:.95rem; padding:1px 10px 2px; border-radius:11px; color:var(--accent); }
+    :is(#orarmeu,.orm) .oz-sr .oz-disc { font-size:.88rem; }
+    :is(#orarmeu,.orm) .oz-sr.lapr { opacity:.6; }
+    :is(#orarmeu,.orm) .oz-sr.lapr .oz-clasa { border-style:dashed; border-color:#f59e0b; color:#b45309; }
+    :is(#orarmeu,.orm) .oz-vezi { width:auto; min-height:34px; margin:6px 0 2px; padding:0 4px; background:transparent; border:0; box-shadow:none; color:var(--accent); font-weight:700; font-size:.85rem; }
+    :is(#orarmeu,.orm) .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+    :is(#orarmeu,.orm) .orar-t { border-collapse:separate; border-spacing:5px; width:100%; min-width:640px; font-size:.92rem; }
+    :is(#orarmeu,.orm) .orar-t th, :is(#orarmeu,.orm) .orar-t td { border:0; padding:8px 4px; text-align:center; }
+    :is(#orarmeu,.orm) .orar-t thead th { background:transparent; line-height:1.25; font-weight:800; }
+    :is(#orarmeu,.orm) .orar-t thead th small { display:block; font-weight:500; font-size:.7rem; color:var(--muted); margin-top:1px; }
+    :is(#orarmeu,.orm) .orar-t tbody th { text-align:left; padding-left:12px; font-weight:700; color:var(--muted); position:sticky; left:0; background:var(--card); z-index:1; white-space:nowrap; }
+    :is(#orarmeu,.orm) .orar-t tbody th.azi { color:var(--accent); box-shadow:none; }
+    :is(#orarmeu,.orm) .orar-t td { background:var(--bg); border-radius:12px; min-width:78px; line-height:1.25; }
+    :is(#orarmeu,.orm) .orar-t td.azi { box-shadow:none; }
+    :is(#orarmeu,.orm) .cl { background:color-mix(in srgb, var(--accent) 9%, var(--card)) !important; box-shadow:inset 3px 0 0 var(--accent), 0 1px 2px rgba(0,0,0,.06) !important; font-weight:600; transition:transform .15s ease; }
+    :is(#orarmeu,.orm) .cl:hover { transform:translateY(-2px); }
+    :is(#orarmeu,.orm) td.acum { background:var(--accent) !important; color:var(--on-accent); animation:orar-puls 2.2s ease-out infinite; }
+    :is(#orarmeu,.orm) td.acum .ab { color:var(--on-accent); }
+    :is(#orarmeu,.orm) .om-comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 12px; }
+    :is(#orarmeu,.orm) .om-comut button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
+    :is(#orarmeu,.orm) .om-zi { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); animation:om-intra .35s ease both; }
+    :is(#orarmeu,.orm) .om-zi:nth-of-type(2) { animation-delay:.04s; } :is(#orarmeu,.orm) .om-zi:nth-of-type(3) { animation-delay:.08s; } :is(#orarmeu,.orm) .om-zi:nth-of-type(4) { animation-delay:.12s; } :is(#orarmeu,.orm) .om-zi:nth-of-type(5) { animation-delay:.16s; }
     @keyframes om-intra { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
-    #orarmeu .om-zi.azi { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 8px 22px rgba(0,0,0,.10); }
-    #orarmeu .om-zi h3 { margin:0 0 8px; font-size:1.05rem; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    #orarmeu .om-zi h3 .badge { font-size:.75rem; }
-    #orarmeu .om-zi .tot { margin-left:auto; font-weight:400; font-size:.85rem; color:var(--muted); }
-    #orarmeu .om-ora { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:center; padding:8px 12px; border-radius:12px; margin-bottom:6px; background:var(--bg); box-shadow:inset 3px 0 0 var(--accent); transition:transform .15s ease; }
-    #orarmeu .om-ora:hover { transform:translateX(2px); }
-    #orarmeu .om-ora.acum { background:var(--accent); color:var(--on-accent); animation:orar-puls 2.2s ease-out infinite; }
-    #orarmeu .om-ora.urm { box-shadow:inset 3px 0 0 var(--accent), 0 0 0 1.5px var(--accent); }
-    #orarmeu .om-ora .t { font-variant-numeric:tabular-nums; font-weight:700; }
-    #orarmeu .om-ora .t .badge { margin-left:6px; font-size:.68rem; }
-    #orarmeu .om-ora.acum .t .badge { background:var(--on-accent); color:var(--accent); }
-    @media (prefers-reduced-motion: reduce) { #orarmeu .om-zi, #orarmeu .om-ora, #orarmeu td.acum, #orarmeu .om-ora.acum { animation:none; transition:none; } }
-    #orarmeu .om-ora .n { font-size:.8rem; opacity:.75; font-weight:400; }
-    #orarmeu .om-ora .c { font-weight:800; font-size:1.05rem; text-align:right; }
-    #orarmeu .om-gol { color:var(--muted); font-size:.85rem; padding:2px 10px 8px; }
-    @media (prefers-color-scheme: dark) { #orarmeu .cl { background:hsl(var(--h) 40% 26%); color:#e8f5f6; } }
+    :is(#orarmeu,.orm) .om-zi.azi { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 8px 22px rgba(0,0,0,.10); }
+    :is(#orarmeu,.orm) .om-zi h3 { margin:0 0 8px; font-size:1.05rem; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    :is(#orarmeu,.orm) .om-zi h3 .badge { font-size:.75rem; }
+    :is(#orarmeu,.orm) .om-zi .tot { margin-left:auto; font-weight:400; font-size:.85rem; color:var(--muted); }
+    :is(#orarmeu,.orm) .om-ora { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:center; padding:8px 12px; border-radius:12px; margin-bottom:6px; background:var(--bg); box-shadow:inset 3px 0 0 var(--accent); transition:transform .15s ease; }
+    :is(#orarmeu,.orm) .om-ora:hover { transform:translateX(2px); }
+    :is(#orarmeu,.orm) .om-ora.acum { background:var(--accent); color:var(--on-accent); animation:orar-puls 2.2s ease-out infinite; }
+    :is(#orarmeu,.orm) .om-ora.urm { box-shadow:inset 3px 0 0 var(--accent), 0 0 0 1.5px var(--accent); }
+    :is(#orarmeu,.orm) .om-ora .t { font-variant-numeric:tabular-nums; font-weight:700; }
+    :is(#orarmeu,.orm) .om-ora .t .badge { margin-left:6px; font-size:.68rem; }
+    :is(#orarmeu,.orm) .om-ora.acum .t .badge { background:var(--on-accent); color:var(--accent); }
+    @media (prefers-reduced-motion: reduce) { :is(#orarmeu,.orm) .om-zi, :is(#orarmeu,.orm) .om-ora, :is(#orarmeu,.orm) td.acum, :is(#orarmeu,.orm) .om-ora.acum { animation:none; transition:none; } }
+    :is(#orarmeu,.orm) .om-ora .n { font-size:.8rem; opacity:.75; font-weight:400; }
+    :is(#orarmeu,.orm) .om-ora .c { font-weight:800; font-size:1.05rem; text-align:right; }
+    :is(#orarmeu,.orm) .om-gol { color:var(--muted); font-size:.85rem; padding:2px 10px 8px; }
+    @media (prefers-color-scheme: dark) { :is(#orarmeu,.orm) .cl { background:hsl(var(--h) 40% 26%); color:#e8f5f6; } }
     #structura .orar-t { border-collapse:collapse; width:100%; min-width:560px; font-size:.9rem; }
     #structura .orar-t th, #structura .orar-t td { border:1px solid var(--line); padding:8px 4px; text-align:center; }
     #structura .orar-t td.plin { background:color-mix(in srgb, var(--accent) 22%, var(--card)); font-weight:700; }
@@ -1645,6 +1648,7 @@
       const zona = el("div", "");
       corp.append(bara, zona);
       let date = null; // { an, rows, nume(Map), profesori[], clase[] }
+      let vedere = "calendar";
       const incarca = async () => {
         zona.replaceChildren(el("p", "who", "Se încarcă…"));
         const a = ani.find((x) => x.id === selAn.value);
@@ -1655,7 +1659,9 @@
           const pe = new Map(); rows.forEach((r) => { if (!pe.has(r.angajat_id)) pe.set(r.angajat_id, []); pe.get(r.angajat_id).push(r); });
           const profesori = ang.filter((x) => pe.has(x.id)).sort((x, y) => x.nume.localeCompare(y.nume, "ro"));
           const clase = [...new Set(rows.map((r) => r.clasa))].sort(ordClasaOrar);
-          date = { an: a.denumire, rows, nume, pe, profesori, clase, dm };
+          const { data: calDb } = await db.rpc("orar_calendar");
+          const cal = calDb && calDb.structura ? calDb : { structura: [], libere: [], practica: [] };
+          date = { an: a.denumire, rows, nume, pe, profesori, clase, dm, cal };
         } catch (e) { date = null; zona.replaceChildren(); msg.textContent = "Orarul nu a putut fi încărcat."; return; }
         msg.textContent = ""; umple();
       };
@@ -1675,8 +1681,18 @@
         if (!selX.value) return zona.appendChild(el("p", "who", mod === "profesori" ? "Alege un profesor ca să vezi și să tipărești orarul lui." : "Alege o clasă ca să vezi și să tipărești orarul ei."));
         const p = mod === "profesori" ? pagProf(date.profesori.find((x) => x.id === selX.value)) : pagClasa(selX.value);
         zona.appendChild(el("p", "who", p.titlu + (p.sub ? " · " + p.sub : "") + " · " + date.an));
-        const sc = el("div", "orar-g-scroll"); sc.appendChild(grilaOrar(p.celula, p.max, true, p.de)); zona.appendChild(sc);
-        const lgz = legendaOrar(p.leg); if (lgz) zona.appendChild(lgz);
+        const vb = el("div", "oz-vedere");
+        [["calendar", "Calendar"], ["grila", "Grilă"]].forEach(([k, et]) => { const b = el("button", "", et); b.type = "button"; b.setAttribute("aria-pressed", String(vedere === k)); b.addEventListener("click", () => { vedere = k; arata(); }); vb.appendChild(b); });
+        zona.appendChild(vb);
+        if (vedere === "grila") {
+          const sc = el("div", "orar-g-scroll"); sc.appendChild(grilaOrar(p.celula, p.max, true, p.de)); zona.appendChild(sc);
+          const lgz = legendaOrar(p.leg); if (lgz) zona.appendChild(lgz);
+        } else {
+          const rez = el("div", "orm"); zona.appendChild(rez);
+          const ore = mod === "profesori" ? date.pe.get(selX.value) || [] : date.rows.filter((r) => r.clasa === selX.value);
+          const rd = ore.map((r) => { const d = dsc(r); const baza = { an_id: selAn.value, zi: r.zi, ora: r.ora, clasa: r.clasa, scurt: d ? d.scurt : "", complet: d ? d.complet : "" }; return mod === "profesori" ? baza : { ...baza, eticheta: (d && d.scurt) || "Ora " + r.ora, text: date.nume.get(r.angajat_id) || "", grup: date.nume.get(r.angajat_id) || "?" }; });
+          randeazaOrarModern({ zona: rez, data: rd, numeProf: "", cal: date.cal, ani: [{ id: selAn.value, den: date.an }], tipar: false, etGrup: mod === "clase" ? "Ore pe profesori" : "" });
+        }
       }
       bP.addEventListener("click", () => { mod = "profesori"; umple(); });
       bC.addEventListener("click", () => { mod = "clase"; umple(); });
@@ -1702,6 +1718,11 @@
       const ani = []; data.forEach((r) => { if (!ani.find((x) => x.id === r.an_id)) ani.push({ id: r.an_id, den: r.denumire }); });
       const zona = el("div", "");
       corp.appendChild(zona);
+      randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar: true });
+    }
+    // Vedere modernă (zi / săptămână, calendar, practică): folosită la „Orarul meu” și la ecranul de orar al administratorului.
+    // data: rânduri { an_id, zi, ora, clasa, scurt, complet, eticheta?, text?, grup? }
+    function randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar, etGrup }) {
       const ZL = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const ZL7 = [...ZL, "Sâmbătă", "Duminică"];
       const LUNI_RO = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
@@ -1716,7 +1737,7 @@
       const durata = (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? h + (h === 1 ? " oră" : " ore") + (r ? " și " + r + " min" : "") : r + " min"; };
       const oraS = (n) => n + (n === 1 ? " oră" : " ore");
       const stOra = (r) => 480 + (r.ora - 1) * 60;
-      const randClasa = (r, cls) => { const d = el("div", cls); d.appendChild(el("span", "oz-clasa", r.clasa)); if (r.complet) d.appendChild(el("span", "oz-disc", r.complet)); return d; };
+      const randClasa = (r, cls) => { const d = el("div", cls); d.appendChild(el("span", "oz-clasa", r.eticheta || r.clasa)); const tx = r.text || r.complet; if (tx) d.appendChild(el("span", "oz-disc", tx)); return d; };
       const anPentru = (f) => {
         const interv = new Map(); cal.structura.forEach((x) => { const v = interv.get(x.an_id) || [x.de_la, x.pana_la]; interv.set(x.an_id, [x.de_la < v[0] ? x.de_la : v[0], x.pana_la > v[1] ? x.pana_la : v[1]]); });
         const g = ani.find((x) => interv.has(x.id) && interv.get(x.id)[0] <= f && f <= interv.get(x.id)[1]);
@@ -1805,7 +1826,7 @@
           } else if (eAzi && active.length) {
             hero.append(el("span", "oz-pill", "Gata pentru azi"), el("h2", "oz-h2", "Orele de azi s-au încheiat"));
           } else {
-            hero.append(el("span", "oz-pill", "Orarul zilei"), el("h2", "oz-h2", active.length ? oraS(active.length) : "Nicio oră de predat"), el("div", "oz-meta", active.length ? "de la " + interval(active[0].ora).split("–")[0] + " până la " + interval(active[active.length - 1].ora).split("–")[1] : "Toate clasele sunt la practică"));
+            hero.append(el("span", "oz-pill", "Orarul zilei"), el("h2", "oz-h2", active.length ? oraS(active.length) : (etGrup ? "Nicio oră în program" : "Nicio oră de predat")), el("div", "oz-meta", active.length ? "de la " + interval(active[0].ora).split("–")[0] + " până la " + interval(active[active.length - 1].ora).split("–")[1] : (etGrup ? "Clasa este la practică" : "Toate clasele sunt la practică")));
           }
           if (active.length) { const ch = el("div", "oz-chips"); ch.append(el("span", "", oraS(active.length) + (eAzi ? " azi" : "")), el("span", "", "de la " + interval(active[0].ora).split("–")[0]), el("span", "", "până la " + interval(active[active.length - 1].ora).split("–")[1])); hero.appendChild(ch); }
           zona.appendChild(hero);
@@ -1840,7 +1861,7 @@
           const lu = luS, vi = adauga(lu, 4);
           const cap = el("div", "oz-sapt-cap"); cap.append(el("b", "", lu.getDate() + (lu.getMonth() !== vi.getMonth() ? " " + LUNI_RO[lu.getMonth()] : "") + " – " + vi.getDate() + " " + LUNI_RO[vi.getMonth()] + " " + vi.getFullYear()));
           const totS = Array.from({ length: 5 }, (_, k) => { const d = adauga(lu, k), inf = infoZi(d, claseMele), p = new Set(inf.practica.map((x) => x.clasa)); return inf.suspendat ? 0 : oreZi(d).filter((r) => !p.has(r.clasa)).length; }).reduce((x, y) => x + y, 0);
-          cap.appendChild(el("span", "", oraS(totS) + " de predat în această săptămână")); zona.appendChild(cap);
+          cap.appendChild(el("span", "", oraS(totS) + (etGrup ? " în program în această săptămână" : " de predat în această săptămână"))); zona.appendChild(cap);
           for (let k = 0; k < 5; k++) {
             const d = adauga(lu, k), info = infoZi(d, claseMele), prac = new Set(info.practica.map((x) => x.clasa));
             const lista = info.suspendat ? [] : oreZi(d);
@@ -1850,29 +1871,29 @@
             const dr = el("div", "oz-zc-r"); if (iso(d) === iso(azi)) dr.appendChild(el("span", "oz-cl oz-ac", "azi")); dr.appendChild(el("span", "oz-zc-n", info.suspendat ? info.titlu : (lista.length ? oraS(lista.length) : "liber"))); h.appendChild(dr);
             card.appendChild(h);
             const av = aviz(infoR, false); if (av) card.appendChild(av);
-            lista.forEach((r) => { const lp = prac.has(r.clasa); const rd = el("div", "oz-sr" + (lp ? " lapr" : "")); rd.append(el("span", "oz-sr-t", interval(r.ora).split("–")[0]), el("span", "oz-clasa mic", r.clasa), el("span", "oz-disc", lp ? "este la practică" : (r.complet || "Ora " + r.ora))); card.appendChild(rd); });
+            lista.forEach((r) => { const lp = prac.has(r.clasa); const rd = el("div", "oz-sr" + (lp ? " lapr" : "")); rd.append(el("span", "oz-sr-t", interval(r.ora).split("–")[0]), el("span", "oz-clasa mic", r.eticheta || r.clasa), el("span", "oz-disc", lp ? "este la practică" : (r.text || r.complet || "Ora " + r.ora))); card.appendChild(rd); });
             card.addEventListener("click", (e) => { if (e.target.closest("button")) return; });
             const bz = el("button", "oz-vezi", "Deschide ziua ›"); bz.type = "button"; bz.addEventListener("click", () => { dataSel = d; mod = "zile"; deseneaza(); window.scrollTo({ top: 0, behavior: "smooth" }); }); card.appendChild(bz);
             zona.appendChild(card);
           }
         }
-        const nrc = new Map(); ore.forEach((r) => nrc.set(r.clasa, (nrc.get(r.clasa) || 0) + 1));
-        const rc = el("div", "oz-clase"); rc.appendChild(el("span", "oz-et", "Ore pe clase"));
-        [...nrc].sort((x, y) => ordClasaOrar(x[0], y[0])).forEach(([c, n]) => rc.appendChild(el("span", "oz-cl", c + " · " + n)));
+        const nrc = new Map(); ore.forEach((r) => { const g = r.grup || r.clasa; nrc.set(g, (nrc.get(g) || 0) + 1); });
+        const rc = el("div", "oz-clase"); rc.appendChild(el("span", "oz-et", etGrup || "Ore pe clase"));
+        [...nrc].sort((x, y) => (etGrup ? String(x[0]).localeCompare(String(y[0]), "ro") : ordClasaOrar(x[0], y[0]))).forEach(([c, n]) => rc.appendChild(el("span", "oz-cl", c + " · " + n)));
         zona.appendChild(rc);
         const { de: deO, max } = limiteOrar(ore);
         const tp = el("button", "oz-tipar", "🖨 Tipărește orarul"); tp.type = "button";
         tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, de: deO, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], an.den));
-        zona.appendChild(tp);
+        if (tipar) zona.appendChild(tp);
         zona.appendChild(el("p", "oz-mic2", "Ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
         // aliniere: toate casetele de clasă au aceeași lățime, ca numele disciplinelor să înceapă din același loc
-        ["#orarmeu .oz-ora .oz-clasa", "#orarmeu .oz-sr .oz-clasa"].forEach((sel) => {
-          const ch = [...zona.querySelectorAll(sel.replace("#orarmeu ", ""))];
+        [".oz-ora .oz-clasa", ".oz-sr .oz-clasa"].forEach((sel) => {
+          const ch = [...zona.querySelectorAll(sel)];
           const w = Math.max(0, ...ch.map((x) => x.getBoundingClientRect().width));
           if (w) ch.forEach((x) => { x.style.minWidth = Math.ceil(w) + "px"; x.style.textAlign = "center"; x.style.boxSizing = "border-box"; });
         });
       };
-      clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { const n = new Date(); if (!document.hidden && !$("orarmeu").classList.contains("hidden") && iso(n) === iso(dataSel)) deseneaza(); }, 60000);
+      clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { const n = new Date(); if (!document.hidden && zona.isConnected && zona.offsetParent !== null && iso(n) === iso(dataSel)) deseneaza(); }, 60000);
       deseneaza();
     }
 
