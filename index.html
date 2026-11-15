@@ -542,6 +542,9 @@
     #cereri .cr-pers { margin:0 0 10px; } #cereri .cr-pers > summary { cursor:pointer; padding:10px 12px; background:var(--card); border-radius:14px; display:flex; flex-direction:column; gap:2px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     #cereri .cr-pers[open] > summary { margin-bottom:8px; }
     #cereri .cr-sterge { color:#b91c1c; border-color:#dc2626; }
+    #cereri .cr-tab { background:var(--card); border-radius:16px; padding:4px 12px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .cr-tab-rand { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:7px 0; border-top:1px solid var(--line); font-size:.9rem; } #cereri .cr-tab-rand:first-child { border-top:0; }
+    #cereri .cr-pers > summary { border-left:6px solid var(--accent); }
     #cereri .cr-ore { margin-top:6px; }
     #cereri .cr-ore .cl-zi { margin:6px 0; }
     #cereri .cr-form .cr-ore .n-ora { display:inline-flex; align-items:center; gap:6px; margin:4px 14px 4px 0; font-weight:600; }
@@ -1442,7 +1445,7 @@
         // Lista angajaților (fără dubluri), pentru a lega fiecare cont de o persoană.
         const { data: ang } = await db.from("angajati").select("nume").is("sters_la", null);
         numeAngajati = [...new Set((ang || []).map((x) => x.nume))].sort((a, b) => colator.compare(a, b));
-        const luate = new Map(data.filter((x) => x.angajat_nume).map((x) => [x.angajat_nume.toLowerCase(), x.id]));
+        const luate = new Map(data.filter((x) => x.angajat_nume && !(x.roluri || []).includes("administrator")).map((x) => [x.angajat_nume.toLowerCase(), x.id]));
         data.forEach((u) => lista.appendChild(randUtilizator(u, luate)));
       }
       actualizeazaNotificari();
@@ -1569,7 +1572,7 @@
       const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "— nealocat —"; selAng.appendChild(o0);
       numeAngajati.forEach((n) => {
         const idLuat = luate && luate.get(n.toLowerCase());
-        if (idLuat && idLuat !== u.id) return; // deja alocat altui cont
+        if (idLuat && idLuat !== u.id && !(u.roluri || []).includes("administrator")) return; // deja alocat altui cont (conturile de administrator pot împărți același nume)
         const o = document.createElement("option"); o.value = n; o.textContent = n; selAng.appendChild(o);
       });
       if (u.angajat_nume && !numeAngajati.includes(u.angajat_nume)) {
@@ -2394,7 +2397,7 @@
         zona.replaceChildren();
         const nou = el("button", "", "+ Cerere nouă"); nou.type = "button"; nou.addEventListener("click", () => desenForm());
         zona.appendChild(nou);
-        if (poateDecide) { const tt = el("button", "secondary", "Toate cererile, pe persoane"); tt.type = "button"; tt.addEventListener("click", () => desenToate()); zona.appendChild(tt); }
+        if (poateDecide) { const tt = el("button", "secondary", esteAdmin ? "← Toate cererile (panou)" : "Toate cererile, pe persoane"); tt.type = "button"; tt.addEventListener("click", () => desenToate()); zona.appendChild(tt); }
         const sd = sectiuneDeDecis(); if (sd) zona.appendChild(sd);
         const sp = sectiunePentruMine(); if (sp) zona.appendChild(sp);
         const stat = statistica(); if (stat) zona.appendChild(stat);
@@ -2431,43 +2434,91 @@
           zona.appendChild(k);
         });
       };
-      const desenToate = async () => {
+      const butoaneDecizie = (c, k, reface) => {
+        if (!poateDecide || c.stare !== "in_asteptare") return;
+        if (c.optiuni_clasa && !esteDirector) { k.appendChild(el("p", "cr-det", "Include ore cu clasa care vine mai târziu sau pleacă acasă: o soluționează doar directorul.")); return; }
+        const ac = c.acceptari || [], asteapta = ac.some((x) => x.stare !== "acceptat");
+        if (asteapta) k.appendChild(el("p", "cr-det", esteDirector ? "Nu toți înlocuitorii au acceptat încă. Ca director poți aproba oricum." : "Se așteaptă acceptul înlocuitorilor propuși."));
+        const ctl = el("div", "ctl");
+        const ap = el("button", "", "Aprobă"); ap.type = "button"; ap.disabled = asteapta && !esteDirector;
+        const re = el("button", "secondary", "Respinge"); re.type = "button"; ctl.append(ap, re); k.appendChild(ctl);
+        const nb = el("div", "cr-nota-box hidden"); const nt = document.createElement("textarea"); nt.rows = 2; nt.maxLength = 500; nt.placeholder = "Motivul respingerii (obligatoriu)";
+        const conf = el("button", "secondary", "Confirmă respingerea"); conf.type = "button"; nb.append(nt, conf); k.appendChild(nb);
+        const decide = async (aproba, nota) => {
+          ap.disabled = true; re.disabled = true; conf.disabled = true;
+          const { error } = await db.rpc("cerere_invoire_decide", { p_id: c.id, p_aproba: aproba, p_nota: nota || null });
+          if (error) { await reface(error.message || "Decizia nu a putut fi salvată."); return; }
+          await reface(aproba ? "Cererea a fost aprobată." : "Cererea a fost respinsă.", true);
+        };
+        ap.addEventListener("click", () => { if (confirm("Aprobi cererea de învoire a lui " + c.angajat + "?" + (asteapta ? "\n\nNu toți înlocuitorii propuși au acceptat." : ""))) decide(true, null); });
+        re.addEventListener("click", () => { nb.classList.toggle("hidden"); nt.focus(); });
+        conf.addEventListener("click", () => { if (nt.value.trim().length < 3) return mesaj("Scrie motivul respingerii."); decide(false, nt.value.trim()); });
+      };
+      const desenToate = async (txt, ok) => {
         zona.replaceChildren(el("p", "who", "Se încarcă…")); mesaj("");
         const { data, error } = await db.rpc("cereri_toate");
-        if (error || !Array.isArray(data)) { mesaj("Cererile nu au putut fi încărcate."); desenLista(); return; }
-        zona.replaceChildren();
-        const inapoi = el("button", "secondary", "← Înapoi la cereri"); inapoi.type = "button"; inapoi.addEventListener("click", () => { mesaj(""); desenLista(); });
-        zona.appendChild(inapoi);
-        zona.appendChild(el("h3", "az-h", "Toate cererile, pe persoane (" + data.length + ")"));
+        if (error || !Array.isArray(data)) { mesaj("Cererile nu au putut fi încărcate."); if (!esteAdmin) desenLista(); else zona.replaceChildren(); return; }
+        zona.replaceChildren(); if (txt) mesaj(txt, ok);
+        const refa = async (t, o) => { try { await incarca(); } catch (e) { /* rămâne lista veche */ } await desenToate(t, o); actualizeazaClopot(); };
+        const bara = el("div", "ctl");
+        if (esteAdmin ? orar.length : true) { const b = el("button", "secondary", esteAdmin ? "Cererile mele și cerere nouă" : "← Înapoi la cereri"); b.type = "button"; b.addEventListener("click", () => { mesaj(""); desenLista(); }); bara.appendChild(b); }
+        if (bara.children.length) zona.appendChild(bara);
+        const nrOre = (c) => (c.ore_alese ? c.ore_alese.length : 0);
+        const fara = (c) => (c.ore_alese || []).filter((k) => !(c.propuneri && c.propuneri[k]) && !(c.optiuni_clasa && c.optiuni_clasa[k])).length;
+        const apr = data.filter((c) => c.stare === "aprobata"), nr = (st) => data.filter((c) => c.stare === st).length;
+        const profesori = new Set(data.map((c) => c.angajat_id));
+        // Statistica generală
+        zona.appendChild(el("h3", "az-h", "Statistică generală"));
+        const st = el("div", "az-stats");
+        const tile = (n, et, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et)); return t; };
+        st.append(tile(data.length, "Cereri trimise"), tile(profesori.size, "Profesori care s-au învoit"), tile(nr("in_asteptare"), "În așteptare", nr("in_asteptare") ? "att" : ""), tile(apr.length, "Aprobate", "bun"), tile(nr("respinsa"), "Respinse", nr("respinsa") ? "rau" : ""), tile(nr("anulata"), "Anulate"),
+          tile(apr.reduce((t, c) => t + zileCerere(c), 0), "Zile aprobate"), tile(apr.reduce((t, c) => t + nrOre(c), 0), "Ore aprobate"), tile(apr.reduce((t, c) => t + fara(c), 0), "Ore aprobate fără înlocuitor", apr.some((c) => fara(c)) ? "att" : ""),
+          tile(apr.reduce((t, c) => t + (c.propuneri ? Object.keys(c.propuneri).length : 0), 0), "Ore cu înlocuitor propus"), tile(apr.reduce((t, c) => t + (c.optiuni_clasa ? Object.keys(c.optiuni_clasa).length : 0), 0), "Ore cu clasa venită mai târziu / plecată acasă"), tile(data.filter((c) => c.modificari > 0).length, "Cereri modificate"));
+        zona.appendChild(st);
+        // Pe luni
+        const luni = new Map(); data.forEach((c) => { const l = c.de_la.slice(0, 7); if (!luni.has(l)) luni.set(l, { c: 0, a: 0, z: 0, o: 0 }); const x = luni.get(l); x.c++; if (c.stare === "aprobata") { x.a++; x.z += zileCerere(c); x.o += nrOre(c); } });
+        const LUNI = ["", "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+        zona.appendChild(el("h3", "az-h", "Pe luni"));
+        const tb = el("div", "cr-tab");
+        [...luni.keys()].sort().reverse().forEach((l) => { const x = luni.get(l), r = el("div", "cr-tab-rand"); r.append(el("b", "", LUNI[Number(l.slice(5))] + " " + l.slice(0, 4)), el("span", "", x.c + " cereri · aprobate: " + x.a + " (" + x.z + " zile, " + x.o + " ore)")); tb.appendChild(r); });
+        zona.appendChild(tb);
+        // Cei mai mulți
+        const pePers = new Map(); data.forEach((c) => { if (!pePers.has(c.angajat)) pePers.set(c.angajat, []); pePers.get(c.angajat).push(c); });
+        const clasament = [...pePers.entries()].map(([n, l]) => [n, l.filter((c) => c.stare === "aprobata").reduce((t, c) => t + nrOre(c), 0), l.filter((c) => c.stare === "aprobata").reduce((t, c) => t + zileCerere(c), 0)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        if (clasament.length) { zona.appendChild(el("h3", "az-h", "Cele mai multe ore de învoire aprobate")); const cl = el("div", "cr-tab"); clasament.forEach(([n, o, z], i) => { const r = el("div", "cr-tab-rand"); r.append(el("b", "", (i + 1) + ". " + n), el("span", "", o + " ore · " + z + " zile")); cl.appendChild(r); }); zona.appendChild(cl); }
+        // Câte un cartonaș pe profesor
+        zona.appendChild(el("h3", "az-h", "Profesori care s-au învoit (" + pePers.size + ")"));
         if (!data.length) { zona.appendChild(el("p", "who", "Nu a fost trimisă nicio cerere.")); return; }
-        const grup = new Map(); data.forEach((c) => { if (!grup.has(c.angajat)) grup.set(c.angajat, []); grup.get(c.angajat).push(c); });
-        [...grup.keys()].sort((a, b) => a.localeCompare(b, "ro")).forEach((nume) => {
-          const lista = grup.get(nume), apr = lista.filter((c) => c.stare === "aprobata"), att = lista.filter((c) => c.stare === "in_asteptare").length;
-          const det = el("details", "cr-pers"); const sm = el("summary", "");
-          sm.append(el("b", "", nume), el("span", "cr-det", lista.length + (lista.length === 1 ? " cerere" : " cereri") + " · aprobate: " + apr.length + " (" + apr.reduce((t, c) => t + zileCerere(c), 0) + " zile, " + apr.reduce((t, c) => t + (c.ore_alese ? c.ore_alese.length : 0), 0) + " ore)" + (att ? " · în așteptare: " + att : "")));
+        [...pePers.keys()].sort((a, b) => a.localeCompare(b, "ro")).forEach((nume) => {
+          const lista = pePers.get(nume), ap = lista.filter((c) => c.stare === "aprobata"), att = lista.filter((c) => c.stare === "in_asteptare").length, resp = lista.filter((c) => c.stare === "respinsa").length;
+          const det = el("details", "cr-pers"); if (att) det.open = true; const sm = el("summary", "");
+          sm.appendChild(el("b", "", nume));
+          sm.appendChild(el("span", "cr-det", lista.length + (lista.length === 1 ? " cerere" : " cereri") + " · aprobate: " + ap.length + " (" + ap.reduce((t, c) => t + zileCerere(c), 0) + " zile, " + ap.reduce((t, c) => t + nrOre(c), 0) + " ore)"));
+          sm.appendChild(el("span", "cr-det", (att ? "în așteptare: " + att + " · " : "") + (resp ? "respinse: " + resp + " · " : "") + "ore fără înlocuitor: " + ap.reduce((t, c) => t + fara(c), 0) + " · ultima cerere: " + fd(lista.map((c) => c.de_la).sort().reverse()[0])));
           det.appendChild(sm);
           lista.forEach((c) => {
             const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
             cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", ST[c.stare][1], ST[c.stare][0]));
             k.appendChild(cp);
-            const nz = zileCerere(c), no = c.ore_alese ? c.ore_alese.length : 0;
+            const nz = zileCerere(c), no = nrOre(c);
             k.appendChild(el("p", "cr-det", "Trimisă la " + fDataOra(c.creat_la) + " · " + nz + (nz === 1 ? " zi" : " zile") + " · " + no + (no === 1 ? " oră" : " ore") + (c.modificari > 0 ? " · modificată de " + c.modificari + (c.modificari === 1 ? " dată" : " ori") : "")));
             k.appendChild(el("p", "cr-motiv", c.motiv));
             if (c.ore_alese && c.ore_alese.length) k.appendChild(listaOre(c.ore_alese));
             if (c.optiuni_clasa) k.appendChild(optiuniClasa(c.optiuni_clasa, true));
             (c.acceptari || []).forEach((x) => { const r = el("div", "cr-acc"); r.append(el("span", "", "Înlocuitor: " + x.nume), el("span", ACC[x.stare][1], ACC[x.stare][0])); k.appendChild(r); });
             if (c.decis_de) k.appendChild(el("p", "cr-det", (c.stare === "aprobata" ? "Aprobată" : c.stare === "respinsa" ? "Respinsă" : "Anulată") + " de " + c.decis_de + (c.decis_la ? " la " + fDataOra(c.decis_la) : "") + (c.nota_decizie ? " · " + c.nota_decizie : "")));
-            const bara = el("div", "ctl");
+            butoaneDecizie(c, k, refa);
+            const bb = el("div", "ctl");
             const bi = el("button", "secondary", "Istoric"); bi.type = "button"; let pi = null;
             bi.addEventListener("click", () => { if (pi) { pi.remove(); pi = null; return; } pi = istoricPanou(c.id); k.appendChild(pi); });
-            bara.appendChild(bi);
+            bb.appendChild(bi);
             if (esteAdmin) { const bs = el("button", "secondary cr-sterge", "Șterge"); bs.type = "button"; bs.addEventListener("click", async () => {
               if (!confirm("Ștergi definitiv cererea lui " + nume + " (" + fd(c.de_la) + (c.de_la === c.pana_la ? "" : " – " + fd(c.pana_la)) + ")?\n\nAcțiunea nu poate fi anulată.")) return;
               bs.disabled = true; const r = await db.rpc("cerere_invoire_sterge", { p_id: c.id });
               if (r.error) { bs.disabled = false; mesaj(r.error.message || "Cererea nu a putut fi ștearsă."); return; }
-              try { await incarca(); } catch (e) { /* rămâne lista veche */ } await desenToate(); mesaj("Cererea a fost ștearsă.", true); actualizeazaClopot();
-            }); bara.appendChild(bs); }
-            k.appendChild(bara); det.appendChild(k);
+              await refa("Cererea a fost ștearsă.", true);
+            }); bb.appendChild(bs); }
+            k.appendChild(bb); det.appendChild(k);
           });
           zona.appendChild(det);
         });
@@ -2642,7 +2693,7 @@
         });
         dupaDate();
       };
-      corp.replaceChildren(zona); desenLista();
+      corp.replaceChildren(zona); if (esteAdmin) desenToate(); else desenLista();
     }
 
     function deschideAnunturi() {
