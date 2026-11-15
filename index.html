@@ -582,8 +582,13 @@
     #orarmeu .oz-card { margin:0 0 12px; padding:14px 16px; border-radius:20px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); transition:transform .15s ease; }
     #orarmeu .oz-card:hover { transform:translateX(3px); }
     #orarmeu .oz-ora.acum .oz-card { background:linear-gradient(135deg,#0b7f8a,#124a86); color:#fff; box-shadow:0 12px 28px -12px rgba(18,74,134,.7); }
-    #orarmeu .oz-mat { font-weight:800; font-size:1.6rem; letter-spacing:-.02em; line-height:1.1; }
-    #orarmeu .oz-disc { font-size:.85rem; font-weight:400; opacity:.85; }
+    #orarmeu .oz-rand { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; margin:12px 0 2px; }
+    #orarmeu .oz-clasa { display:inline-block; padding:2px 14px 3px; border-radius:14px; border:1.5px solid color-mix(in srgb, currentColor 35%, transparent); background:color-mix(in srgb, currentColor 8%, transparent); font-weight:800; font-size:1.7rem; letter-spacing:-.02em; line-height:1.25; }
+    #orarmeu .oz-hero .oz-clasa { font-size:2.1rem; border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.14); }
+    #orarmeu .oz-card .oz-rand { margin-top:0; }
+    #orarmeu .oz-card:not(.x) .oz-clasa { color:var(--accent); }
+    #orarmeu .oz-ora.acum .oz-clasa { color:#fff; border-color:rgba(255,255,255,.45); background:rgba(255,255,255,.14); }
+    #orarmeu .oz-disc { font-size:.95rem; font-weight:400; opacity:.85; }
     #orarmeu .oz-meta2 { display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center; }
     #orarmeu .oz-nr { font-size:.8rem; opacity:.7; }
     #orarmeu .oz-cl { display:inline-block; padding:3px 11px; border-radius:999px; background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent); font-weight:800; font-size:.8rem; }
@@ -1621,6 +1626,7 @@
       const durata = (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? h + (h === 1 ? " oră" : " ore") + (r ? " și " + r + " min" : "") : r + " min"; };
       const oraS = (n) => n + (n === 1 ? " oră" : " ore");
       const stOra = (r) => 480 + (r.ora - 1) * 60;
+      const randClasa = (r, cls) => { const d = el("div", cls); d.appendChild(el("span", "oz-clasa", r.clasa)); if (r.complet) d.appendChild(el("span", "oz-disc", r.complet)); return d; };
       const deseneaza = () => {
         zona.replaceChildren();
         const id = sel ? sel.value : ani[0].id;
@@ -1646,11 +1652,11 @@
           const hero = el("div", "oz-hero");
           hero.appendChild(el("div", "oz-data", ZL7[azi] + ", " + acum.getDate() + " " + LUNI_RO[acum.getMonth()]));
           if (cur) {
-            hero.append(el("span", "oz-pill live", "Acum"), el("h2", "", cur.clasa), el("div", "oz-meta", (cur.complet ? cur.complet + " · " : "") + interval(cur.ora)));
+            hero.append(el("span", "oz-pill live", "Acum"), randClasa(cur, "oz-rand"), el("div", "oz-meta", interval(cur.ora)));
             const bar = el("div", "oz-bar"); const bi = el("i"); bi.style.width = Math.round(((mN - stOra(cur)) / 50) * 100) + "%"; bar.appendChild(bi);
             hero.append(bar, el("div", "oz-mic", "Mai sunt " + (stOra(cur) + 50 - mN) + " min din oră"));
           } else if (urm) {
-            hero.append(el("span", "oz-pill", "Urmează"), el("h2", "", urm.clasa), el("div", "oz-meta", (urm.complet ? urm.complet + " · " : "") + interval(urm.ora)), el("div", "oz-mic", "Începe peste " + durata(stOra(urm) - mN)));
+            hero.append(el("span", "oz-pill", "Urmează"), randClasa(urm, "oz-rand"), el("div", "oz-meta", interval(urm.ora)), el("div", "oz-mic", "Începe peste " + durata(stOra(urm) - mN)));
           } else if (oreAzi.length) {
             hero.append(el("span", "oz-pill", "Gata pentru azi"), el("h2", "", "Orele de azi s-au încheiat"), el("div", "oz-meta", "Ai avut " + oraS(oreAzi.length) + " azi."));
           } else {
@@ -1676,8 +1682,8 @@
             const aziZi = ziSel === azi, eCur = aziZi && r === cur, eUrm = aziZi && r === urm, eTrecut = aziZi && !eCur && stOra(r) + 50 <= mN;
             const o = el("div", "oz-ora" + (eCur ? " acum" : "") + (eUrm ? " urm" : "") + (eTrecut ? " trecut" : "")); o.style.setProperty("--k", k);
             const t = el("div", "oz-t"); t.append(el("b", "", interval(r.ora).split("–")[0]), el("span", "", interval(r.ora).split("–")[1]));
-            const card = el("div", "oz-card"); card.appendChild(el("div", "oz-mat", r.clasa));
-            const mt = el("div", "oz-meta2"); if (r.complet) mt.appendChild(el("span", "oz-disc", r.complet)); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
+            const card = el("div", "oz-card"); card.appendChild(randClasa(r, "oz-rand"));
+            const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
             card.appendChild(mt); o.append(t, el("div", "oz-nod"), card); tl.appendChild(o);
           });
           zona.appendChild(tl);
