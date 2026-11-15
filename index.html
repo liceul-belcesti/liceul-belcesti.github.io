@@ -1652,7 +1652,13 @@
 
     // Clopoțelul: anunțuri noi (necitite) pentru contul curent; se actualizează la intrare, la revenirea în filă și din 5 în 5 minute.
     let anunturiNoi = 0, cereriNoi = 0, cereriDeDecis = 0, cereriDeRaspuns = 0;
+    let clopotRuleaza = false, clopotDinNou = false;
     async function actualizeazaClopot() {
+      if (clopotRuleaza) { clopotDinNou = true; return; } clopotRuleaza = true;
+      try { await actualizeazaClopotInterior(); } finally { clopotRuleaza = false; }
+      if (clopotDinNou) { clopotDinNou = false; actualizeazaClopot(); }
+    }
+    async function actualizeazaClopotInterior() {
       const b = $("clopot");
       if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); return; }
       const azi = new Date().toISOString().slice(0, 10);
@@ -1684,7 +1690,7 @@
       document.body.appendChild(m);
     });
     document.addEventListener("click", inchideMeniuClopot);
-    setInterval(() => { if (euId && !document.hidden) actualizeazaClopot(); }, 300000);
+    setInterval(() => { if (euId && !document.hidden) actualizeazaClopot(); }, 30000); // notificările apar în cel mult 30 de secunde, fără reîmprospătare
     document.addEventListener("visibilitychange", () => { if (euId && !document.hidden) actualizeazaClopot(); });
 
     // ---------- Orar: grile, tipărire, modulul pentru administrator / director / secretariat ----------
