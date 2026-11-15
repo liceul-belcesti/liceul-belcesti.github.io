@@ -2335,7 +2335,7 @@
         };
         const toateCheile = () => lectii.flatMap((x) => x.ore.filter((o) => !o.practica).map((o) => o.k));
         const sincMod = () => { const t = toateCheile(); const tot = t.length > 0 && t.every((k) => alese.has(k)); cbT.checked = tot; cbP.checked = !tot; };
-        const optiune = (sl, titlu, lista) => { if (!lista.length) return; const og = document.createElement("optgroup"); og.label = titlu; lista.forEach((r) => og.appendChild(new Option(r.nume, r.id))); sl.appendChild(og); };
+        const optiune = (sl, titlu, lista) => { if (!lista.length) return; const og = document.createElement("optgroup"); og.label = titlu; lista.forEach((r) => og.appendChild(new Option(r.detaliu ? r.nume + " — " + r.detaliu : r.nume, r.id))); sl.appendChild(og); };
         const blocProp = (z, o) => {
           const k = o.k, bloc = el("div", "cr-prop");
           const rec = sug ? sug.filter((r) => r.data === z && Number(r.ora) === o.ora && r.clasa === o.clasa) : [];
@@ -2389,7 +2389,7 @@
           if (!lectii.length) return;
           timer = setTimeout(async () => {
             const nr = ++cerereSug;
-            const { data, error } = await db.rpc("sugestii_invoire_zile", { p_de: de.value, p_pana: pana.value });
+            const { data, error } = await db.rpc("sugestii_invoire_detalii", { p_de: de.value, p_pana: pana.value });
             if (nr !== cerereSug) return;
             sug = error ? [] : (data || []);
             if (error) mesaj("Sugestiile de înlocuitori nu au putut fi încărcate. Poți alege manual alt profesor.");
