@@ -1865,6 +1865,12 @@
         tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, de: deO, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], an.den));
         zona.appendChild(tp);
         zona.appendChild(el("p", "oz-mic2", "Ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
+        // aliniere: toate casetele de clasă au aceeași lățime, ca numele disciplinelor să înceapă din același loc
+        ["#orarmeu .oz-ora .oz-clasa", "#orarmeu .oz-sr .oz-clasa"].forEach((sel) => {
+          const ch = [...zona.querySelectorAll(sel.replace("#orarmeu ", ""))];
+          const w = Math.max(0, ...ch.map((x) => x.getBoundingClientRect().width));
+          if (w) ch.forEach((x) => { x.style.minWidth = Math.ceil(w) + "px"; x.style.textAlign = "center"; x.style.boxSizing = "border-box"; });
+        });
       };
       clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { const n = new Date(); if (!document.hidden && !$("orarmeu").classList.contains("hidden") && iso(n) === iso(dataSel)) deseneaza(); }, 60000);
       deseneaza();
