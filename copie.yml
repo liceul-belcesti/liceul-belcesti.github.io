@@ -1,0 +1,37 @@
+name: Copie de siguranță
+
+on:
+  schedule:
+    - cron: "30 1 * * *"   # în fiecare noapte, în jurul orei 3:30–4:30 (ora României)
+  workflow_dispatch:        # se poate porni și manual din fila Actions
+
+permissions:
+  contents: write
+
+jobs:
+  copie:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descarcă copia din baza de date
+        env:
+          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p copii
+          f="copii/copie-$(date -u +%Y-%m-%d_%H%M).json.gz"
+          curl --fail-with-body -sS --max-time 120 -X POST \
+            -H "x-backup-token: $BACKUP_TOKEN" \
+            "https://wbaymyupnejkyltvfvam.supabase.co/functions/v1/copie-automata" | gzip -9 > "$f"
+          gzip -dc "$f" | python3 -c "import sys,json; d=json.load(sys.stdin); assert d['randuri']>0 and len(d['tabele'])>0; print('Rânduri salvate:', d['randuri'], '· tabele:', len(d['tabele']))"
+          # se păstrează ultimele 60 de copii (cele mai vechi se șterg din folder)
+          ls -1 copii/*.json.gz | sort | head -n -60 | xargs -r rm --
+
+      - name: Salvează în depozit
+        run: |
+          git config user.name "copie-automata"
+          git config user.email "copie-automata@users.noreply.github.com"
+          git add -A copii
+          git commit -m "Copie de siguranță $(date -u +%F)"
+          git push
