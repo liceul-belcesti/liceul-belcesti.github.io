@@ -542,6 +542,61 @@
       #tipar-orar .orar-leg b { color:#12275a; }
       #tipar-orar tbody td { height:14mm; font-weight:700; background:#fff !important; line-height:1.15; }
     }
+    /* Orarul meu — design nou: carte de vizită a zilei, zile ca pastile, linia timpului */
+    #orarmeu .oz-sub { margin:2px 0 8px; color:var(--muted); font-weight:600; }
+    #orarmeu .oz-comut { display:inline-grid; grid-auto-flow:column; gap:4px; padding:4px; background:var(--card); border-radius:999px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin:0 0 14px; }
+    #orarmeu .oz-comut button { margin:0; width:auto; min-height:40px; padding:0 22px; border-radius:999px; background:transparent; color:var(--muted); border:0; box-shadow:none; font-weight:700; }
+    #orarmeu .oz-comut button[aria-pressed="true"] { background:var(--text); color:var(--card); }
+    #orarmeu .oz-hero { position:relative; overflow:hidden; border-radius:28px; padding:22px 22px 20px; color:#fff; background:radial-gradient(120% 140% at 100% 0%, #34d1c0 0%, transparent 55%), linear-gradient(135deg,#0b7f8a 0%,#124a86 55%,#251f6e 100%); box-shadow:0 18px 40px -14px rgba(18,74,134,.6); }
+    #orarmeu .oz-hero::after { content:""; position:absolute; right:-50px; bottom:-70px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,.08); pointer-events:none; }
+    #orarmeu .oz-data { font-size:.85rem; opacity:.85; font-weight:600; }
+    #orarmeu .oz-pill { display:inline-flex; align-items:center; gap:7px; margin-top:14px; padding:4px 12px; border-radius:999px; background:rgba(255,255,255,.18); font-weight:800; font-size:.74rem; letter-spacing:.09em; text-transform:uppercase; }
+    #orarmeu .oz-pill.live::before { content:""; width:8px; height:8px; border-radius:50%; background:#7cffb2; animation:oz-bat 1.4s ease-in-out infinite; }
+    @keyframes oz-bat { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.35; transform:scale(.7); } }
+    #orarmeu .oz-hero h2 { margin:10px 0 2px; font-size:1.85rem; line-height:1.1; letter-spacing:-.02em; font-weight:800; color:#fff; }
+    #orarmeu .oz-meta { opacity:.92; font-weight:600; }
+    #orarmeu .oz-bar { height:6px; border-radius:99px; background:rgba(255,255,255,.22); margin:16px 0 6px; overflow:hidden; }
+    #orarmeu .oz-bar i { display:block; height:100%; border-radius:inherit; background:#fff; transition:width .6s ease; }
+    #orarmeu .oz-mic { font-size:.85rem; opacity:.85; margin-top:4px; }
+    #orarmeu .oz-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
+    #orarmeu .oz-chips span { padding:4px 11px; border-radius:999px; background:rgba(255,255,255,.14); font-size:.8rem; font-weight:700; }
+    #orarmeu .oz-zile { display:flex; gap:8px; overflow-x:auto; padding:16px 2px 8px; scrollbar-width:none; }
+    #orarmeu .oz-zile::-webkit-scrollbar { display:none; }
+    #orarmeu .oz-zi { flex:1 0 auto; width:auto; min-width:78px; min-height:0; margin:0; display:flex; flex-direction:column; align-items:center; gap:8px; padding:12px 12px 11px; border-radius:20px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.07); font-weight:700; font-size:.86rem; transition:transform .15s ease; }
+    #orarmeu .oz-zi:hover { transform:translateY(-2px); }
+    #orarmeu .oz-zi[aria-pressed="true"] { background:var(--text); color:var(--card); }
+    #orarmeu .oz-zi.azi b::after { content:""; display:inline-block; width:7px; height:7px; margin-left:6px; border-radius:50%; background:var(--accent); vertical-align:middle; }
+    #orarmeu .oz-zi .pct { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; max-width:60px; min-height:6px; }
+    #orarmeu .oz-zi .pct i { width:6px; height:6px; border-radius:50%; background:var(--accent); }
+    #orarmeu .oz-zi[aria-pressed="true"] .pct i { background:#5eead4; }
+    #orarmeu .oz-tl { margin-top:14px; }
+    #orarmeu .oz-ora { display:grid; grid-template-columns:54px 22px 1fr; gap:0 8px; animation:om-intra .4s ease both; animation-delay:calc(var(--k, 0) * 60ms); }
+    #orarmeu .oz-t { text-align:right; padding-top:16px; font-variant-numeric:tabular-nums; }
+    #orarmeu .oz-t b { display:block; font-size:1.05rem; }
+    #orarmeu .oz-t span { font-size:.75rem; color:var(--muted); }
+    #orarmeu .oz-nod { position:relative; }
+    #orarmeu .oz-nod::before { content:""; position:absolute; left:50%; top:0; bottom:0; border-left:2px solid var(--line); transform:translateX(-1px); }
+    #orarmeu .oz-nod::after { content:""; position:absolute; left:50%; top:20px; width:12px; height:12px; margin-left:-6px; box-sizing:border-box; border-radius:50%; background:var(--card); border:3px solid var(--accent); }
+    #orarmeu .oz-ora.acum .oz-nod::after { background:var(--accent); box-shadow:0 0 0 6px color-mix(in srgb, var(--accent) 25%, transparent); }
+    #orarmeu .oz-ora.trecut { opacity:.5; }
+    #orarmeu .oz-card { margin:0 0 12px; padding:14px 16px; border-radius:20px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); transition:transform .15s ease; }
+    #orarmeu .oz-card:hover { transform:translateX(3px); }
+    #orarmeu .oz-ora.acum .oz-card { background:linear-gradient(135deg,#0b7f8a,#124a86); color:#fff; box-shadow:0 12px 28px -12px rgba(18,74,134,.7); }
+    #orarmeu .oz-mat { font-weight:800; font-size:1.08rem; letter-spacing:-.01em; line-height:1.2; }
+    #orarmeu .oz-meta2 { display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center; }
+    #orarmeu .oz-nr { font-size:.8rem; opacity:.7; }
+    #orarmeu .oz-cl { display:inline-block; padding:3px 11px; border-radius:999px; background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent); font-weight:800; font-size:.8rem; }
+    #orarmeu .oz-ora.acum .oz-cl { background:rgba(255,255,255,.2); color:#fff; }
+    #orarmeu .oz-ora.urm .oz-card { box-shadow:0 0 0 2px var(--accent); }
+    #orarmeu .oz-ac { background:var(--accent); color:var(--on-accent); text-transform:uppercase; letter-spacing:.06em; font-size:.68rem; }
+    #orarmeu .oz-ora.acum .oz-ac { background:#fff; color:#124a86; }
+    #orarmeu .oz-pauza { margin:0 0 12px 84px; padding:9px 14px; border-radius:16px; border:1.5px dashed var(--line); color:var(--muted); font-size:.82rem; }
+    #orarmeu .oz-gol { padding:22px; text-align:center; color:var(--muted); background:var(--card); border-radius:20px; }
+    #orarmeu .oz-clase { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:18px 0 6px; }
+    #orarmeu .oz-et { font-size:.8rem; color:var(--muted); font-weight:700; margin-right:4px; }
+    #orarmeu .oz-tipar { width:auto; margin:10px 0 0; min-height:42px; padding:0 20px; border-radius:999px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:700; }
+    #orarmeu .oz-mic2 { color:var(--muted); font-size:.8rem; margin:10px 0 0; }
+    @media (prefers-reduced-motion: reduce) { #orarmeu .oz-ora, #orarmeu .oz-pill.live::before, #orarmeu .oz-zi, #orarmeu .oz-card { animation:none; transition:none; } }
     #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
     #orarmeu .orar-t { border-collapse:separate; border-spacing:5px; width:100%; min-width:640px; font-size:.92rem; }
     #orarmeu .orar-t th, #orarmeu .orar-t td { border:0; padding:8px 4px; text-align:center; }
@@ -1559,54 +1614,90 @@
       const nuanta = (c) => { let h = 0; for (const ch of c) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
       const azi = (new Date().getDay() + 6) % 7; // 0 = luni … 6 = duminică
       let mod = "zile";
+      let ziSel = azi < 5 ? azi : 0;
+      const ZL7 = [...ZL, "Sâmbătă", "Duminică"];
+      const LUNI_RO = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+      const durata = (m) => { const h = Math.floor(m / 60), r = m % 60; return h ? h + (h === 1 ? " oră" : " ore") + (r ? " și " + r + " min" : "") : r + " min"; };
+      const oraS = (n) => n + (n === 1 ? " oră" : " ore");
+      const stOra = (r) => 480 + (r.ora - 1) * 60;
       const deseneaza = () => {
         zona.replaceChildren();
         const id = sel ? sel.value : ani[0].id;
         const ore = data.filter((r) => r.an_id === id);
         const { de: deO, max } = limiteOrar(ore);
-        zona.appendChild(el("p", "who", ani.find((x) => x.id === id).den + " · " + ore.length + (ore.length === 1 ? " oră" : " ore") + " pe săptămână"));
-        const comut = el("div", "om-comut");
-        [["zile", "Pe zile"], ["tabel", "Tabel săptămânal"]].forEach(([k, et]) => {
-          const b = el("button", "", et); b.type = "button"; b.setAttribute("aria-pressed", String(mod === k));
-          b.addEventListener("click", () => { mod = k; deseneaza(); }); comut.appendChild(b);
+        const oreZi = (i) => ore.filter((r) => r.zi === i + 1).sort((x, y) => x.ora - y.ora);
+        const acum = new Date(), mN = acum.getHours() * 60 + acum.getMinutes();
+        zona.appendChild(el("p", "oz-sub", ani.find((x) => x.id === id).den + " · " + oraS(ore.length) + " pe săptămână"));
+        const comut = el("div", "oz-comut");
+        [["zile", "Ziua"], ["tabel", "Săptămâna"]].forEach(([k, et]) => {
+          const bt = el("button", "", et); bt.type = "button"; bt.setAttribute("aria-pressed", String(mod === k));
+          bt.addEventListener("click", () => { mod = k; deseneaza(); }); comut.appendChild(bt);
         });
         zona.appendChild(comut);
-        const tp = el("button", "secondary", "🖨 Tipărește orarul"); tp.type = "button";
+        const tp = el("button", "oz-tipar", "🖨 Tipărește orarul"); tp.type = "button";
         tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, de: deO, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], ani.find((x) => x.id === id).den));
-        zona.appendChild(tp);
         if (mod === "zile") {
+          // ---- Cartea de vizită a zilei: ce se întâmplă acum
+          const oreAzi = azi < 5 ? oreZi(azi) : [];
+          const cur = oreAzi.find((r) => mN >= stOra(r) && mN < stOra(r) + 50);
+          const urm = cur ? null : oreAzi.find((r) => stOra(r) > mN);
+          const tit = (r) => r.complet || "Ora " + r.ora;
+          const hero = el("div", "oz-hero");
+          hero.appendChild(el("div", "oz-data", ZL7[azi] + ", " + acum.getDate() + " " + LUNI_RO[acum.getMonth()]));
+          if (cur) {
+            hero.append(el("span", "oz-pill live", "Acum"), el("h2", "", tit(cur)), el("div", "oz-meta", cur.clasa + " · " + interval(cur.ora)));
+            const bar = el("div", "oz-bar"); const bi = el("i"); bi.style.width = Math.round(((mN - stOra(cur)) / 50) * 100) + "%"; bar.appendChild(bi);
+            hero.append(bar, el("div", "oz-mic", "Mai sunt " + (stOra(cur) + 50 - mN) + " min din oră"));
+          } else if (urm) {
+            hero.append(el("span", "oz-pill", "Urmează"), el("h2", "", tit(urm)), el("div", "oz-meta", urm.clasa + " · " + interval(urm.ora)), el("div", "oz-mic", "Începe peste " + durata(stOra(urm) - mN)));
+          } else if (oreAzi.length) {
+            hero.append(el("span", "oz-pill", "Gata pentru azi"), el("h2", "", "Orele de azi s-au încheiat"), el("div", "oz-meta", "Ai avut " + oraS(oreAzi.length) + " azi."));
+          } else {
+            hero.append(el("span", "oz-pill", azi < 5 ? "Zi liberă" : "Weekend"), el("h2", "", "Nicio oră azi"));
+            for (let d = 1; d <= 7; d++) { const j = (azi + d) % 7; if (j < 5 && oreZi(j).length) { const f = oreZi(j)[0]; hero.appendChild(el("div", "oz-meta", "Următoarea oră: " + ZL7[j] + ", " + interval(f.ora).split("–")[0] + (f.complet ? " · " + f.complet : ""))); break; } }
+          }
+          if (oreAzi.length) { const ch = el("div", "oz-chips"); ch.append(el("span", "", oraS(oreAzi.length) + " azi"), el("span", "", "de la " + interval(oreAzi[0].ora).split("–")[0]), el("span", "", "până la " + interval(oreAzi[oreAzi.length - 1].ora).split("–")[1])); hero.appendChild(ch); }
+          zona.appendChild(hero);
+          // ---- Alegerea zilei
+          const zile = el("div", "oz-zile");
           ZL.forEach((zn, i) => {
-            const zi = ore.filter((r) => r.zi === i + 1).sort((x, y) => x.ora - y.ora);
-            const card = el("div", "om-zi" + (i === azi ? " azi" : ""));
-            const h3 = el("h3", "", zn); if (i === azi) h3.appendChild(el("span", "badge", "Azi"));
-            h3.appendChild(el("span", "tot", zi.length ? zi.length + (zi.length === 1 ? " oră" : " ore") + " · " + interval(zi[0].ora).split("–")[0] + "–" + interval(zi[zi.length - 1].ora).split("–")[1] : "liber"));
-            card.appendChild(h3);
-            if (!zi.length) card.appendChild(el("div", "om-gol", "Nicio oră."));
-            zi.forEach((r, k) => {
-              if (k && r.ora - zi[k - 1].ora > 1) card.appendChild(el("div", "om-gol", "Fereastră: " + (r.ora - zi[k - 1].ora - 1 === 1 ? "ora " + (r.ora - 1) : "orele " + (zi[k - 1].ora + 1) + "–" + (r.ora - 1)) + " (" + interval(zi[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")"));
-              const st0 = 480 + (r.ora - 1) * 60, mA = new Date(), minA = mA.getHours() * 60 + mA.getMinutes();
-              const eAcum = i === azi && minA >= st0 && minA < st0 + 50, eUrm = i === azi && !eAcum && st0 > minA && !zi.some((q) => q.ora < r.ora && 480 + (q.ora - 1) * 60 > minA);
-              const o = el("div", "om-ora" + (eAcum ? " acum" : "") + (eUrm ? " urm" : ""));
-              const t = el("div", "t", interval(r.ora)); if (eAcum) t.appendChild(el("span", "badge", "Acum")); else if (eUrm) t.appendChild(el("span", "badge", "Urmează")); t.appendChild(el("div", "n", "ora " + r.ora));
-              const cc = el("div", "c", r.clasa); if (r.complet) cc.appendChild(el("div", "sb", r.complet)); o.append(t, cc); card.appendChild(o);
-            });
-            zona.appendChild(card);
+            const n = oreZi(i).length; const bz = el("button", "oz-zi" + (i === azi ? " azi" : "")); bz.type = "button"; bz.setAttribute("aria-pressed", String(i === ziSel)); bz.setAttribute("aria-label", zn + ", " + (n ? oraS(n) : "liber"));
+            bz.appendChild(el("b", "", zn)); const pct = el("span", "pct"); for (let k = 0; k < n; k++) pct.appendChild(el("i")); bz.appendChild(pct);
+            bz.addEventListener("click", () => { ziSel = i; deseneaza(); }); zile.appendChild(bz);
           });
+          zona.appendChild(zile);
+          // ---- Linia timpului pentru ziua aleasă
+          const zi = oreZi(ziSel);
+          const tl = el("div", "oz-tl");
+          if (!zi.length) tl.appendChild(el("div", "oz-gol", "Nicio oră în ziua de " + ZL[ziSel].toLowerCase() + "."));
+          zi.forEach((r, k) => {
+            if (k && r.ora - zi[k - 1].ora > 1) { const g = r.ora - zi[k - 1].ora - 1; tl.appendChild(el("div", "oz-pauza", "Fereastră · " + oraS(g) + " (" + interval(zi[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")")); }
+            const aziZi = ziSel === azi, eCur = aziZi && r === cur, eUrm = aziZi && r === urm, eTrecut = aziZi && !eCur && stOra(r) + 50 <= mN;
+            const o = el("div", "oz-ora" + (eCur ? " acum" : "") + (eUrm ? " urm" : "") + (eTrecut ? " trecut" : "")); o.style.setProperty("--k", k);
+            const t = el("div", "oz-t"); t.append(el("b", "", interval(r.ora).split("–")[0]), el("span", "", interval(r.ora).split("–")[1]));
+            const card = el("div", "oz-card"); card.appendChild(el("div", "oz-mat", tit(r)));
+            const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-cl", r.clasa)); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
+            card.appendChild(mt); o.append(t, el("div", "oz-nod"), card); tl.appendChild(o);
+          });
+          zona.appendChild(tl);
         } else {
           const t = el("table", "orar-t"); const th = el("tr"); th.appendChild(el("th", "", ""));
           for (let h = deO; h <= max; h++) { const c = el("th", "", String(h)); c.appendChild(el("small", "", interval(h))); th.appendChild(c); }
           t.appendChild(el("thead")).appendChild(th);
           const tb = el("tbody");
-          ZL.forEach((zn, i) => { const tr = el("tr"); const zh = el("th", i === azi ? "azi" : "", zn); tr.appendChild(zh); for (let h = deO; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); const st1 = 480 + (h - 1) * 60, m1 = new Date(), min1 = m1.getHours() * 60 + m1.getMinutes();
-            const td = el("td", (r ? "cl" : "") + (i === azi ? " azi" : "") + (r && i === azi && min1 >= st1 && min1 < st1 + 50 ? " acum" : ""), r && !r.scurt ? r.clasa : ""); if (r && r.scurt) { td.appendChild(el("span", "ab", r.scurt)); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(r.clasa)); } if (r) td.style.setProperty("--h", nuanta(r.clasa)); tr.appendChild(td); } tb.appendChild(tr); });
+          ZL.forEach((zn, i) => { const tr = el("tr"); const zh = el("th", i === azi ? "azi" : "", zn); tr.appendChild(zh); for (let h = deO; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); const st1 = 480 + (h - 1) * 60;
+            const td = el("td", (r ? "cl" : "") + (i === azi ? " azi" : "") + (r && i === azi && mN >= st1 && mN < st1 + 50 ? " acum" : ""), r && !r.scurt ? r.clasa : ""); if (r && r.scurt) { td.appendChild(el("span", "ab", r.scurt)); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(r.clasa)); } tr.appendChild(td); } tb.appendChild(tr); });
           t.appendChild(tb);
           const sc = el("div", "foaie-scroll"); sc.appendChild(t); zona.appendChild(sc);
           const lgm = legendaOrar(ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet])); if (lgm) zona.appendChild(lgm);
         }
         const nrc = new Map(); ore.forEach((r) => nrc.set(r.clasa, (nrc.get(r.clasa) || 0) + 1));
-        zona.appendChild(el("p", "who", "Ore pe clase: " + [...nrc].sort((x, y) => x[0].localeCompare(y[0], "ro", { numeric: true })).map(([c, n]) => c + " – " + n).join(" · ")));
-        zona.appendChild(el("p", "who", "Intervalele: ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
+        const rc = el("div", "oz-clase"); rc.appendChild(el("span", "oz-et", "Ore pe clase"));
+        [...nrc].sort((x, y) => x[0].localeCompare(y[0], "ro", { numeric: true })).forEach(([c, n]) => rc.appendChild(el("span", "oz-cl", c + " · " + n)));
+        zona.appendChild(rc); zona.appendChild(tp);
+        zona.appendChild(el("p", "oz-mic2", "Ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
       };
+      clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { if (mod === "zile" && !document.hidden && !$("orarmeu").classList.contains("hidden")) deseneaza(); }, 60000);
       if (sel) sel.addEventListener("change", deseneaza);
       deseneaza();
     }
