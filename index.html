@@ -496,6 +496,26 @@
     #structura .ang-rand { border-left:5px solid var(--line); }
     #structura .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
     /* Orar pe ecran: aspect curat, o singură culoare de accent, ora curentă evidențiată */
+    /* Cereri de învoire */
+    #cereri .cr-card { background:var(--card); border-radius:18px; padding:12px 14px; margin:0 0 10px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .cr-cap { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+    #cereri .cr-st { font-size:.78rem; font-weight:800; padding:2px 10px; border-radius:999px; }
+    #cereri .cr-st.att { background:color-mix(in srgb, #f0a31a 22%, var(--card)); color:#7a4a00; }
+    #cereri .cr-st.ok { background:color-mix(in srgb, #16a34a 16%, var(--card)); color:#15803d; }
+    #cereri .cr-st.rau { background:color-mix(in srgb, #dc2626 14%, var(--card)); color:#b91c1c; }
+    #cereri .cr-st.nul { background:var(--bg); color:var(--muted); }
+    #cereri .cr-motiv { margin:6px 0 2px; }
+    #cereri .cr-det, #cereri .cr-nota { margin:2px 0 6px; color:var(--muted); font-size:.88rem; }
+    #cereri .cr-nota { color:var(--text); font-weight:600; }
+    #cereri .cr-form label { display:block; margin-top:10px; font-weight:700; font-size:.9rem; }
+    #cereri .cr-form label.cr-bif { display:flex; align-items:center; gap:8px; font-weight:600; }
+    #cereri select { width:100%; box-sizing:border-box; min-height:44px; padding:8px 12px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
+    #cereri input[type="checkbox"] { width:auto; min-height:0; margin:0; flex:none; }
+    #cereri textarea { display:block; width:100%; box-sizing:border-box; padding:10px 12px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
+    #cereri .cr-ore { margin-top:6px; }
+    #cereri .cr-ore .cl-zi { margin:6px 0; }
+    #cereri .cr-form .cr-ore .n-ora { display:inline-flex; align-items:center; gap:6px; margin:4px 14px 4px 0; font-weight:600; }
+    @media (prefers-color-scheme: dark) { #cereri .cr-st.att { color:#fcd34d; } #cereri .cr-st.ok { color:#86efac; } #cereri .cr-st.rau { color:#fca5a5; } }
     /* Azi în școală */
     .orm .az-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:0 0 6px; }
     @media (min-width:640px) { .orm .az-stats { grid-template-columns:repeat(4,1fr); } }
@@ -1050,6 +1070,13 @@
       <div id="orar-corp"></div>
     </main>
 
+    <main id="cereri" class="wrap hidden">
+      <button id="inapoi-cereri" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Cereri de învoire</h1>
+      <div id="cereri-msg" class="panel-msg" role="alert"></div>
+      <div id="cereri-corp"></div>
+    </main>
+
     <main id="azi" class="wrap hidden">
       <button id="inapoi-azi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Azi în școală</h1>
@@ -1098,6 +1125,7 @@
     const MODULE = {
       utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și atribuie roluri", sub: ["Conturi în așteptare", "Roluri"], activ: true },
       azi:      { ico: "🏫", t: "Azi în școală", d: "Cine lipsește, ore neacoperite, suplinitori, practică", sub: ["Situația zilei"], activ: true },
+      cereri:   { ico: "📝", t: "Cereri de învoire", d: "Cere o învoire și vezi răspunsul", sub: ["Cererile mele"], activ: true },
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orarul meu"], activ: true },
@@ -1113,7 +1141,7 @@
       director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
       secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
-      profesor:      ["pontaj", "orarmeu", "anunturi"],
+      profesor:      ["pontaj", "orarmeu", "cereri", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -1218,6 +1246,7 @@
       $("orarmeu").classList.add("hidden");
       $("orar").classList.add("hidden");
       $("azi").classList.add("hidden");
+      $("cereri").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -1225,7 +1254,8 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri") return;
+      if (cheie === "cereri") return deschideCereri();
       if (cheie === "azi") return deschideAzi();
       if (cheie === "orar") return deschideOrar();
       if (cheie === "anunturi") return deschideAnunturi();
@@ -2155,6 +2185,119 @@
           if (JSON.stringify([f, dn]) !== sD) { sD = JSON.stringify([f, dn]); rezultat = { f, b, dn, calc: calculeaza(f, ziSapt(dataSel) + 1, b, dn) }; deseneaza(); }
         } catch (e) { /* la următoarea încercare */ }
       };
+    }
+
+    // ---------- Cereri de învoire (profesor): cere, vezi răspunsul, anulează ----------
+    $("inapoi-cereri").addEventListener("click", arataPrincipal);
+    async function deschideCereri() {
+      memoreazaVedere("cereri");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("cereri").classList.remove("hidden");
+      const msg = $("cereri-msg"), corp = $("cereri-corp"); msg.textContent = ""; msg.className = "panel-msg"; corp.replaceChildren(el("p", "who", "Se încarcă…"));
+      const fd = (z) => z.split("-").reverse().join("/");
+      const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
+      const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
+      const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
+      let cereri, orar, colegi;
+      const incarca = async () => {
+        const [c, o, g] = await Promise.all([
+          db.from("cereri_invoire").select("id, de_la, pana_la, ore_alese, motiv, inlocuitor_propus, stare, nota_decizie, decis_la, creat_la").order("creat_la", { ascending: false }).limit(100),
+          db.rpc("orar_propriu_disc"), db.rpc("colegi_invoire")
+        ]);
+        if (c.error) throw c.error;
+        cereri = c.data || [];
+        const rr = o.error ? [] : (o.data || []); const an0 = rr.length ? rr[0].an_id : null; orar = rr.filter((x) => x.an_id === an0);
+        colegi = g.error ? [] : (g.data || []);
+      };
+      try { await incarca(); } catch (e) { corp.replaceChildren(); mesaj("Cererile nu au putut fi încărcate. Încearcă din nou."); return; }
+      const numeColeg = new Map(colegi.map((x) => [x.id, x.nume]));
+      const ST = { in_asteptare: ["În așteptare", "cr-st att"], aprobata: ["Aprobată", "cr-st ok"], respinsa: ["Respinsă", "cr-st rau"], anulata: ["Anulată", "cr-st nul"] };
+      const zona = el("div", "");
+      const desenLista = () => {
+        zona.replaceChildren();
+        const nou = el("button", "", "+ Cerere nouă"); nou.type = "button"; nou.addEventListener("click", desenForm);
+        zona.appendChild(nou);
+        if (!orar.length) zona.appendChild(el("p", "who", "Contul tău nu este legat încă de numele tău din lista de angajați sau nu ai orar. Cere administratorului să îl lege, ca să poți trimite cereri."));
+        zona.appendChild(el("h3", "az-h", "Cererile mele"));
+        if (!cereri.length) zona.appendChild(el("p", "who", "Nu ai trimis nicio cerere."));
+        cereri.forEach((c) => {
+          const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
+          cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", ST[c.stare][1], ST[c.stare][0]));
+          k.appendChild(cp);
+          k.appendChild(el("p", "cr-motiv", c.motiv));
+          const det = [c.ore_alese ? c.ore_alese.length + (c.ore_alese.length === 1 ? " oră aleasă" : " ore alese") : "Toate orele", c.inlocuitor_propus ? "înlocuitor propus: " + (numeColeg.get(c.inlocuitor_propus) || "coleg") : ""].filter(Boolean).join(" · ");
+          k.appendChild(el("p", "cr-det", det));
+          if (c.nota_decizie) k.appendChild(el("p", "cr-nota", "Răspuns: " + c.nota_decizie));
+          if (c.stare === "in_asteptare") {
+            const an = el("button", "secondary", "Anulează cererea"); an.type = "button";
+            an.addEventListener("click", async () => {
+              if (!confirm("Anulezi această cerere?")) return;
+              an.disabled = true; const { error } = await db.rpc("cerere_invoire_anuleaza", { p_id: c.id });
+              if (error) { an.disabled = false; mesaj(error.message || "Cererea nu a putut fi anulată."); return; }
+              try { await incarca(); } catch (e) { /* rămâne lista veche */ } mesaj("Cererea a fost anulată.", true); desenLista();
+            });
+            k.appendChild(an);
+          }
+          zona.appendChild(k);
+        });
+      };
+      const desenForm = () => {
+        zona.replaceChildren(); mesaj("");
+        const azi = iso(new Date());
+        const f = el("div", "cr-form");
+        f.appendChild(el("h3", "az-h", "Cerere nouă de învoire"));
+        const de = document.createElement("input"); de.type = "date"; de.min = azi; de.value = azi; de.setAttribute("aria-label", "De la");
+        const pana = document.createElement("input"); pana.type = "date"; pana.min = azi; pana.value = azi; pana.setAttribute("aria-label", "Până la");
+        const lDe = el("label", "", "De la"), lPana = el("label", "", "Până la");
+        f.append(lDe, de, lPana, pana);
+        const toate = document.createElement("input"); toate.type = "checkbox"; toate.checked = true;
+        const lt = el("label", "cr-bif"); lt.append(toate, document.createTextNode(" Toate orele din aceste zile")); f.appendChild(lt);
+        const orebox = el("div", "cr-ore hidden"); f.appendChild(orebox);
+        const alese = new Set();
+        const refaOre = () => {
+          orebox.replaceChildren();
+          if (toate.checked) { orebox.classList.add("hidden"); return; }
+          orebox.classList.remove("hidden");
+          const zile = new Set();
+          if (de.value && pana.value && pana.value >= de.value) for (let d = dinIso(de.value); iso(d) <= pana.value && zile.size < 5; d.setDate(d.getDate() + 1)) { const w = d.getDay(); if (w >= 1 && w <= 5) zile.add(w); }
+          const l = orar.filter((o) => zile.has(Number(o.zi)));
+          if (!l.length) { orebox.appendChild(el("p", "who", "Nu ai ore în zilele alese.")); return; }
+          [1, 2, 3, 4, 5].forEach((w) => {
+            const dz = l.filter((o) => Number(o.zi) === w); if (!dz.length) return;
+            const lin = el("div", "cl-zi"); lin.appendChild(el("b", "", NZ[w] + ": "));
+            dz.forEach((o) => {
+              const k = w + "|" + o.ora + "|" + o.clasa;
+              const lb = el("label", "n-ora"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = alese.has(k);
+              cb.addEventListener("change", () => { if (cb.checked) alese.add(k); else alese.delete(k); });
+              lb.append(cb, document.createTextNode(" ora " + o.ora + " – " + o.clasa)); lin.appendChild(lb);
+            });
+            orebox.appendChild(lin);
+          });
+        };
+        toate.addEventListener("change", refaOre); de.addEventListener("change", refaOre); pana.addEventListener("change", refaOre);
+        const motiv = document.createElement("textarea"); motiv.rows = 3; motiv.maxLength = 500; motiv.placeholder = "Motivul învoirii";
+        f.append(el("label", "", "Motivul"), motiv);
+        const sel = document.createElement("select"); sel.add(new Option("Fără propunere", ""));
+        colegi.forEach((x) => sel.add(new Option(x.nume, x.id)));
+        f.append(el("label", "", "Cine te poate suplini (propunere, opțional)"), sel);
+        const ctl = el("div", "ctl");
+        const ok = el("button", "", "Trimite cererea"); ok.type = "button";
+        const nu = el("button", "secondary", "Renunță"); nu.type = "button"; nu.addEventListener("click", () => { mesaj(""); desenLista(); });
+        ctl.append(ok, nu); f.appendChild(ctl); zona.appendChild(f);
+        ok.addEventListener("click", async () => {
+          if (!de.value || !pana.value || pana.value < de.value) return mesaj("Alege corect zilele.");
+          if (motiv.value.trim().length < 3) return mesaj("Scrie motivul învoirii.");
+          if (!toate.checked && !alese.size) return mesaj("Bifează orele sau alege „Toate orele”.");
+          ok.disabled = true;
+          const { error } = await db.rpc("cerere_invoire_noua", { p_de: de.value, p_pana: pana.value, p_ore: toate.checked ? null : [...alese], p_motiv: motiv.value.trim(), p_inlocuitor: sel.value || null });
+          ok.disabled = false;
+          if (error) return mesaj(error.message || "Cererea nu a putut fi trimisă.");
+          try { await incarca(); } catch (e) { /* lista se reîncarcă la următoarea deschidere */ }
+          mesaj("Cererea a fost trimisă.", true); desenLista();
+        });
+      };
+      corp.replaceChildren(zona); desenLista();
     }
 
     function deschideAnunturi() {
@@ -4746,7 +4889,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
