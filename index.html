@@ -490,17 +490,27 @@
     #pontaj table.foaie-t td.zi.ajust { color:#c2410c; font-weight:800; }
     #structura .ang-rand { border-left:5px solid var(--line); }
     #structura .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
-    .orar-g-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
-    table.orar-g { border-collapse:collapse; width:100%; min-width:620px; font-size:.9rem; }
-    table.orar-g th, table.orar-g td { border:1px solid var(--line); padding:6px 4px; text-align:center; vertical-align:middle; }
-    table.orar-g thead th { background:var(--bg); line-height:1.25; }
-    table.orar-g thead th small { display:block; font-weight:400; font-size:.72rem; color:var(--muted); }
-    table.orar-g td.plin { background:hsl(var(--h, 190) 65% 88%); color:#13292d; font-weight:700; }
-    @media (prefers-color-scheme: dark) { table.orar-g td.plin { background:hsl(var(--h, 190) 40% 26%); color:#e8f5f6; } }
+    /* Orar pe ecran: aspect curat, o singură culoare de accent, ora curentă evidențiată */
+    #orar table.orar-g { border-collapse:separate; border-spacing:5px; width:100%; min-width:640px; font-size:.9rem; }
+    #orar table.orar-g th, #orar table.orar-g td { border:0; padding:8px 4px; text-align:center; vertical-align:middle; }
+    #orar table.orar-g thead th { background:transparent; line-height:1.25; font-weight:800; color:var(--text); }
+    #orar table.orar-g thead th small { display:block; font-weight:500; font-size:.7rem; color:var(--muted); margin-top:1px; }
+    #orar table.orar-g tbody th { text-align:left; padding-left:12px; font-weight:700; color:var(--muted); position:sticky; left:0; background:var(--card); z-index:1; white-space:nowrap; }
+    #orar table.orar-g tbody th.azi { color:var(--accent); }
+    #orar table.orar-g tbody th.azi::before { content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent); margin-right:7px; }
+    #orar table.orar-g td { background:var(--bg); border-radius:12px; line-height:1.25; min-width:78px; }
+    #orar table.orar-g td.plin { background:color-mix(in srgb, var(--accent) 9%, var(--card)); box-shadow:inset 3px 0 0 var(--accent), 0 1px 2px rgba(0,0,0,.06); color:var(--text); font-weight:600; transition:transform .15s ease, box-shadow .15s ease; }
+    #orar table.orar-g td.plin:hover { transform:translateY(-2px); box-shadow:inset 3px 0 0 var(--accent), 0 6px 14px rgba(0,0,0,.14); }
+    #orar table.orar-g td.plin .ab { display:block; color:var(--accent); font-size:.88rem; font-weight:800; letter-spacing:.01em; }
+    #orar table.orar-g td.acum { background:var(--accent); color:var(--on-accent); box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); animation:orar-puls 2.2s ease-out infinite; }
+    #orar table.orar-g td.acum .ab { color:var(--on-accent); }
+    @keyframes orar-puls { 0% { box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent); } 70%,100% { box-shadow:0 0 0 10px transparent; } }
+    @media (prefers-reduced-motion: reduce) { #orar table.orar-g td.acum { animation:none; } #orar table.orar-g td.plin { transition:none; } }
+    .orar-g-scroll { overflow:auto; -webkit-overflow-scrolling:touch; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
     #orar .orar-bara { display:grid; gap:8px; margin:8px 0; }
     #orar .orar-bara .comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     #orar .orar-bara button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
-    table.orar-g .ab, #orarmeu .orar-t .ab { font-weight:800; font-size:.8rem; letter-spacing:.02em; }
+    #orarmeu .orar-t .ab { display:block; color:var(--accent); font-weight:800; font-size:.88rem; }
     .orar-leg { columns:2 240px; column-gap:18px; margin:10px 0 0; font-size:.82rem; color:var(--muted); }
     .orar-leg p { margin:0 0 3px; break-inside:avoid; }
     .orar-leg b { color:var(--text, inherit); }
@@ -532,22 +542,36 @@
       #tipar-orar .orar-leg b { color:#12275a; }
       #tipar-orar tbody td { height:14mm; font-weight:700; background:#fff !important; line-height:1.15; }
     }
-    #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
-    #orarmeu .orar-t { border-collapse:collapse; width:100%; min-width:620px; font-size:.95rem; }
-    #orarmeu .orar-t th, #orarmeu .orar-t td { border:1px solid var(--line); padding:8px 4px; text-align:center; }
-    #orarmeu .orar-t thead th { background:var(--bg); line-height:1.25; }
-    #orarmeu .orar-t thead th small { display:block; font-weight:400; font-size:.72rem; color:var(--muted); }
-    #orarmeu .orar-t th.azi, #orarmeu .orar-t td.azi { box-shadow:inset 0 0 0 2px var(--accent); }
-    #orarmeu .cl { background:hsl(var(--h) 65% 88%); color:#13292d; font-weight:700; }
+    #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+    #orarmeu .orar-t { border-collapse:separate; border-spacing:5px; width:100%; min-width:640px; font-size:.92rem; }
+    #orarmeu .orar-t th, #orarmeu .orar-t td { border:0; padding:8px 4px; text-align:center; }
+    #orarmeu .orar-t thead th { background:transparent; line-height:1.25; font-weight:800; }
+    #orarmeu .orar-t thead th small { display:block; font-weight:500; font-size:.7rem; color:var(--muted); margin-top:1px; }
+    #orarmeu .orar-t tbody th { text-align:left; padding-left:12px; font-weight:700; color:var(--muted); position:sticky; left:0; background:var(--card); z-index:1; white-space:nowrap; }
+    #orarmeu .orar-t tbody th.azi { color:var(--accent); box-shadow:none; }
+    #orarmeu .orar-t td { background:var(--bg); border-radius:12px; min-width:78px; line-height:1.25; }
+    #orarmeu .orar-t td.azi { box-shadow:none; }
+    #orarmeu .cl { background:color-mix(in srgb, var(--accent) 9%, var(--card)) !important; box-shadow:inset 3px 0 0 var(--accent), 0 1px 2px rgba(0,0,0,.06) !important; font-weight:600; transition:transform .15s ease; }
+    #orarmeu .cl:hover { transform:translateY(-2px); }
+    #orarmeu td.acum { background:var(--accent) !important; color:var(--on-accent); animation:orar-puls 2.2s ease-out infinite; }
+    #orarmeu td.acum .ab { color:var(--on-accent); }
     #orarmeu .om-comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 12px; }
     #orarmeu .om-comut button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
-    #orarmeu .om-zi { background:var(--card); border:1.5px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; }
-    #orarmeu .om-zi.azi { border-color:var(--accent); border-width:2.5px; }
+    #orarmeu .om-zi { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); animation:om-intra .35s ease both; }
+    #orarmeu .om-zi:nth-of-type(2) { animation-delay:.04s; } #orarmeu .om-zi:nth-of-type(3) { animation-delay:.08s; } #orarmeu .om-zi:nth-of-type(4) { animation-delay:.12s; } #orarmeu .om-zi:nth-of-type(5) { animation-delay:.16s; }
+    @keyframes om-intra { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    #orarmeu .om-zi.azi { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 8px 22px rgba(0,0,0,.10); }
     #orarmeu .om-zi h3 { margin:0 0 8px; font-size:1.05rem; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     #orarmeu .om-zi h3 .badge { font-size:.75rem; }
     #orarmeu .om-zi .tot { margin-left:auto; font-weight:400; font-size:.85rem; color:var(--muted); }
-    #orarmeu .om-ora { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:center; padding:6px 10px; border-radius:10px; margin-bottom:6px; }
+    #orarmeu .om-ora { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:center; padding:8px 12px; border-radius:12px; margin-bottom:6px; background:var(--bg); box-shadow:inset 3px 0 0 var(--accent); transition:transform .15s ease; }
+    #orarmeu .om-ora:hover { transform:translateX(2px); }
+    #orarmeu .om-ora.acum { background:var(--accent); color:var(--on-accent); animation:orar-puls 2.2s ease-out infinite; }
+    #orarmeu .om-ora.urm { box-shadow:inset 3px 0 0 var(--accent), 0 0 0 1.5px var(--accent); }
     #orarmeu .om-ora .t { font-variant-numeric:tabular-nums; font-weight:700; }
+    #orarmeu .om-ora .t .badge { margin-left:6px; font-size:.68rem; }
+    #orarmeu .om-ora.acum .t .badge { background:var(--on-accent); color:var(--accent); }
+    @media (prefers-reduced-motion: reduce) { #orarmeu .om-zi, #orarmeu .om-ora, #orarmeu td.acum, #orarmeu .om-ora.acum { animation:none; transition:none; } }
     #orarmeu .om-ora .n { font-size:.8rem; opacity:.75; font-weight:400; }
     #orarmeu .om-ora .c { font-weight:800; font-size:1.05rem; text-align:right; }
     #orarmeu .om-gol { color:var(--muted); font-size:.85rem; padding:2px 10px 8px; }
@@ -1395,14 +1419,15 @@
     const intervalOra = (h) => { const st = 480 + (h - 1) * 60; return hmOrar(st) + "–" + hmOrar(st + 50); }; // 50 de minute + pauză de 10
     const ordClasaOrar = (x, y) => { const f = (c) => { const m = /^(\d+)(.*)$/.exec(c); return m ? [Number(m[1]), m[2]] : [99, c]; }; const p = f(x), q = f(y); return p[0] - q[0] || p[1].localeCompare(q[1], "ro", { numeric: true }); };
     // celula(zi 1-5, ora) întoarce lista de texte (poate fi goală)
-    function grilaOrar(celula, max) {
+    function grilaOrar(celula, max, viu) {
+      const acum = new Date(), ziAz = (acum.getDay() + 6) % 7, minAz = acum.getHours() * 60 + acum.getMinutes();
       const t = el("table", "orar-g"); const th = el("tr"); th.appendChild(el("th", "", ""));
       for (let h = 1; h <= max; h++) { const c = el("th", "", String(h)); c.appendChild(el("small", "", intervalOra(h))); th.appendChild(c); }
       t.appendChild(el("thead")).appendChild(th);
       const tb = el("tbody");
       ZILE_ORAR.forEach((zn, i) => {
-        const tr = el("tr"); tr.appendChild(el("th", "", zn));
-        for (let h = 1; h <= max; h++) { const v = celula(i + 1, h); const td = el("td", v.length ? "plin" : ""); if (v.length) td.style.setProperty("--h", nuantaOrar(Array.isArray(v[0]) ? v[0][1] : v[0])); v.forEach((x, k) => { if (k) td.appendChild(document.createElement("br")); if (Array.isArray(x)) { td.appendChild(el("span", "ab", x[0])); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(x[1])); } else td.appendChild(document.createTextNode(x)); }); tr.appendChild(td); }
+        const tr = el("tr"); tr.appendChild(el("th", viu && i === ziAz ? "azi" : "", zn));
+        for (let h = 1; h <= max; h++) { const v = celula(i + 1, h); const st0 = 480 + (h - 1) * 60; const td = el("td", (v.length ? "plin" : "") + (viu && v.length && i === ziAz && minAz >= st0 && minAz < st0 + 50 ? " acum" : "")); if (v.length) td.style.setProperty("--h", nuantaOrar(Array.isArray(v[0]) ? v[0][1] : v[0])); v.forEach((x, k) => { if (k) td.appendChild(document.createElement("br")); if (Array.isArray(x)) { td.appendChild(el("span", "ab", x[0])); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(x[1])); } else td.appendChild(document.createTextNode(x)); }); tr.appendChild(td); }
         tb.appendChild(tr);
       });
       t.appendChild(tb); return t;
@@ -1492,7 +1517,7 @@
         if (!selX.value) return zona.appendChild(el("p", "who", mod === "profesori" ? "Alege un profesor ca să vezi și să tipărești orarul lui." : "Alege o clasă ca să vezi și să tipărești orarul ei."));
         const p = mod === "profesori" ? pagProf(date.profesori.find((x) => x.id === selX.value)) : pagClasa(selX.value);
         zona.appendChild(el("p", "who", p.titlu + (p.sub ? " · " + p.sub : "") + " · " + date.an));
-        const sc = el("div", "orar-g-scroll"); sc.appendChild(grilaOrar(p.celula, p.max)); zona.appendChild(sc);
+        const sc = el("div", "orar-g-scroll"); sc.appendChild(grilaOrar(p.celula, p.max, true)); zona.appendChild(sc);
         const lgz = legendaOrar(p.leg); if (lgz) zona.appendChild(lgz);
       }
       bP.addEventListener("click", () => { mod = "profesori"; umple(); });
@@ -1550,8 +1575,10 @@
             if (!zi.length) card.appendChild(el("div", "om-gol", "Nicio oră."));
             zi.forEach((r, k) => {
               if (k && r.ora - zi[k - 1].ora > 1) card.appendChild(el("div", "om-gol", "Fereastră: " + (r.ora - zi[k - 1].ora - 1 === 1 ? "ora " + (r.ora - 1) : "orele " + (zi[k - 1].ora + 1) + "–" + (r.ora - 1)) + " (" + interval(zi[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1] + ")"));
-              const o = el("div", "om-ora cl"); o.style.setProperty("--h", nuanta(r.clasa));
-              const t = el("div", "t", interval(r.ora)); t.appendChild(el("div", "n", "ora " + r.ora));
+              const st0 = 480 + (r.ora - 1) * 60, mA = new Date(), minA = mA.getHours() * 60 + mA.getMinutes();
+              const eAcum = i === azi && minA >= st0 && minA < st0 + 50, eUrm = i === azi && !eAcum && st0 > minA && !zi.some((q) => q.ora < r.ora && 480 + (q.ora - 1) * 60 > minA);
+              const o = el("div", "om-ora" + (eAcum ? " acum" : "") + (eUrm ? " urm" : ""));
+              const t = el("div", "t", interval(r.ora)); if (eAcum) t.appendChild(el("span", "badge", "Acum")); else if (eUrm) t.appendChild(el("span", "badge", "Urmează")); t.appendChild(el("div", "n", "ora " + r.ora));
               const cc = el("div", "c", r.clasa); if (r.complet) cc.appendChild(el("div", "sb", r.complet)); o.append(t, cc); card.appendChild(o);
             });
             zona.appendChild(card);
@@ -1561,7 +1588,8 @@
           for (let h = 1; h <= max; h++) { const c = el("th", "", String(h)); c.appendChild(el("small", "", interval(h))); th.appendChild(c); }
           t.appendChild(el("thead")).appendChild(th);
           const tb = el("tbody");
-          ZL.forEach((zn, i) => { const tr = el("tr"); const zh = el("th", i === azi ? "azi" : "", zn); tr.appendChild(zh); for (let h = 1; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); const td = el("td", (r ? "cl" : "") + (i === azi ? " azi" : ""), r && !r.scurt ? r.clasa : ""); if (r && r.scurt) { td.appendChild(el("span", "ab", r.scurt)); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(r.clasa)); } if (r) td.style.setProperty("--h", nuanta(r.clasa)); tr.appendChild(td); } tb.appendChild(tr); });
+          ZL.forEach((zn, i) => { const tr = el("tr"); const zh = el("th", i === azi ? "azi" : "", zn); tr.appendChild(zh); for (let h = 1; h <= max; h++) { const r = ore.find((x) => x.zi === i + 1 && x.ora === h); const st1 = 480 + (h - 1) * 60, m1 = new Date(), min1 = m1.getHours() * 60 + m1.getMinutes();
+            const td = el("td", (r ? "cl" : "") + (i === azi ? " azi" : "") + (r && i === azi && min1 >= st1 && min1 < st1 + 50 ? " acum" : ""), r && !r.scurt ? r.clasa : ""); if (r && r.scurt) { td.appendChild(el("span", "ab", r.scurt)); td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(r.clasa)); } if (r) td.style.setProperty("--h", nuanta(r.clasa)); tr.appendChild(td); } tb.appendChild(tr); });
           t.appendChild(tb);
           const sc = el("div", "foaie-scroll"); sc.appendChild(t); zona.appendChild(sc);
           const lgm = legendaOrar(ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet])); if (lgm) zona.appendChild(lgm);
