@@ -553,7 +553,7 @@
     #orarmeu .oz-pill { display:inline-flex; align-items:center; gap:7px; margin-top:14px; padding:4px 12px; border-radius:999px; background:rgba(255,255,255,.18); font-weight:800; font-size:.74rem; letter-spacing:.09em; text-transform:uppercase; }
     #orarmeu .oz-pill.live::before { content:""; width:8px; height:8px; border-radius:50%; background:#7cffb2; animation:oz-bat 1.4s ease-in-out infinite; }
     @keyframes oz-bat { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.35; transform:scale(.7); } }
-    #orarmeu .oz-hero h2 { margin:10px 0 2px; font-size:1.85rem; line-height:1.1; letter-spacing:-.02em; font-weight:400; color:#fff; }
+    #orarmeu .oz-hero h2 { margin:10px 0 2px; font-size:2.6rem; line-height:1.05; letter-spacing:-.03em; font-weight:800; color:#fff; }
     #orarmeu .oz-meta { opacity:.92; font-weight:600; }
     #orarmeu .oz-bar { height:6px; border-radius:99px; background:rgba(255,255,255,.22); margin:16px 0 6px; overflow:hidden; }
     #orarmeu .oz-bar i { display:block; height:100%; border-radius:inherit; background:#fff; transition:width .6s ease; }
@@ -582,7 +582,8 @@
     #orarmeu .oz-card { margin:0 0 12px; padding:14px 16px; border-radius:20px; background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.07); transition:transform .15s ease; }
     #orarmeu .oz-card:hover { transform:translateX(3px); }
     #orarmeu .oz-ora.acum .oz-card { background:linear-gradient(135deg,#0b7f8a,#124a86); color:#fff; box-shadow:0 12px 28px -12px rgba(18,74,134,.7); }
-    #orarmeu .oz-mat { font-weight:400; font-size:1.08rem; letter-spacing:-.01em; line-height:1.2; }
+    #orarmeu .oz-mat { font-weight:800; font-size:1.6rem; letter-spacing:-.02em; line-height:1.1; }
+    #orarmeu .oz-disc { font-size:.85rem; font-weight:400; opacity:.85; }
     #orarmeu .oz-meta2 { display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center; }
     #orarmeu .oz-nr { font-size:.8rem; opacity:.7; }
     #orarmeu .oz-cl { display:inline-block; padding:3px 11px; border-radius:999px; background:color-mix(in srgb, var(--accent) 14%, transparent); color:var(--accent); font-weight:800; font-size:.8rem; }
@@ -1645,16 +1646,16 @@
           const hero = el("div", "oz-hero");
           hero.appendChild(el("div", "oz-data", ZL7[azi] + ", " + acum.getDate() + " " + LUNI_RO[acum.getMonth()]));
           if (cur) {
-            hero.append(el("span", "oz-pill live", "Acum"), el("h2", "", tit(cur)), el("div", "oz-meta", cur.clasa + " · " + interval(cur.ora)));
+            hero.append(el("span", "oz-pill live", "Acum"), el("h2", "", cur.clasa), el("div", "oz-meta", (cur.complet ? cur.complet + " · " : "") + interval(cur.ora)));
             const bar = el("div", "oz-bar"); const bi = el("i"); bi.style.width = Math.round(((mN - stOra(cur)) / 50) * 100) + "%"; bar.appendChild(bi);
             hero.append(bar, el("div", "oz-mic", "Mai sunt " + (stOra(cur) + 50 - mN) + " min din oră"));
           } else if (urm) {
-            hero.append(el("span", "oz-pill", "Urmează"), el("h2", "", tit(urm)), el("div", "oz-meta", urm.clasa + " · " + interval(urm.ora)), el("div", "oz-mic", "Începe peste " + durata(stOra(urm) - mN)));
+            hero.append(el("span", "oz-pill", "Urmează"), el("h2", "", urm.clasa), el("div", "oz-meta", (urm.complet ? urm.complet + " · " : "") + interval(urm.ora)), el("div", "oz-mic", "Începe peste " + durata(stOra(urm) - mN)));
           } else if (oreAzi.length) {
             hero.append(el("span", "oz-pill", "Gata pentru azi"), el("h2", "", "Orele de azi s-au încheiat"), el("div", "oz-meta", "Ai avut " + oraS(oreAzi.length) + " azi."));
           } else {
             hero.append(el("span", "oz-pill", azi < 5 ? "Zi liberă" : "Weekend"), el("h2", "", "Nicio oră azi"));
-            for (let d = 1; d <= 7; d++) { const j = (azi + d) % 7; if (j < 5 && oreZi(j).length) { const f = oreZi(j)[0]; hero.appendChild(el("div", "oz-meta", "Următoarea oră: " + ZL7[j] + ", " + interval(f.ora).split("–")[0] + (f.complet ? " · " + f.complet : ""))); break; } }
+            for (let d = 1; d <= 7; d++) { const j = (azi + d) % 7; if (j < 5 && oreZi(j).length) { const f = oreZi(j)[0]; hero.appendChild(el("div", "oz-meta", "Următoarea oră: " + ZL7[j] + ", " + interval(f.ora).split("–")[0] + " · " + f.clasa + (f.complet ? " · " + f.complet : ""))); break; } }
           }
           if (oreAzi.length) { const ch = el("div", "oz-chips"); ch.append(el("span", "", oraS(oreAzi.length) + " azi"), el("span", "", "de la " + interval(oreAzi[0].ora).split("–")[0]), el("span", "", "până la " + interval(oreAzi[oreAzi.length - 1].ora).split("–")[1])); hero.appendChild(ch); }
           zona.appendChild(hero);
@@ -1675,8 +1676,8 @@
             const aziZi = ziSel === azi, eCur = aziZi && r === cur, eUrm = aziZi && r === urm, eTrecut = aziZi && !eCur && stOra(r) + 50 <= mN;
             const o = el("div", "oz-ora" + (eCur ? " acum" : "") + (eUrm ? " urm" : "") + (eTrecut ? " trecut" : "")); o.style.setProperty("--k", k);
             const t = el("div", "oz-t"); t.append(el("b", "", interval(r.ora).split("–")[0]), el("span", "", interval(r.ora).split("–")[1]));
-            const card = el("div", "oz-card"); card.appendChild(el("div", "oz-mat", tit(r)));
-            const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-cl", r.clasa)); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
+            const card = el("div", "oz-card"); card.appendChild(el("div", "oz-mat", r.clasa));
+            const mt = el("div", "oz-meta2"); if (r.complet) mt.appendChild(el("span", "oz-disc", r.complet)); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
             card.appendChild(mt); o.append(t, el("div", "oz-nod"), card); tl.appendChild(o);
           });
           zona.appendChild(tl);
