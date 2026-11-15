@@ -492,7 +492,8 @@
     table.orar-g th, table.orar-g td { border:1px solid var(--line); padding:6px 4px; text-align:center; vertical-align:middle; }
     table.orar-g thead th { background:var(--bg); line-height:1.25; }
     table.orar-g thead th small { display:block; font-weight:400; font-size:.72rem; color:var(--muted); }
-    table.orar-g td.plin { background:color-mix(in srgb, var(--accent) 18%, var(--card)); font-weight:700; }
+    table.orar-g td.plin { background:hsl(var(--h, 190) 65% 88%); color:#13292d; font-weight:700; }
+    @media (prefers-color-scheme: dark) { table.orar-g td.plin { background:hsl(var(--h, 190) 40% 26%); color:#e8f5f6; } }
     #orar .orar-bara { display:grid; gap:8px; margin:8px 0; }
     #orar .orar-bara .comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     #orar .orar-bara button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
@@ -503,17 +504,21 @@
       body.tipar-orar #tipar-orar { display:block; color:#000; font-family:Arial, Helvetica, sans-serif; }
       #tipar-orar .pag-orar { break-after:page; page-break-after:always; }
       #tipar-orar .pag-orar:last-child { break-after:auto; page-break-after:auto; }
-      #tipar-orar .po-scoala { text-align:center; font-weight:800; font-size:13pt; text-transform:uppercase; margin:0; }
-      #tipar-orar .po-titlu { text-align:center; font-weight:800; font-size:18pt; margin:6mm 0 1mm; }
-      #tipar-orar .po-nume { text-align:center; font-weight:800; font-size:22pt; margin:0 0 1mm; text-transform:uppercase; }
-      #tipar-orar .po-sub { text-align:center; font-size:12pt; margin:0 0 6mm; }
-      #tipar-orar table { width:100%; border-collapse:collapse; table-layout:fixed; }
-      #tipar-orar th, #tipar-orar td { border:.8pt solid #000; padding:2mm 1mm; text-align:center; vertical-align:middle; font-size:12pt; color:#000; background:#fff !important; }
-      #tipar-orar thead th { font-weight:800; }
-      #tipar-orar thead th small { display:block; font-weight:400; font-size:8pt; }
-      #tipar-orar tbody th { width:24mm; font-weight:800; text-align:left; padding-left:2mm; }
-      #tipar-orar tbody td { height:17mm; font-weight:700; }
-      #tipar-orar .po-nota { font-size:9pt; margin-top:5mm; }
+      #tipar-orar .po-cap { display:flex; align-items:center; gap:7mm; padding-bottom:4mm; border-bottom:2.2mm solid #0e7c86; }
+      #tipar-orar .po-logo { height:24mm; width:auto; display:block; }
+      #tipar-orar .po-scoala { font-weight:800; font-size:15pt; text-transform:uppercase; line-height:1.25; color:#0b5f67; margin:0; }
+      #tipar-orar .po-scoala small { display:block; font-size:10.5pt; font-weight:700; text-transform:none; color:#444; margin-top:1mm; }
+      #tipar-orar .po-titlu { text-align:center; font-weight:800; font-size:20pt; color:#0e7c86; letter-spacing:.03em; text-transform:uppercase; margin:7mm 0 1mm; }
+      #tipar-orar .po-nume { text-align:center; font-weight:800; font-size:24pt; color:#111; margin:0 0 1mm; text-transform:uppercase; }
+      #tipar-orar .po-sub { text-align:center; font-size:12pt; color:#555; margin:0 0 6mm; }
+      #tipar-orar table { width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; border:.8pt solid #0e7c86; border-radius:2mm; overflow:hidden; }
+      #tipar-orar th, #tipar-orar td { border-right:.6pt solid #b9d6d9; border-bottom:.6pt solid #b9d6d9; padding:2mm 1mm; text-align:center; vertical-align:middle; font-size:12pt; color:#111; }
+      #tipar-orar thead th { background:#0e7c86 !important; color:#fff !important; font-weight:800; border-color:#0b5f67; }
+      #tipar-orar thead th small { display:block; font-weight:400; font-size:8pt; color:#dff3f4 !important; }
+      #tipar-orar tbody th { width:26mm; font-weight:800; text-align:left; padding-left:3mm; background:#e3f2f3 !important; color:#0b5f67 !important; }
+      #tipar-orar tbody tr:nth-child(even) td { background:#f6fbfb; }
+      #tipar-orar tbody td { height:18mm; font-weight:700; }
+      #tipar-orar tbody td.plin { background:hsl(var(--h, 190) 65% 86%) !important; }
     }
     #orarmeu .foaie-scroll { overflow:auto; -webkit-overflow-scrolling:touch; }
     #orarmeu .orar-t { border-collapse:collapse; width:100%; min-width:620px; font-size:.95rem; }
@@ -1371,6 +1376,7 @@
     document.addEventListener("visibilitychange", () => { if (euId && !document.hidden) actualizeazaClopot(); });
 
     // ---------- Orar: grile, tipărire, modulul pentru administrator / director / secretariat ----------
+    const nuantaOrar = (c) => { let h = 0; for (const ch of String(c)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
     const ZILE_ORAR = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
     const hmOrar = (m) => Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
     const intervalOra = (h) => { const st = 480 + (h - 1) * 60; return hmOrar(st) + "–" + hmOrar(st + 50); }; // 50 de minute + pauză de 10
@@ -1383,7 +1389,7 @@
       const tb = el("tbody");
       ZILE_ORAR.forEach((zn, i) => {
         const tr = el("tr"); tr.appendChild(el("th", "", zn));
-        for (let h = 1; h <= max; h++) { const v = celula(i + 1, h); const td = el("td", v.length ? "plin" : ""); v.forEach((x, k) => { if (k) td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(x)); }); tr.appendChild(td); }
+        for (let h = 1; h <= max; h++) { const v = celula(i + 1, h); const td = el("td", v.length ? "plin" : ""); if (v.length) td.style.setProperty("--h", nuantaOrar(v[0])); v.forEach((x, k) => { if (k) td.appendChild(document.createElement("br")); td.appendChild(document.createTextNode(x)); }); tr.appendChild(td); }
         tb.appendChild(tr);
       });
       t.appendChild(tb); return t;
@@ -1394,12 +1400,13 @@
       const cont = el("div", ""); cont.id = "tipar-orar";
       pagini.forEach((p) => {
         const pg = el("section", "pag-orar");
-        pg.appendChild(el("p", "po-scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești"));
+        const cap = el("div", "po-cap"); const lg = el("img", "po-logo"); lg.src = "logo-scoala.jpg"; lg.alt = "";
+        const sc = el("p", "po-scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu”"); sc.appendChild(el("small", "", "Comuna Belcești, județul Iași"));
+        cap.append(lg, sc); pg.appendChild(cap);
         pg.appendChild(el("p", "po-titlu", p.titlu));
         if (p.sub) pg.appendChild(el("p", "po-nume", p.sub));
         pg.appendChild(el("p", "po-sub", an ? "Anul școlar " + an : ""));
         pg.appendChild(grilaOrar(p.celula, p.max));
-        pg.appendChild(el("p", "po-nota", "Ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
         cont.appendChild(pg);
       });
       document.body.appendChild(cont); document.body.classList.add("tipar-orar");
