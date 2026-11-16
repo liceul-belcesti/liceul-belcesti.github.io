@@ -2308,6 +2308,8 @@
         ["bac", "Șablon Bacalaureat", "Subiectele și punctajele de la Bacalaureat"],
         ["nou", "Șablon nou", "Îți stabilești singur subiectele, itemii și punctajele"]
       ];
+      const DISC_BAC = ["Matematică", "Limba și literatura română", "Geografie"];
+      const bacPermis = (cl, d) => /^12/.test(cl) && DISC_BAC.includes(d);
       const ETICHETA_SABLON = { en: "Evaluare Națională", bac: "Bacalaureat", nou: "Șablon nou" };
       const lista = () => {
         msg.textContent = ""; corp.replaceChildren();
@@ -2360,12 +2362,19 @@
           if (disc.length > 1) { f.appendChild(el("label", "", "Disciplina")); selDisc = el("select", ""); disc.forEach((d) => selDisc.appendChild(el("option", "", d))); f.appendChild(selDisc); }
           f.appendChild(el("label", "", "Șablon de barem"));
           let sablon = "en"; const optiuni = el("div", "ev-sabl");
-          SABLOANE.forEach(([k, t, d]) => {
-            const o = el("button", "ev-sab", ""); o.type = "button"; o.setAttribute("aria-pressed", k === sablon ? "true" : "false");
-            o.append(el("b", "", t), el("span", "", d));
-            o.addEventListener("click", () => { sablon = k; optiuni.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === o ? "true" : "false")); });
-            optiuni.appendChild(o);
-          });
+          const deseneazaSabloane = () => {
+            const dAles = selDisc ? selDisc.value : disc[0];
+            if (sablon === "bac" && !bacPermis(nume, dAles)) sablon = "en";
+            optiuni.replaceChildren();
+            SABLOANE.filter(([k]) => k !== "bac" || bacPermis(nume, dAles)).forEach(([k, t, d]) => {
+              const o = el("button", "ev-sab", ""); o.type = "button"; o.setAttribute("aria-pressed", k === sablon ? "true" : "false");
+              o.append(el("b", "", t), el("span", "", d));
+              o.addEventListener("click", () => { sablon = k; optiuni.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === o ? "true" : "false")); });
+              optiuni.appendChild(o);
+            });
+          };
+          if (selDisc) selDisc.addEventListener("change", deseneazaSabloane);
+          deseneazaSabloane();
           f.appendChild(optiuni);
           const ctl = el("div", "ctl"); const ok = el("button", "", "Creează lucrarea"); ok.type = "button";
           const nu = el("button", "secondary", "Renunță"); nu.type = "button"; nu.addEventListener("click", () => zonaForm.replaceChildren());
