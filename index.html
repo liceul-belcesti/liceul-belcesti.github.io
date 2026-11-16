@@ -287,6 +287,7 @@
     #cel-editor .cutie .n-opt input, #cel-editor .cutie .n-ora input { width:auto; min-height:0; }
     #cel-editor .cutie .taie-rand { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
     #cel-editor .cutie .taie-rand button.taie { width:auto; margin:0; min-height:42px; padding:6px 14px; background:#e67700; color:#fff; border:2px solid #e67700; font-weight:800; }
+    #pontaj table.foaie-t td.zi.inv { color:#9a5b00; background:#fff0cf !important; font-weight:800; }
     #pontaj table.foaie-t td.zi.taiat { color:#b42318; background:#fde0e0 !important; font-weight:800; }
     #pontaj .ccc-rand { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:.88rem; }
     #pontaj .ccc-rand button { width:auto; min-height:34px; margin:0; padding:2px 12px; }
@@ -395,6 +396,7 @@
       #pontaj table.foaie-t thead { display:table-header-group; }
       #pontaj table.foaie-t tr { break-inside:avoid; }
       #pontaj table.foaie-t tr.tine-cu-semn { break-after:avoid; page-break-after:avoid; }
+      #pontaj table.foaie-t td.zi.inv { color:#7a4800 !important; background:#fff0cf !important; font-weight:800; }
       #pontaj table.foaie-t td.zi.taiat { color:#c00000 !important; background:#fde0e0 !important; font-weight:800; }
       #pontaj table.foaie-t td.titlu.intreg { text-align:center !important; font-weight:800; padding:.4mm 0 !important; }
       #pontaj .anexa-titlu { text-align:center; font-weight:800; font-size:12pt; padding:2mm 0; }
@@ -4190,6 +4192,7 @@
             const lib = foaie.libere.has(z.t); const sapt = z.dow !== 0 && z.dow !== 6;
             const auto = Number(valoareAutomata(r.n, z.t)) || 0;
             const oreN = foaie.oreN.get(r.n.id + "|" + z.t) || "";
+            const esteInv = (o) => /(^|,)!/.test(o || "");
             const taiat = !!(man && v && ((/^\d+$/.test(v) && Number(v) < auto) || v === "N"));
             const fp = foaie.fp.has(r.n.id + "|" + z.t);
             celule.push({ z, v, man, lib, sapt, aj, out, taiat, auto, oreN, fp });
@@ -4281,13 +4284,13 @@
           const tr = el("tr", ix % 2 ? "z2" : "");
           tr.appendChild(el("td", "nr", String(nr)));
           tr.appendChild(el("td", "nm", r.p.nume));
-          r.celule.forEach(({ z, v, man, lib, sapt, aj, out, taiat, auto, fp }) => {
-            const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt && !out ? " lib" : "") + (out && sapt ? " afara" : "") + (taiat ? " taiat" : "") + (fp ? " fp" : "") + (sapt && !lib && !out && foaie.vac.has(z.t) ? " vac" : "") + (man ? " man" : "") + (aj && !man ? " ajust" : "") + (v && !/^\d+$/.test(v) ? " cod" : "") + (v === "CCC" ? " ccc" : ""), v || "");
+          r.celule.forEach(({ z, v, man, lib, sapt, aj, out, taiat, auto, fp, oreN }) => {
+            const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt && !out ? " lib" : "") + (out && sapt ? " afara" : "") + (taiat ? (/(^|,)!/.test(oreN || "") ? " inv" : " taiat") : "") + (fp ? " fp" : "") + (sapt && !lib && !out && foaie.vac.has(z.t) ? " vac" : "") + (man ? " man" : "") + (aj && !man ? " ajust" : "") + (v && !/^\d+$/.test(v) ? " cod" : "") + (v === "CCC" ? " ccc" : ""), v || "");
             if (v && /^\d+$/.test(v) && +v > MAX_ZI) { td.classList.add("depasit"); td.title = "Atenție: peste " + MAX_ZI + " ore într-o zi"; }
             if (aj && !man) td.title = "Ore ajustate" + (aj.minus ? " · − " + aj.minus + " ore de predare" : "") + (aj.plus ? " · + " + aj.plus + " ore adăugate" : "");
             if (v && COD_NUME[v]) td.title = COD_NUME[v];
             if (fp) td.title = (td.title ? td.title + " · " : "") + "Nu se numără la plata cu ora (PCO, DT, PIP)";
-            if (taiat) td.title = v === "N" ? "Absență nemotivată pe toată ziua" : "Absență nemotivată la " + (auto - Number(v)) + (auto - Number(v) === 1 ? " oră" : " ore") + " (era " + auto + " în program)";
+            if (taiat) td.title = v === "N" ? "Absență nemotivată pe toată ziua" : (/(^|,)!/.test(oreN || "") ? "Învoire aprobată la " : "Absență nemotivată la ") + (auto - Number(v)) + (auto - Number(v) === 1 ? " oră" : " ore") + " (era " + auto + " în program)";
             const lz = foaie.libere.get(z.t); if (lz && sapt) td.title = lz.motiv;
             if (editS) td.addEventListener("click", () => deschideEditor(r, z.t));
             else td.style.cursor = "default";
@@ -4432,9 +4435,11 @@
         });
         lista.appendChild(d);
       });
-      if (taieri.size) {
-        const ct = el("p", "det-p"); ct.appendChild(el("b", "", "Absențe nemotivate și învoiri la câteva ore (orele și zilele de mai jos nu se numără):")); lista.appendChild(ct);
-        [...taieri.values()].sort((x, y) => (x.p.nume || "").localeCompare(y.p.nume || "", "ro")).forEach((a) => {
+      [false, true].forEach((faInv) => {
+        const sel = [...taieri.values()].map((a) => ({ p: a.p, zile: a.zile.filter((q) => /(^|,)!/.test(q.oreN || "") === faInv) })).filter((a) => a.zile.length);
+        if (!sel.length) return;
+        const ct = el("p", "det-p"); ct.appendChild(el("b", "", faInv ? "Învoiri aprobate la câteva ore (orele de mai jos nu se numără):" : "Absențe nemotivate (orele și zilele de mai jos nu se numără):")); lista.appendChild(ct);
+        sel.sort((x, y) => (x.p.nume || "").localeCompare(y.p.nume || "", "ro")).forEach((a) => {
           const d = el("div", "det-pers"); d.appendChild(el("b", "", a.p.nume));
           a.zile.sort((x, y) => (x.z < y.z ? -1 : 1)).forEach(({ z, auto, v, oreN }) => {
             const w = dinIso(z).getUTCDay();
@@ -4444,8 +4449,8 @@
             if (v === "N") {
               t = "absență nemotivată pe toată ziua – nu a fost prezent(ă) la programul școlar; ziua nu se numără" + (orarZi.length ? " (" + orarZi.map(txtOra).join("; ") + ")" : "");
             } else {
-              const inv = (oreN || "").startsWith("!");
-              const lips = (oreN || "").replace(/^!/, "").split(",").filter(Boolean).map((x) => { const [o, c] = x.split(":"); return "ora " + o + " – clasa " + c; });
+              const inv = /(^|,)!/.test(oreN || "");
+              const lips = (oreN || "").replace(/(^|,)!/g, "$1").split(",").filter(Boolean).map((x) => { const [o, c] = x.split(":"); return "ora " + o + " – clasa " + c; });
               const k = auto - Number(v);
               t = inv ? "învoire aprobată la " + (lips.length || k) + ((lips.length || k) === 1 ? " oră" : " ore") + (lips.length ? ": " + lips.join("; ") : "") + "; orele nu se numără (" + auto + " → " + v + " ore)" : "absență nemotivată la " + (lips.length || k) + ((lips.length || k) === 1 ? " oră" : " ore") + (lips.length ? ": " + lips.join("; ") : "") + "; orele nu se numără (" + auto + " → " + v + " ore)";
             }
@@ -4453,7 +4458,7 @@
           });
           lista.appendChild(d);
         });
-      }
+      });
       if (blocInloc.length) {
         const ci = el("p", "det-p"); ci.appendChild(el("b", "", "Concedii medicale și învoiri, cu înlocuitorii lor:")); lista.appendChild(ci);
         blocInloc.forEach((d) => lista.appendChild(d));
