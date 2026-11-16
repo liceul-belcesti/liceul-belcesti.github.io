@@ -694,6 +694,23 @@
     :is(#orarmeu,.orm) .oz-tipar { width:auto; margin:10px 0 0; min-height:42px; padding:0 20px; border-radius:999px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:700; }
     :is(#orarmeu,.orm) .oz-mic2 { color:var(--muted); font-size:.8rem; margin:10px 0 0; }
     #evaluare .ev-grila { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; margin:8px 0; }
+    #evaluare button.ev-card { display:block; width:100%; margin:0; text-align:left; cursor:pointer; color:inherit; font:inherit; }
+    #evaluare button.ev-card:hover { border-color:var(--accent); }
+    #evaluare .ev-inap { width:auto; min-height:36px; margin:0 0 8px; padding:4px 12px; font-size:.85rem; }
+    #evaluare .ev-cap { display:flex; flex-direction:column; gap:2px; margin:0 0 10px; }
+    #evaluare .ev-nou { width:auto; min-height:44px; margin:0 0 10px; padding:0 20px; border-radius:999px; font-weight:800; }
+    #evaluare .ev-form { padding:12px; margin:0 0 12px; border-radius:16px; background:var(--card); border:1px solid var(--line); }
+    #evaluare .ev-form label { display:block; margin:8px 0 3px; font-size:.8rem; }
+    #evaluare .ev-form input, #evaluare .ev-form select { min-height:40px; padding:4px 10px; font-size:.9rem; }
+    #evaluare .ev-sabl { display:grid; gap:6px; }
+    #evaluare .ev-sab { display:flex; flex-direction:column; gap:2px; align-items:flex-start; width:100%; margin:0; padding:8px 12px; text-align:left; min-height:0; border-radius:12px; background:transparent; color:var(--text); border:1.5px solid var(--line); box-shadow:none; font-weight:400; }
+    #evaluare .ev-sab span { font-size:.78rem; color:var(--muted); }
+    #evaluare .ev-sab[aria-pressed="true"] { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, var(--card)); }
+    #evaluare .ev-form .ctl { display:flex; gap:8px; margin-top:10px; }
+    #evaluare .ev-form .ctl button { width:auto; margin:0; min-height:40px; padding:0 18px; }
+    #evaluare .ev-lucr { display:flex; align-items:center; gap:10px; padding:10px 14px; margin:0 0 8px; border-radius:14px; background:var(--card); border:1px solid var(--line); }
+    #evaluare .ev-lucr-t { display:flex; flex-direction:column; flex:1; min-width:0; }
+    #evaluare .ev-sterge { width:auto; margin:0; min-height:34px; padding:0 12px; font-size:.8rem; }
     #evaluare .ev-card { padding:12px 14px; border-radius:16px; background:var(--card); border:1px solid var(--line); box-shadow:0 1px 2px rgba(0,0,0,.05); }
     #evaluare .ev-clasa { display:block; font-size:1.4rem; letter-spacing:-.02em; color:var(--accent); margin-bottom:6px; }
     #evaluare .ev-disc { display:flex; flex-direction:column; gap:4px; }
@@ -2269,6 +2286,8 @@
     $("inapoi-evaluare").addEventListener("click", arataPrincipal);
     async function deschideEvaluare() {
       memoreazaVedere("evaluare");
+      const fd = (z) => z.split("-").reverse().join("/");
+      const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("evaluare").classList.remove("hidden");
       const msg = $("evaluare-msg"), corp = $("evaluare-corp"); msg.textContent = ""; corp.replaceChildren(el("p", "who", "Se încarcă…"));
@@ -2284,17 +2303,86 @@
         c.discipline.set(nume, (c.discipline.get(nume) || 0) + 1); c.ore++;
         clase.set(r.clasa, c);
       });
-      const toateDisc = new Set(); clase.forEach((c) => c.discipline.forEach((_, d) => toateDisc.add(d)));
-      corp.appendChild(el("p", "who", (rez[0].denumire || "An școlar") + " · " + clase.size + (clase.size === 1 ? " clasă" : " clase") + " · " + toateDisc.size + (toateDisc.size === 1 ? " disciplină" : " discipline")));
-      const grila = el("div", "ev-grila");
-      [...clase.keys()].sort((a, b) => a.localeCompare(b, "ro", { numeric: true })).forEach((nume) => {
-        const c = clase.get(nume), card = el("div", "ev-card");
-        card.appendChild(el("b", "ev-clasa", nume));
-        const lista = el("div", "ev-disc");
-        [...c.discipline.entries()].sort((a, b) => a[0].localeCompare(b[0], "ro")).forEach(([d, n]) => lista.appendChild(el("span", "ev-chip", d + " · " + n + (n === 1 ? " oră" : " ore") + " pe săptămână")));
-        card.appendChild(lista); grila.appendChild(card);
-      });
-      corp.appendChild(grila);
+      const SABLOANE = [
+        ["en", "Șablon Evaluare Națională", "Subiectele I, II, III și punctele din oficiu, după modelul oficial"],
+        ["bac", "Șablon Bacalaureat", "Subiectele și punctajele de la Bacalaureat"],
+        ["nou", "Șablon nou", "Îți stabilești singur subiectele, itemii și punctajele"]
+      ];
+      const ETICHETA_SABLON = { en: "Evaluare Națională", bac: "Bacalaureat", nou: "Șablon nou" };
+      const lista = () => {
+        msg.textContent = ""; corp.replaceChildren();
+        const toateDisc = new Set(); clase.forEach((c) => c.discipline.forEach((_, d) => toateDisc.add(d)));
+        corp.appendChild(el("p", "who", (rez[0].denumire || "An școlar") + " · " + clase.size + (clase.size === 1 ? " clasă" : " clase") + " · " + toateDisc.size + (toateDisc.size === 1 ? " disciplină" : " discipline")));
+        const grila = el("div", "ev-grila");
+        [...clase.keys()].sort((x, y) => x.localeCompare(y, "ro", { numeric: true })).forEach((nume) => {
+          const c = clase.get(nume), card = el("button", "ev-card"); card.type = "button";
+          card.appendChild(el("b", "ev-clasa", nume));
+          const l = el("div", "ev-disc");
+          [...c.discipline.entries()].sort((x, y) => x[0].localeCompare(y[0], "ro")).forEach(([d, n]) => l.appendChild(el("span", "ev-chip", d + " · " + n + (n === 1 ? " oră" : " ore") + " pe săptămână")));
+          card.appendChild(l); card.addEventListener("click", () => clasa(nume)); grila.appendChild(card);
+        });
+        corp.appendChild(grila);
+      };
+      const clasa = async (nume) => {
+        const c = clase.get(nume), disc = [...c.discipline.keys()].sort((x, y) => x.localeCompare(y, "ro"));
+        msg.textContent = ""; corp.replaceChildren();
+        const inap = el("button", "secondary ev-inap", "← Clasele mele"); inap.type = "button"; inap.addEventListener("click", lista); corp.appendChild(inap);
+        const cap = el("div", "ev-cap"); cap.appendChild(el("b", "ev-clasa", "Clasa " + nume)); cap.appendChild(el("span", "who", disc.join(" · "))); corp.appendChild(cap);
+        const zonaForm = el("div", ""), zonaLista = el("div", "");
+        const nou = el("button", "ev-nou", "＋ Lucrare nouă"); nou.type = "button"; corp.append(nou, zonaForm, zonaLista);
+        const incarca = async () => {
+          const { data: ls, error: e } = await db.rpc("evaluare_lucrari_lista", { p_clasa: nume });
+          zonaLista.replaceChildren();
+          if (e) { msg.textContent = "Lucrările nu au putut fi încărcate. Încearcă din nou."; return; }
+          if (!ls || !ls.length) { zonaLista.appendChild(el("p", "who", "Nu ai creat încă nicio lucrare pentru această clasă.")); return; }
+          ls.forEach((l) => {
+            const card = el("div", "ev-lucr");
+            const st = el("div", "ev-lucr-t"); st.appendChild(el("b", "", l.titlu));
+            st.appendChild(el("span", "who", fd(l.data_lucrarii) + " · " + (ETICHETA_SABLON[l.sablon] || l.sablon) + (l.disciplina ? " · " + l.disciplina : "")));
+            const sterge = el("button", "secondary ev-sterge", "Șterge"); sterge.type = "button";
+            sterge.addEventListener("click", async () => {
+              if (!confirm("Ștergi lucrarea „" + l.titlu + "”?")) return;
+              const { error: e2 } = await db.rpc("evaluare_lucrare_sterge", { p_id: l.id });
+              if (e2) { msg.textContent = "Lucrarea nu a putut fi ștearsă."; return; }
+              incarca();
+            });
+            card.append(st, sterge); zonaLista.appendChild(card);
+          });
+        };
+        nou.addEventListener("click", () => {
+          if (zonaForm.childElementCount) { zonaForm.replaceChildren(); return; }
+          const f = el("div", "ev-form");
+          const titlu = el("input", ""); titlu.type = "text"; titlu.maxLength = 120; titlu.placeholder = "Titlul lucrării (de exemplu Simulare, Test inițial)";
+          const data = el("input", ""); data.type = "date"; data.value = iso(new Date());
+          const lt = el("label", "", "Titlu"); const ld = el("label", "", "Data lucrării");
+          f.append(lt, titlu, ld, data); imbracaData(data);
+          let selDisc = null;
+          if (disc.length > 1) { f.appendChild(el("label", "", "Disciplina")); selDisc = el("select", ""); disc.forEach((d) => selDisc.appendChild(el("option", "", d))); f.appendChild(selDisc); }
+          f.appendChild(el("label", "", "Șablon de barem"));
+          let sablon = "en"; const optiuni = el("div", "ev-sabl");
+          SABLOANE.forEach(([k, t, d]) => {
+            const o = el("button", "ev-sab", ""); o.type = "button"; o.setAttribute("aria-pressed", k === sablon ? "true" : "false");
+            o.append(el("b", "", t), el("span", "", d));
+            o.addEventListener("click", () => { sablon = k; optiuni.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === o ? "true" : "false")); });
+            optiuni.appendChild(o);
+          });
+          f.appendChild(optiuni);
+          const ctl = el("div", "ctl"); const ok = el("button", "", "Creează lucrarea"); ok.type = "button";
+          const nu = el("button", "secondary", "Renunță"); nu.type = "button"; nu.addEventListener("click", () => zonaForm.replaceChildren());
+          ok.addEventListener("click", async () => {
+            if (titlu.value.trim().length < 2) { msg.textContent = "Scrie titlul lucrării."; return; }
+            if (!data.value) { msg.textContent = "Alege data lucrării."; return; }
+            ok.disabled = true;
+            const { error: e } = await db.rpc("evaluare_lucrare_creeaza", { p_clasa: nume, p_disciplina: selDisc ? selDisc.value : disc[0] || null, p_titlu: titlu.value.trim(), p_data: data.value, p_sablon: sablon });
+            ok.disabled = false;
+            if (e) { msg.textContent = "Lucrarea nu a putut fi creată. Încearcă din nou."; return; }
+            msg.textContent = ""; zonaForm.replaceChildren(); incarca();
+          });
+          ctl.append(ok, nu); f.appendChild(ctl); zonaForm.appendChild(f); titlu.focus();
+        });
+        incarca();
+      };
+      lista();
     }
     $("inapoi-cereri").addEventListener("click", arataPrincipal);
     async function deschideCereri() {
