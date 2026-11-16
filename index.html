@@ -1304,7 +1304,7 @@
         }
         if (cheie === "cereri" && cereriNoi > 0) {
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = cereriNoi;
-          k.setAttribute("aria-label", cereriNoi + " cereri de învoire care așteaptă răspunsul tău"); c.appendChild(k);
+          k.setAttribute("aria-label", cereriNoi + " cereri de învoire noi pentru tine"); c.appendChild(k);
         }
         if (cheie === "utilizatori" && inAsteptare > 0) {
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = inAsteptare;
@@ -1714,14 +1714,16 @@
       if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); return; }
       const azi = new Date().toISOString().slice(0, 10);
       const decide = ["administrator", "director"].some((r) => euRoluri.includes(r)) && moduleleMele(euRoluri).includes("cereri");
-      const [a, c, cd, cm] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id, necitit"),
-        decide ? db.rpc("cereri_de_decis_v2") : Promise.resolve({ data: [] }), moduleleMele(euRoluri).includes("cereri") ? db.rpc("cereri_pentru_mine") : Promise.resolve({ data: [] })]);
+      const areCereri = moduleleMele(euRoluri).includes("cereri");
+      const [a, c, cd, cm, cn] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id, necitit"),
+        decide ? db.rpc("cereri_de_decis_v2") : Promise.resolve({ data: [] }), areCereri ? db.rpc("cereri_pentru_mine") : Promise.resolve({ data: [] }), areCereri ? db.rpc("cereri_decise_nevazute") : Promise.resolve({ data: 0 })]);
       if (a.error || c.error) return;
       const citite = new Set(c.data.filter((x) => !x.necitit).map((x) => x.anunt_id));
       const n = a.data.filter((x) => x.creat_de !== euId && !citite.has(x.id) && (!x.expira_la || x.expira_la >= azi)).length;
       cereriDeDecis = cd.error || !Array.isArray(cd.data) ? 0 : cd.data.length;
       cereriDeRaspuns = cm.error || !Array.isArray(cm.data) ? 0 : cm.data.filter((x) => x.stare_cerere === "in_asteptare" && x.stare_mea === "in_asteptare").length;
-      const nc = cereriDeDecis + cereriDeRaspuns, tot = n + nc;
+      const cereriDecise = cn.error || typeof cn.data !== "number" ? 0 : cn.data;
+      const nc = cereriDeDecis + cereriDeRaspuns + cereriDecise, tot = n + nc;
       b.classList.remove("hidden");
       $("clopot-nr").textContent = tot > 99 ? "99+" : String(tot); $("clopot-nr").classList.toggle("hidden", tot < 1);
       b.setAttribute("aria-label", tot ? tot + " notificări" : "Notificări");
@@ -2492,6 +2494,7 @@
       memoreazaVedere("cereri");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("cereri").classList.remove("hidden");
+      db.rpc("cereri_decizie_vazuta").then(() => actualizeazaClopot()); // deciziile pe cererile mele devin „văzute” la intrarea în modul
       const msg = $("cereri-msg"), corp = $("cereri-corp"); msg.textContent = ""; msg.className = "panel-msg"; corp.replaceChildren(el("p", "who", "Se încarcă…"));
       const fd = (z) => z.split("-").reverse().join("/");
       const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -2598,6 +2601,7 @@
             ap.disabled = true; re.disabled = true; conf.disabled = true;
             const { error } = await db.rpc("cerere_invoire_decide", { p_id: c.id, p_aproba: aproba, p_nota: nota || null });
             if (error) { await reincarca(error.message || "Decizia nu a putut fi salvată."); return; }
+            db.functions.invoke("trimite-decizie-email", { body: { cerere_id: c.id } }).catch(() => {});
             await reincarca(aproba ? "Cererea a fost aprobată." : "Cererea a fost respinsă.", true);
           };
           ap.addEventListener("click", () => { if (confirm("Aprobi cererea de învoire a lui " + c.solicitant + "?" + (asteapta ? "\n\nNu toți înlocuitorii propuși au acceptat." : ""))) decide(true, null); });
@@ -2691,6 +2695,7 @@
           ap.disabled = true; re.disabled = true; conf.disabled = true;
           const { error } = await db.rpc("cerere_invoire_decide", { p_id: c.id, p_aproba: aproba, p_nota: nota || null });
           if (error) { await reface(error.message || "Decizia nu a putut fi salvată."); return; }
+          db.functions.invoke("trimite-decizie-email", { body: { cerere_id: c.id } }).catch(() => {});
           await reface(aproba ? "Cererea a fost aprobată." : "Cererea a fost respinsă.", true);
         };
         ap.addEventListener("click", () => { if (confirm("Aprobi cererea de învoire a lui " + c.angajat + "?" + (asteapta ? "\n\nNu toți înlocuitorii propuși au acceptat." : ""))) decide(true, null); });
