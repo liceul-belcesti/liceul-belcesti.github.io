@@ -4295,7 +4295,12 @@
             if (aj && !man) td.title = "Ore ajustate" + (aj.minus ? " · − " + aj.minus + " ore de predare" : "") + (aj.plus ? " · + " + aj.plus + " ore adăugate" : "");
             if (v && COD_NUME[v]) td.title = COD_NUME[v];
             if (fp) td.title = (td.title ? td.title + " · " : "") + "Nu se numără la plata cu ora (PCO, DT, PIP)";
-            if (taiat) td.title = v === "N" ? "Absență nemotivată pe toată ziua" : (/(^|,)!/.test(oreN || "") ? "Învoire aprobată la " : "Absență nemotivată la ") + (auto - Number(v)) + (auto - Number(v) === 1 ? " oră" : " ore") + " (era " + auto + " în program)";
+            if (taiat) {
+              const nI = auto - Number(v), orePl = nI === 1 ? " oră" : " ore";
+              if (v === "N") td.title = "Absență nemotivată pe toată ziua";
+              else if (/(^|,)!/.test(oreN || "")) td.title = "Învoire aprobată: " + nI + orePl + " (" + oreN.replace(/(^|,)!/g, "$1").split(",").filter(Boolean).map((x) => { const [o, c] = x.split(":"); return "ora " + o + ", clasa " + c; }).join("; ") + "). Au rămas " + v + " din " + auto + " ore.";
+              else td.title = "Absență nemotivată la " + nI + orePl + " (era " + auto + " în program)";
+            }
             if (taiat && v !== "N" && /(^|,)!/.test(oreN || "")) td.dataset.inv = "−" + (auto - Number(v));
             const lz = foaie.libere.get(z.t); if (lz && sapt) td.title = lz.motiv;
             if (editS) td.addEventListener("click", () => deschideEditor(r, z.t));
