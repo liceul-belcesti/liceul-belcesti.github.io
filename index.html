@@ -961,6 +961,16 @@
           <li>Așteaptă ca administratorul să îți aprobe contul. După aprobare poți intra.</li>
         </ol>
         <button id="google2" class="google" type="button">Creează cont cu Google</button>
+        <div class="sep">sau cu alt e-mail</div>
+        <form id="form-creeaza">
+          <label for="c-email">E-mail</label>
+          <input id="c-email" type="email" autocomplete="username" inputmode="email" required>
+          <label for="c-parola">Parolă (minimum 8 caractere)</label>
+          <input id="c-parola" type="password" autocomplete="new-password" minlength="8" required>
+          <label for="c-parola2">Repetă parola</label>
+          <input id="c-parola2" type="password" autocomplete="new-password" minlength="8" required>
+          <button id="c-creeaza-btn" type="submit">Creează cont cu e-mail</button>
+        </form>
       </section>
     </main>
 
@@ -5745,10 +5755,36 @@
       $("msg").className = "msg";
       const { error } = await db.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: "https://liceul-belcesti.github.io/" }
+        options: { redirectTo: "https://liceul-belcesti.github.io/", queryParams: { prompt: "select_account" } }
       });
       if (error) $("msg").textContent = "Autentificarea cu Google nu a reușit. Încearcă din nou.";
     }
+    $("form-creeaza").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      mesajRamas = "";
+      const m = $("msg");
+      m.className = "msg";
+      const email = $("c-email").value.trim();
+      const p1 = $("c-parola").value, p2 = $("c-parola2").value;
+      if (p1.length < 8) { m.textContent = "Parola trebuie să aibă cel puțin 8 caractere."; return; }
+      if (p1 !== p2) { m.textContent = "Parolele nu coincid."; return; }
+      $("c-creeaza-btn").disabled = true;
+      const { data, error } = await db.auth.signUp({
+        email, password: p1,
+        options: { emailRedirectTo: "https://liceul-belcesti.github.io/" }
+      });
+      $("c-creeaza-btn").disabled = false;
+      $("c-parola").value = ""; $("c-parola2").value = "";
+      if (error) {
+        m.textContent = /rate|limit/i.test(error.message || "")
+          ? "Prea multe încercări. Încearcă din nou peste puțin timp."
+          : "Contul nu a putut fi creat. Verifică e-mailul și încearcă din nou.";
+        return;
+      }
+      if (data && data.session) return;
+      m.className = "msg info";
+      m.textContent = "Ți-am trimis un e-mail. Deschide linkul din el pentru a confirma adresa, apoi intră în cont.";
+    });
     $("google").addEventListener("click", intraCuGoogle);
     $("google2").addEventListener("click", intraCuGoogle);
 
