@@ -711,6 +711,22 @@
     #evaluare .ev-lucr { display:flex; align-items:center; gap:10px; padding:10px 14px; margin:0 0 8px; border-radius:14px; background:var(--card); border:1px solid var(--line); }
     #evaluare .ev-lucr-t { display:flex; flex-direction:column; flex:1; min-width:0; }
     #evaluare .ev-sterge { width:auto; margin:0; min-height:34px; padding:0 12px; font-size:.8rem; }
+    #evaluare .ev-deschide { width:auto; margin:0; min-height:34px; padding:0 14px; font-size:.82rem; font-weight:800; }
+    #evaluare .ev-sj { padding:10px 12px; margin:0 0 10px; border-radius:16px; background:var(--card); border:1px solid var(--line); }
+    #evaluare .ev-sj-t { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    #evaluare .ev-sj-t input { flex:1; min-width:0; min-height:38px; padding:4px 10px; font-weight:800; }
+    #evaluare .ev-sj-sum { font-weight:800; color:var(--accent); white-space:nowrap; }
+    #evaluare .ev-it { display:flex; align-items:center; gap:6px; margin:4px 0; flex-wrap:wrap; }
+    #evaluare .ev-it-n { width:22px; text-align:right; font-weight:700; color:var(--muted); }
+    #evaluare .ev-it input, #evaluare .ev-it select { width:auto; min-height:36px; padding:2px 8px; font-size:.9rem; margin:0; }
+    #evaluare .ev-pct { width:74px !important; }
+    #evaluare .ev-rasp { width:130px !important; }
+    #evaluare .ev-mic { width:auto; margin:4px 0 0; min-height:34px; padding:0 12px; font-size:.82rem; }
+    #evaluare .ev-it .ev-mic { margin:0; }
+    #evaluare .ev-of { display:flex; align-items:center; gap:10px; margin:8px 0; font-weight:700; }
+    #evaluare .ev-of input { width:80px; min-height:36px; margin:0; padding:2px 8px; }
+    #evaluare .ev-total { margin:8px 0 10px; font-weight:800; font-size:1.05rem; }
+    #evaluare .ev-total-alt { color:var(--err); }
     #evaluare .ev-card { padding:12px 14px; border-radius:16px; background:var(--card); border:1px solid var(--line); box-shadow:0 1px 2px rgba(0,0,0,.05); }
     #evaluare .ev-clasa { display:block; font-size:1.4rem; letter-spacing:-.02em; color:var(--accent); margin-bottom:6px; }
     #evaluare .ev-disc { display:flex; flex-direction:column; gap:4px; }
@@ -2327,6 +2343,78 @@
         });
         corp.appendChild(grila);
       };
+      // Baremul unei lucrări: pornește din șablon (propunere de verificat), apoi poate fi modificat liber.
+      const baremDinSablon = () => {
+        const it = (n, p, tip) => Array.from({ length: n }, () => ({ puncte: p, tip, raspuns: "" }));
+        return { oficiu: 10, subiecte: [{ nume: "Subiectul I", itemi: it(6, 5, "rezolvare") }, { nume: "Subiectul al II-lea", itemi: it(6, 5, "rezolvare") }, { nume: "Subiectul al III-lea", itemi: it(3, 10, "rezolvare") }] };
+      };
+      const nrz = (n) => String(Math.round(n * 100) / 100).replace(".", ",");
+      const lucrare = async (id, nume) => {
+        msg.textContent = ""; corp.replaceChildren(el("p", "who", "Se încarcă…"));
+        const { data: rr, error: er } = await db.rpc("evaluare_lucrare_citeste", { p_id: id });
+        const l = rr && rr[0];
+        if (er || !l) { corp.replaceChildren(); msg.textContent = "Lucrarea nu a putut fi încărcată."; return; }
+        const nou = !l.barem;
+        const b = l.barem ? JSON.parse(JSON.stringify(l.barem)) : (l.sablon === "nou" ? { oficiu: 10, subiecte: [] } : baremDinSablon());
+        corp.replaceChildren();
+        const inap = el("button", "secondary ev-inap", "← Clasa " + nume); inap.type = "button"; inap.addEventListener("click", () => clasa(nume)); corp.appendChild(inap);
+        const cap = el("div", "ev-cap"); cap.appendChild(el("b", "ev-clasa", l.titlu));
+        cap.appendChild(el("span", "who", fd(l.data_lucrarii) + " · " + (ETICHETA_SABLON[l.sablon] || l.sablon) + (l.disciplina ? " · " + l.disciplina : ""))); corp.appendChild(cap);
+        if (nou && l.sablon !== "nou") corp.appendChild(el("p", "who", "Structura de mai jos este o propunere pornită din șablon. Verific-o după modelul oficial și modific-o, apoi apasă Salvează baremul."));
+        const zona = el("div", ""), total = el("div", "ev-total");
+        const suma = () => b.subiecte.reduce((t, sj) => t + sj.itemi.reduce((u, x) => u + (Number(x.puncte) || 0), 0), 0) + (Number(b.oficiu) || 0);
+        const actTotal = () => {
+          const t = suma(); total.textContent = "Total: " + nrz(t) + " puncte" + (t === 100 ? " · nota = total ÷ 10" : " (de obicei 100)");
+          total.classList.toggle("ev-total-alt", t !== 100);
+        };
+        const nr = (v, f) => { const i = el("input", "ev-pct"); i.type = "number"; i.min = "0"; i.max = "100"; i.step = "0.5"; i.value = v; i.addEventListener("input", () => { f(i.value === "" ? 0 : Number(i.value)); actTotal(); }); return i; };
+        const deseneaza = () => {
+          zona.replaceChildren();
+          b.subiecte.forEach((sj, si) => {
+            const card = el("div", "ev-sj");
+            const top = el("div", "ev-sj-t");
+            const n = el("input", ""); n.type = "text"; n.maxLength = 60; n.value = sj.nume; n.addEventListener("input", () => { sj.nume = n.value; });
+            const sub = el("span", "ev-sj-sum", ""); const act = () => { sub.textContent = nrz(sj.itemi.reduce((u, x) => u + (Number(x.puncte) || 0), 0)) + " p"; };
+            const sj_sterge = el("button", "secondary ev-mic", "Șterge subiectul"); sj_sterge.type = "button";
+            sj_sterge.addEventListener("click", () => { if (!confirm("Ștergi „" + sj.nume + "” cu toți itemii?")) return; b.subiecte.splice(si, 1); deseneaza(); actTotal(); });
+            top.append(n, sub, sj_sterge); card.appendChild(top);
+            sj.itemi.forEach((x, ii) => {
+              const r = el("div", "ev-it"); r.appendChild(el("span", "ev-it-n", String(ii + 1)));
+              const pct = nr(x.puncte, (v) => { x.puncte = v; act(); });
+              const tip = el("select", ""); [["rezolvare", "Rezolvare"], ["grila", "Grilă"]].forEach(([k, t]) => { const o = el("option", "", t); o.value = k; tip.appendChild(o); }); tip.value = x.tip;
+              const rasp = el("input", "ev-rasp"); rasp.type = "text"; rasp.maxLength = 40; rasp.placeholder = "Răspuns corect"; rasp.value = x.raspuns || "";
+              rasp.addEventListener("input", () => { x.raspuns = rasp.value.trim(); });
+              rasp.classList.toggle("hidden", x.tip !== "grila");
+              tip.addEventListener("change", () => { x.tip = tip.value; rasp.classList.toggle("hidden", x.tip !== "grila"); });
+              const del = el("button", "secondary ev-mic", "✕"); del.type = "button"; del.setAttribute("aria-label", "Șterge itemul " + (ii + 1));
+              del.addEventListener("click", () => { sj.itemi.splice(ii, 1); deseneaza(); actTotal(); });
+              r.append(pct, tip, rasp, del); card.appendChild(r);
+            });
+            const add = el("button", "secondary ev-mic", "＋ Item"); add.type = "button";
+            add.addEventListener("click", () => { const ult = sj.itemi[sj.itemi.length - 1]; sj.itemi.push({ puncte: ult ? ult.puncte : 5, tip: ult ? ult.tip : "rezolvare", raspuns: "" }); deseneaza(); actTotal(); });
+            card.appendChild(add); act(); zona.appendChild(card);
+          });
+          const adSj = el("button", "secondary ev-mic", "＋ Subiect nou"); adSj.type = "button";
+          adSj.addEventListener("click", () => { if (b.subiecte.length >= 10) return; b.subiecte.push({ nume: "Subiectul " + (b.subiecte.length + 1), itemi: [{ puncte: 5, tip: "rezolvare", raspuns: "" }] }); deseneaza(); actTotal(); });
+          zona.appendChild(adSj);
+          const of = el("div", "ev-of"); of.appendChild(el("span", "", "Puncte din oficiu"));
+          of.appendChild(nr(b.oficiu, (v) => { b.oficiu = v; })); zona.appendChild(of);
+        };
+        deseneaza(); actTotal();
+        const salv = el("button", "ev-nou", "Salvează baremul"); salv.type = "button";
+        salv.addEventListener("click", async () => {
+          if (!b.subiecte.length) { msg.textContent = "Adaugă cel puțin un subiect."; return; }
+          if (b.subiecte.some((x) => !x.itemi.length || !x.nume.trim())) { msg.textContent = "Fiecare subiect are nevoie de un nume și de cel puțin un item."; return; }
+          b.subiecte.forEach((x) => { x.nume = x.nume.trim(); });
+          salv.disabled = true;
+          const { error: e } = await db.rpc("evaluare_barem_salveaza", { p_id: id, p_barem: b });
+          salv.disabled = false;
+          if (e) { msg.textContent = "Baremul nu a putut fi salvat. Încearcă din nou."; return; }
+          msg.className = "panel-msg ok"; msg.textContent = "Baremul a fost salvat.";
+          setTimeout(() => { if (msg.textContent === "Baremul a fost salvat.") { msg.textContent = ""; msg.className = "panel-msg"; } }, 2500);
+        });
+        corp.append(zona, total, salv);
+      };
       const clasa = async (nume) => {
         const c = clase.get(nume), disc = [...c.discipline.keys()].sort((x, y) => x.localeCompare(y, "ro"));
         msg.textContent = ""; corp.replaceChildren();
@@ -2350,7 +2438,8 @@
               if (e2) { msg.textContent = "Lucrarea nu a putut fi ștearsă."; return; }
               incarca();
             });
-            card.append(st, sterge); zonaLista.appendChild(card);
+            const deschide = el("button", "ev-deschide", "Barem"); deschide.type = "button"; deschide.addEventListener("click", () => lucrare(l.id, nume));
+            card.append(st, deschide, sterge); zonaLista.appendChild(card);
           });
         };
         nou.addEventListener("click", () => {
