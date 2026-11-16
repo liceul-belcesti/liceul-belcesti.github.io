@@ -5711,12 +5711,21 @@
       e.preventDefault();
       $("c-msg").textContent = "";
       $("c-btn").disabled = true;
-      const { error } = await db.rpc("completeaza_profil", {
+      const trimite = () => db.rpc("completeaza_profil", {
         p_nume: $("c-nume").value,
         p_calitate: $("c-calitate").value,
         p_detalii: $("c-detalii").value
       });
+      let { error } = await trimite();
+      if (error && (error.status === 401 || /JWT|expired/i.test(error.message || ""))) {
+        await db.auth.refreshSession();
+        ({ error } = await trimite());
+      }
       $("c-btn").disabled = false;
+      if (error && (error.status === 401 || /JWT|expired/i.test(error.message || ""))) {
+        $("c-msg").textContent = "Sesiunea a expirat. Apasă Renunț, intră din nou cu e-mailul și parola și completează datele.";
+        return;
+      }
       if (error) {
         $("c-msg").textContent = "Datele nu au putut fi salvate. Scrie numele și prenumele complet și încearcă din nou.";
         return;
@@ -5812,6 +5821,20 @@
           : "Autentificarea nu a reușit. Încearcă din nou sau contactează administratorul.";
         history.replaceState(null, "", location.pathname);
       }
+    })();
+
+    // Link de confirmare din e-mail (adresa școlii): confirmăm contul și intrăm direct.
+    (function () {
+      const q = new URLSearchParams(location.search);
+      const th = q.get("token_hash"), tip = q.get("type");
+      if (!th || !/^(signup|recovery|magiclink|magic_link|invite|email_change|email)$/.test(tip || "")) return;
+      history.replaceState(null, "", location.pathname);
+      db.auth.verifyOtp({ token_hash: th, type: tip === "magic_link" ? "magiclink" : tip }).then(({ error }) => {
+        if (error) {
+          mesajRamas = "Linkul din e-mail a expirat sau a fost deja folosit. Intră cu e-mail și parolă sau cere alt link.";
+          arataLogin(mesajRamas);
+        }
+      });
     })();
 
     // setTimeout: evită apelurile către Supabase direct în callback-ul de autentificare
