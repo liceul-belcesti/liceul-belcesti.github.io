@@ -693,6 +693,11 @@
     :is(#orarmeu,.orm) .oz-et { font-size:.8rem; color:var(--muted); font-weight:700; margin-right:4px; }
     :is(#orarmeu,.orm) .oz-tipar { width:auto; margin:10px 0 0; min-height:42px; padding:0 20px; border-radius:999px; background:var(--card); color:var(--text); border:0; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:700; }
     :is(#orarmeu,.orm) .oz-mic2 { color:var(--muted); font-size:.8rem; margin:10px 0 0; }
+    #evaluare .ev-grila { display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:10px; margin:8px 0; }
+    #evaluare .ev-card { padding:12px 14px; border-radius:16px; background:var(--card); border:1px solid var(--line); box-shadow:0 1px 2px rgba(0,0,0,.05); }
+    #evaluare .ev-clasa { display:block; font-size:1.4rem; letter-spacing:-.02em; color:var(--accent); margin-bottom:6px; }
+    #evaluare .ev-disc { display:flex; flex-direction:column; gap:4px; }
+    #evaluare .ev-chip { font-size:.85rem; font-weight:600; padding:4px 10px; border-radius:10px; background:color-mix(in srgb, var(--accent) 10%, var(--card)); }
     @media (prefers-reduced-motion: reduce) { :is(#orarmeu,.orm) .oz-ora, :is(#orarmeu,.orm) .oz-pill.live::before, :is(#orarmeu,.orm) .oz-zi, :is(#orarmeu,.orm) .oz-card { animation:none; transition:none; } }
     /* Calendar: navigare pe zile, avize (zi liberă, vacanță, program special, practică), agenda săptămânii */
     :is(#orarmeu,.orm) .oz-comut { margin-bottom:10px; }
@@ -1104,6 +1109,13 @@
       <div id="orar-corp"></div>
     </main>
 
+    <main id="evaluare" class="wrap hidden">
+      <button id="inapoi-evaluare" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Evaluare</h1>
+      <div id="evaluare-msg" class="panel-msg" role="alert"></div>
+      <div id="evaluare-corp"></div>
+    </main>
+
     <main id="cereri" class="wrap hidden">
       <button id="inapoi-cereri" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Cereri de învoire</h1>
@@ -1163,6 +1175,7 @@
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orarul meu"], activ: true },
+      evaluare: { ico: "✅", t: "Evaluare", d: "Teste pentru clasele și disciplinele tale", sub: ["Clasele mele"], activ: true },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul profesorilor și al claselor, tipărire", sub: ["Orarul profesorilor", "Orarul claselor"], activ: true },
       structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
       altfel:   { ico: "🎨", t: "Școala Altfel", d: "Programul săptămânii", sub: ["Programul săptămânii"] },
@@ -1172,10 +1185,10 @@
     // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "altfel", "registru"],
+      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "registru"],
       secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
-      profesor:      ["pontaj", "orarmeu", "cereri", "anunturi"],
+      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -1285,6 +1298,7 @@
       $("orar").classList.add("hidden");
       $("azi").classList.add("hidden");
       $("cereri").classList.add("hidden");
+      $("evaluare").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -1292,8 +1306,9 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare") return;
       if (cheie === "cereri") return deschideCereri();
+      if (cheie === "evaluare") return deschideEvaluare();
       if (cheie === "azi") return deschideAzi();
       if (cheie === "orar") return deschideOrar();
       if (cheie === "anunturi") return deschideAnunturi();
@@ -2250,6 +2265,37 @@
     }
 
     // ---------- Cereri de învoire (profesor): cere, vezi răspunsul, anulează ----------
+    // Evaluare: deocamdată arată clasele și disciplinele profesorului (din orarul lui, anul școlar curent).
+    $("inapoi-evaluare").addEventListener("click", arataPrincipal);
+    async function deschideEvaluare() {
+      memoreazaVedere("evaluare");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("evaluare").classList.remove("hidden");
+      const msg = $("evaluare-msg"), corp = $("evaluare-corp"); msg.textContent = ""; corp.replaceChildren(el("p", "who", "Se încarcă…"));
+      const { data, error } = await db.rpc("orar_propriu_disc");
+      if (error) { corp.replaceChildren(); msg.textContent = "Clasele nu au putut fi încărcate. Încearcă din nou."; return; }
+      corp.replaceChildren();
+      if (!data || !data.length) { corp.appendChild(el("p", "who", "Nu există încă un orar pentru contul tău. Dacă ești profesor, cere administratorului să îți lege contul de numele tău din lista de angajați.")); return; }
+      const an = data[0].an_id, rez = data.filter((r) => r.an_id === an);
+      const clase = new Map();
+      rez.forEach((r) => {
+        const c = clase.get(r.clasa) || { discipline: new Map(), ore: 0 };
+        const nume = r.complet || r.scurt || "Disciplină nespecificată";
+        c.discipline.set(nume, (c.discipline.get(nume) || 0) + 1); c.ore++;
+        clase.set(r.clasa, c);
+      });
+      const toateDisc = new Set(); clase.forEach((c) => c.discipline.forEach((_, d) => toateDisc.add(d)));
+      corp.appendChild(el("p", "who", (rez[0].denumire || "An școlar") + " · " + clase.size + (clase.size === 1 ? " clasă" : " clase") + " · " + toateDisc.size + (toateDisc.size === 1 ? " disciplină" : " discipline")));
+      const grila = el("div", "ev-grila");
+      [...clase.keys()].sort((a, b) => a.localeCompare(b, "ro", { numeric: true })).forEach((nume) => {
+        const c = clase.get(nume), card = el("div", "ev-card");
+        card.appendChild(el("b", "ev-clasa", nume));
+        const lista = el("div", "ev-disc");
+        [...c.discipline.entries()].sort((a, b) => a[0].localeCompare(b[0], "ro")).forEach(([d, n]) => lista.appendChild(el("span", "ev-chip", d + " · " + n + (n === 1 ? " oră" : " ore") + " pe săptămână")));
+        card.appendChild(lista); grila.appendChild(card);
+      });
+      corp.appendChild(grila);
+    }
     $("inapoi-cereri").addEventListener("click", arataPrincipal);
     async function deschideCereri() {
       memoreazaVedere("cereri");
@@ -5293,7 +5339,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
