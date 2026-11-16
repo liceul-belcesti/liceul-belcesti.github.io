@@ -2310,6 +2310,8 @@
       ];
       const DISC_BAC = ["Matematică", "Limba și literatura română", "Geografie"];
       const bacPermis = (cl, d) => /^12/.test(cl) && DISC_BAC.includes(d);
+      const enPermis = (cl, d) => /^(Mun|Tan)?8([^0-9]|$)/.test(cl) && ["Matematică", "Limba și literatura română"].includes(d);
+      const sablonPermis = (k, cl, d) => (k === "bac" ? bacPermis(cl, d) : k === "en" ? enPermis(cl, d) : true);
       const ETICHETA_SABLON = { en: "Evaluare Națională", bac: "Bacalaureat", nou: "Șablon nou" };
       const lista = () => {
         msg.textContent = ""; corp.replaceChildren();
@@ -2361,12 +2363,12 @@
           let selDisc = null;
           if (disc.length > 1) { f.appendChild(el("label", "", "Disciplina")); selDisc = el("select", ""); disc.forEach((d) => selDisc.appendChild(el("option", "", d))); f.appendChild(selDisc); }
           f.appendChild(el("label", "", "Șablon de barem"));
-          let sablon = "en"; const optiuni = el("div", "ev-sabl");
+          let sablon = "nou"; const optiuni = el("div", "ev-sabl");
           const deseneazaSabloane = () => {
             const dAles = selDisc ? selDisc.value : disc[0];
-            if (sablon === "bac" && !bacPermis(nume, dAles)) sablon = "en";
+            if (!sablonPermis(sablon, nume, dAles)) sablon = "nou";
             optiuni.replaceChildren();
-            SABLOANE.filter(([k]) => k !== "bac" || bacPermis(nume, dAles)).forEach(([k, t, d]) => {
+            SABLOANE.filter(([k]) => sablonPermis(k, nume, dAles)).forEach(([k, t, d]) => {
               const o = el("button", "ev-sab", ""); o.type = "button"; o.setAttribute("aria-pressed", k === sablon ? "true" : "false");
               o.append(el("b", "", t), el("span", "", d));
               o.addEventListener("click", () => { sablon = k; optiuni.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === o ? "true" : "false")); });
