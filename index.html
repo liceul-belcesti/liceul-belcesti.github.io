@@ -287,7 +287,9 @@
     #cel-editor .cutie .n-opt input, #cel-editor .cutie .n-ora input { width:auto; min-height:0; }
     #cel-editor .cutie .taie-rand { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
     #cel-editor .cutie .taie-rand button.taie { width:auto; margin:0; min-height:42px; padding:6px 14px; background:#e67700; color:#fff; border:2px solid #e67700; font-weight:800; }
-    #pontaj table.foaie-t td.zi.inv { color:#9a5b00; background:#fff0cf !important; font-weight:800; }
+    #pontaj table.foaie-t td.zi.inv { color:#9a5b00; background:#fff0cf !important; font-weight:800; position:relative; }
+    #pontaj table.foaie-t td.zi.inv.cod { background:#ffd98a !important; }
+    #pontaj table.foaie-t td.zi.inv[data-inv]::after { content:attr(data-inv); position:absolute; top:0; right:1px; font-size:.6em; line-height:1; font-weight:800; }
     #pontaj table.foaie-t td.zi.taiat { color:#b42318; background:#fde0e0 !important; font-weight:800; }
     #pontaj .ccc-rand { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:.88rem; }
     #pontaj .ccc-rand button { width:auto; min-height:34px; margin:0; padding:2px 12px; }
@@ -396,7 +398,8 @@
       #pontaj table.foaie-t thead { display:table-header-group; }
       #pontaj table.foaie-t tr { break-inside:avoid; }
       #pontaj table.foaie-t tr.tine-cu-semn { break-after:avoid; page-break-after:avoid; }
-      #pontaj table.foaie-t td.zi.inv { color:#7a4800 !important; background:#fff0cf !important; font-weight:800; }
+      #pontaj table.foaie-t td.zi.inv { color:#000 !important; background:#fff0cf !important; font-weight:800; outline:1.2pt dotted #000; outline-offset:-2pt; position:relative; }
+      #pontaj table.foaie-t td.zi.inv[data-inv]::after { content:attr(data-inv); position:absolute; top:0; right:.5pt; font-size:5.5pt; line-height:1; }
       #pontaj table.foaie-t td.zi.taiat { color:#c00000 !important; background:#fde0e0 !important; font-weight:800; }
       #pontaj table.foaie-t td.titlu.intreg { text-align:center !important; font-weight:800; padding:.4mm 0 !important; }
       #pontaj .anexa-titlu { text-align:center; font-weight:800; font-size:12pt; padding:2mm 0; }
@@ -4183,10 +4186,10 @@
       // Coloanele de la sfârșit: [titlu, cheie, mereu vizibilă]
       const COL = [["Total ore lucrate", "total", true], ["Zile lucrate", "lucr", true], ["Plata cu ora", "pco", false], ["DT", "dt", false], ["PIP", "pip", false],
         ["Concediu de odihnă", "CO", false], ["Concediu medical", "CM", false], ["Boală profesională", "BP", false], ["Accident de muncă", "AM", false], ["Maternitate", "M", false], ["Concediu creștere copil", "CCC", false],
-        ["Învoiri", "I", false], ["Obligații cetățenești", "O", false], ["Absențe nemotivate", "N", false], ["Total zile nelucrate", "nelucr", false]];
+        ["Învoiri", "I", false], ["Ore învoite", "oreI", false], ["Obligații cetățenești", "O", false], ["Absențe nemotivate", "N", false], ["Total zile nelucrate", "nelucr", false]];
       let nrRanduri = 0;
       randuri.forEach((r) => {
-          let total = 0, lucr = 0, lucrPco = 0, cuOra = 0; const cod = {}; const celule = [];
+          let total = 0, lucr = 0, lucrPco = 0, cuOra = 0, oreI = 0; const cod = {}; const celule = [];
           zile.forEach((z) => {
             const { v, man, aj, out } = arataValoare(r.n, z.t);
             const lib = foaie.libere.has(z.t); const sapt = z.dow !== 0 && z.dow !== 6;
@@ -4196,6 +4199,7 @@
             const taiat = !!(man && v && ((/^\d+$/.test(v) && Number(v) < auto) || v === "N"));
             const fp = foaie.fp.has(r.n.id + "|" + z.t);
             celule.push({ z, v, man, lib, sapt, aj, out, taiat, auto, oreN, fp });
+            if (taiat && esteInv(oreN) && /^\d+$/.test(v)) oreI += Math.max(0, auto - Number(v));
             if (v && /^\d+$/.test(v)) { total += Number(v); if (Number(v) > 0) cuOra++; }
             if (v && COD_ABSENTA.includes(v)) cod[v] = (cod[v] || 0) + 1;
             if (sapt && !lib && !out && !(taiat && v === "0") && !(v && COD_ABSENTA.includes(v))) { lucr++; if (!fp) lucrPco++; }
@@ -4203,7 +4207,7 @@
           const pc = primar.get(r.p.id + "|" + r.n.loc) === r.n ? foaie.pco.get(r.p.id + "|" + r.n.loc) : null;
           const luna = (x) => (pc && +x ? String(Math.round(Number((+x * lucrPco * 0.2).toFixed(6)))) : "");
           const doarP = !!r.n.doar_pco;
-          const val = { total: total || "", lucr: doarP ? cuOra : lucr, pco: doarP ? (total || "") : (pc ? luna(pc.pco) : ""), dt: pc ? luna(pc.dt) : "", pip: pc ? luna(pc.pip) : "" };
+          const val = { oreI: oreI || "", total: total || "", lucr: doarP ? cuOra : lucr, pco: doarP ? (total || "") : (pc ? luna(pc.pco) : ""), dt: pc ? luna(pc.dt) : "", pip: pc ? luna(pc.pip) : "" };
           // Doar plata cu ora: Total ore lucrate = suma orelor din foaie; Zile lucrate = zilele cu cel puțin o oră; DT și PIP = ore pe săptămână × (0,2 × zile lucrătoare din lună); Plata cu ora = rotunjit(DT + PIP).
           if (doarP) {
             const dtR = pc && +pc.dt ? +pc.dt * lucrPco * 0.2 : 0, pipR = pc && +pc.pip ? +pc.pip * lucrPco * 0.2 : 0;
@@ -4229,14 +4233,15 @@
           const v = coduri.length ? (coduri.find((x) => x !== "L") || coduri[0]) : nums.length ? String(nums.reduce((t, x) => t + Number(x), 0)) : null;
           return { z: c0.z, v, man: toate.some((x) => x.man), lib: c0.lib, sapt: c0.sapt, out: toate.every((x) => x.out), taiat: toate.some((x) => x.taiat), fp: toate.some((x) => x.fp), oreN: toate.map((x) => x.oreN).filter(Boolean).join(","), auto: toate.reduce((t, x) => t + (x.auto || 0), 0), aj: (toate.find((x) => x.aj && !x.man) || {}).aj };
         });
-        const val = {}; let total = 0, lucr = 0; const cod = {};
+        const val = {}; let total = 0, lucr = 0, oreI = 0; const cod = {};
         celule.forEach((c) => {
+          if (c.taiat && /(^|,)!/.test(c.oreN || "") && c.v && /^\d+$/.test(c.v)) oreI += Math.max(0, c.auto - Number(c.v));
           if (c.v && /^\d+$/.test(c.v)) total += Number(c.v);
           if (c.v && COD_ABSENTA.includes(c.v)) cod[c.v] = (cod[c.v] || 0) + 1;
           if (c.sapt && !c.lib && !c.out && !(c.taiat && c.v === "0") && !(c.v && COD_ABSENTA.includes(c.v))) lucr++;
         });
         const suma = (k) => rs.reduce((t, r) => t + (+r.val[k] || 0), 0) || "";
-        val.total = total || ""; val.lucr = rs.some((r) => r.n.doar_pco) ? Math.max(...rs.map((r) => +r.val.lucr || 0)) : lucr;
+        val.oreI = oreI || ""; val.total = total || ""; val.lucr = rs.some((r) => r.n.doar_pco) ? Math.max(...rs.map((r) => +r.val.lucr || 0)) : lucr;
         val.pco = suma("pco"); val.dt = suma("dt"); val.pip = suma("pip");
         COD_ABSENTA.forEach((c) => { val[c] = cod[c] || ""; });
         val.nelucr = COD_ABSENTA.reduce((t, c) => t + (cod[c] || 0), 0) || "";
@@ -4285,12 +4290,13 @@
           tr.appendChild(el("td", "nr", String(nr)));
           tr.appendChild(el("td", "nm", r.p.nume));
           r.celule.forEach(({ z, v, man, lib, sapt, aj, out, taiat, auto, fp, oreN }) => {
-            const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt && !out ? " lib" : "") + (out && sapt ? " afara" : "") + (taiat ? (/(^|,)!/.test(oreN || "") ? " inv" : " taiat") : "") + (fp ? " fp" : "") + (sapt && !lib && !out && foaie.vac.has(z.t) ? " vac" : "") + (man ? " man" : "") + (aj && !man ? " ajust" : "") + (v && !/^\d+$/.test(v) ? " cod" : "") + (v === "CCC" ? " ccc" : ""), v || "");
+            const td = el("td", "zi" + (!sapt ? " we" : "") + (lib && sapt && !out ? " lib" : "") + (out && sapt ? " afara" : "") + (taiat ? (/(^|,)!/.test(oreN || "") ? " inv" : " taiat") : v === "I" ? " inv" : "") + (fp ? " fp" : "") + (sapt && !lib && !out && foaie.vac.has(z.t) ? " vac" : "") + (man ? " man" : "") + (aj && !man ? " ajust" : "") + (v && !/^\d+$/.test(v) ? " cod" : "") + (v === "CCC" ? " ccc" : ""), v || "");
             if (v && /^\d+$/.test(v) && +v > MAX_ZI) { td.classList.add("depasit"); td.title = "Atenție: peste " + MAX_ZI + " ore într-o zi"; }
             if (aj && !man) td.title = "Ore ajustate" + (aj.minus ? " · − " + aj.minus + " ore de predare" : "") + (aj.plus ? " · + " + aj.plus + " ore adăugate" : "");
             if (v && COD_NUME[v]) td.title = COD_NUME[v];
             if (fp) td.title = (td.title ? td.title + " · " : "") + "Nu se numără la plata cu ora (PCO, DT, PIP)";
             if (taiat) td.title = v === "N" ? "Absență nemotivată pe toată ziua" : (/(^|,)!/.test(oreN || "") ? "Învoire aprobată la " : "Absență nemotivată la ") + (auto - Number(v)) + (auto - Number(v) === 1 ? " oră" : " ore") + " (era " + auto + " în program)";
+            if (taiat && v !== "N" && /(^|,)!/.test(oreN || "")) td.dataset.inv = "−" + (auto - Number(v));
             const lz = foaie.libere.get(z.t); if (lz && sapt) td.title = lz.motiv;
             if (editS) td.addEventListener("click", () => deschideEditor(r, z.t));
             else td.style.cursor = "default";
