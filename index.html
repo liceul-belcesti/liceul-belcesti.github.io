@@ -289,7 +289,6 @@
     #cel-editor .cutie .taie-rand button.taie { width:auto; margin:0; min-height:42px; padding:6px 14px; background:#e67700; color:#fff; border:2px solid #e67700; font-weight:800; }
     #pontaj table.foaie-t td.zi.inv { color:#9a5b00; background:#fff0cf !important; font-weight:800; position:relative; }
     #pontaj table.foaie-t td.zi.inv.cod { background:#ffd98a !important; }
-    #pontaj table.foaie-t td.zi.inv[data-inv]::after { content:attr(data-inv); position:absolute; top:0; right:1px; font-size:.6em; line-height:1; font-weight:800; }
     #pontaj table.foaie-t td.zi.taiat { color:#b42318; background:#fde0e0 !important; font-weight:800; }
     #pontaj .ccc-rand { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:.88rem; }
     #pontaj .ccc-rand button { width:auto; min-height:34px; margin:0; padding:2px 12px; }
@@ -399,7 +398,6 @@
       #pontaj table.foaie-t tr { break-inside:avoid; }
       #pontaj table.foaie-t tr.tine-cu-semn { break-after:avoid; page-break-after:avoid; }
       #pontaj table.foaie-t td.zi.inv { color:#000 !important; background:#fff0cf !important; font-weight:800; outline:1.2pt dotted #000; outline-offset:-2pt; position:relative; }
-      #pontaj table.foaie-t td.zi.inv[data-inv]::after { content:attr(data-inv); position:absolute; top:0; right:.5pt; font-size:5.5pt; line-height:1; }
       #pontaj table.foaie-t td.zi.taiat { color:#c00000 !important; background:#fde0e0 !important; font-weight:800; }
       #pontaj table.foaie-t td.titlu.intreg { text-align:center !important; font-weight:800; padding:.4mm 0 !important; }
       #pontaj .anexa-titlu { text-align:center; font-weight:800; font-size:12pt; padding:2mm 0; }
@@ -4301,7 +4299,6 @@
               else if (/(^|,)!/.test(oreN || "")) td.title = "Învoire aprobată: " + nI + orePl + " (" + oreN.replace(/(^|,)!/g, "$1").split(",").filter(Boolean).map((x) => { const [o, c] = x.split(":"); return "ora " + o + ", clasa " + c; }).join("; ") + "). Au rămas " + v + " din " + auto + " ore.";
               else td.title = "Absență nemotivată la " + nI + orePl + " (era " + auto + " în program)";
             }
-            if (taiat && v !== "N" && /(^|,)!/.test(oreN || "")) td.dataset.inv = "−" + (auto - Number(v));
             const lz = foaie.libere.get(z.t); if (lz && sapt) td.title = lz.motiv;
             if (editS) td.addEventListener("click", () => deschideEditor(r, z.t));
             else td.style.cursor = "default";
@@ -5127,7 +5124,13 @@
       const wZi = dinIso(t).getUTCDay();
       const orarZi = (foaie.orar || []).filter((o) => o.angajat_id === r.p.id && Number(o.zi) === wZi).sort((x, y) => x.ora - y.ora);
       const autoZi = Number(valoareAutomata(r.n, t)) || 0;
-      const oreSalv = (foaie.oreN.get(r.n.id + "|" + t) || "").split(",").filter(Boolean);
+      const oreBrut = (foaie.oreN.get(r.n.id + "|" + t) || "").split(",").filter(Boolean);
+      const invSalv = oreBrut.filter((x) => x.startsWith("!")).map((x) => x.replace(/^!/, ""));
+      const oreSalv = oreBrut.filter((x) => !x.startsWith("!"));
+      if (invSalv.length) {
+        const ci = el("div", "who", "Învoire aprobată din cererea de învoire: " + invSalv.map((x) => { const [o, c] = x.split(":"); return "ora " + o + ", clasa " + c; }).join("; ") + ". Au rămas " + cur.v + " din " + autoZi + " ore. Pentru a o schimba, modifică sau șterge cererea din modulul Cereri de învoire.");
+        cutie.appendChild(ci);
+      }
       const zonaN = el("div", "zona-n hidden");
       zonaN.appendChild(el("div", "who", "Absență nemotivată – alege cât a lipsit:"));
       const rb = (val, txt) => { const l = el("label", "n-opt"); const i = document.createElement("input"); i.type = "radio"; i.name = "n-fel"; i.value = val; l.append(i, document.createTextNode(" " + txt)); zonaN.appendChild(l); return i; };
