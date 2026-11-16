@@ -2112,7 +2112,7 @@
       const dinamic = async (anId, f) => {
         const [manual, inloc, ccc, pract] = await Promise.all([
           toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare").eq("zi", f).in("valoare", ABS)),
-          toate(() => db.from("pontaj_inlocuiri").select("norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore, ore_clase").is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("de_la").order("id")),
+          toate(() => db.from("pontaj_inlocuiri").select("norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore, ore_clase, partial").is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("de_la").order("id")),
           toate(() => db.from("concedii_lungi").select("angajat_id, tip, de_la, pana_la, inlocuitor_angajat_id, toate_orele, clase").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f)),
           toate(() => db.from("practica_clase").select("clasa, angajat_id, de_la, pana_la").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("clasa"))
         ]);
@@ -2123,7 +2123,7 @@
         const absent = new Map(); // angajat_id -> { motive:Set, acoperiri:[] }
         const ia = (id) => { if (!absent.has(id)) absent.set(id, { motive: new Set(), inloc: [], ccc: [] }); return absent.get(id); };
         dn.manual.forEach((x) => { const a = b.dePeNorma.get(x.norma_id); if (a) ia(a).motive.add(x.valoare); });
-        dn.inloc.forEach((q) => { const a = b.dePeNorma.get(q.norma_id); if (a) { const r = ia(a); r.motive.add(q.tip); r.inloc.push(q); } });
+        dn.inloc.forEach((q) => { if (q.partial) return; const a = b.dePeNorma.get(q.norma_id); if (a) { const r = ia(a); r.motive.add(q.tip); r.inloc.push(q); } });
         dn.ccc.forEach((c) => { const r = ia(c.angajat_id); r.motive.add(c.tip || "CCC"); r.ccc.push(c); });
         const practica = new Set(dn.pract.map((p) => p.clasa));
         const numeInl = (id, nm) => (id && b.nume.get(id)) || nm || "alt coleg";
@@ -3739,7 +3739,7 @@
           toate(() => db.from("zile_libere").select("data, motiv, tip").gte("data", start).lte("data", sfarsit).order("data")),
           db.from("pco_tabele").select("id, valabil_de").eq("an_id", anId).lte("valabil_de", start).order("valabil_de", { ascending: false }).limit(1),
           db.from("pontaj_luni").select("stare, instantaneu, nr_inregistrare, data_inregistrare").eq("an_id", anId).eq("luna", start).limit(1),
-          toate(() => db.from("pontaj_inlocuiri").select("id, norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore, ore_clase").is("sters_la", null).lte("de_la", sfarsit).gte("pana_la", start).order("de_la").order("id")),
+          toate(() => db.from("pontaj_inlocuiri").select("id, norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore, ore_clase, partial").is("sters_la", null).lte("de_la", sfarsit).gte("pana_la", start).order("de_la").order("id")),
           toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa").eq("an_id", anId).order("angajat_id").order("zi").order("ora")),
           toate(() => db.from("practica_clase").select("clasa, angajat_id, de_la, pana_la").eq("an_id", anId).is("sters_la", null).lte("de_la", sfarsit).gte("pana_la", start).order("clasa").order("de_la").order("id")),
           toate(() => db.from("structura_an").select("tip, denumire, de_la, pana_la").eq("an_id", anId).is("sters_la", null).in("tip", ["vacanta", "vacanta_mobila"]).lte("de_la", sfarsit).gte("pana_la", start).order("de_la").order("id")),
@@ -3780,6 +3780,7 @@
         });
         foaie.absente = new Map();
         D.inloc.forEach((q) => {
+          if (q.partial) return;
           for (let d = dinIso(q.de_la < start ? start : q.de_la); iso(d) <= q.pana_la && iso(d) <= sfarsit; d.setUTCDate(d.getUTCDate() + 1)) {
             const w = d.getUTCDay(), z = iso(d);
             if (w !== 0 && w !== 6 && !foaie.libere.has(z)) {
@@ -4198,7 +4199,7 @@
         lista.appendChild(d);
       });
       if (taieri.size) {
-        const ct = el("p", "det-p"); ct.appendChild(el("b", "", "Absențe nemotivate (orele și zilele de mai jos nu se numără):")); lista.appendChild(ct);
+        const ct = el("p", "det-p"); ct.appendChild(el("b", "", "Absențe nemotivate și învoiri la câteva ore (orele și zilele de mai jos nu se numără):")); lista.appendChild(ct);
         [...taieri.values()].sort((x, y) => (x.p.nume || "").localeCompare(y.p.nume || "", "ro")).forEach((a) => {
           const d = el("div", "det-pers"); d.appendChild(el("b", "", a.p.nume));
           a.zile.sort((x, y) => (x.z < y.z ? -1 : 1)).forEach(({ z, auto, v, oreN }) => {
@@ -4209,9 +4210,10 @@
             if (v === "N") {
               t = "absență nemotivată pe toată ziua – nu a fost prezent(ă) la programul școlar; ziua nu se numără" + (orarZi.length ? " (" + orarZi.map(txtOra).join("; ") + ")" : "");
             } else {
-              const lips = (oreN || "").split(",").filter(Boolean).map((x) => { const [o, c] = x.split(":"); return "ora " + o + " – clasa " + c; });
+              const inv = (oreN || "").startsWith("!");
+              const lips = (oreN || "").replace(/^!/, "").split(",").filter(Boolean).map((x) => { const [o, c] = x.split(":"); return "ora " + o + " – clasa " + c; });
               const k = auto - Number(v);
-              t = "absență nemotivată la " + (lips.length || k) + ((lips.length || k) === 1 ? " oră" : " ore") + (lips.length ? ": " + lips.join("; ") : "") + "; orele nu se numără (" + auto + " → " + v + " ore)";
+              t = inv ? "învoire aprobată la " + (lips.length || k) + ((lips.length || k) === 1 ? " oră" : " ore") + (lips.length ? ": " + lips.join("; ") : "") + "; orele nu se numără (" + auto + " → " + v + " ore)" : "absență nemotivată la " + (lips.length || k) + ((lips.length || k) === 1 ? " oră" : " ore") + (lips.length ? ": " + lips.join("; ") : "") + "; orele nu se numără (" + auto + " → " + v + " ore)";
             }
             d.appendChild(el("div", "det-zi", ZI_SC[w] + " " + dd(z) + ": " + t + "."));
           });
@@ -4856,7 +4858,7 @@
         const { error } = await db.from("pontaj_inlocuiri").update({ de_la: primul.de, pana_la: primul.pana, ore: filtrat(q.ore, primul), ore_clase: q.ore_clase ? filtrat(q.ore_clase, primul) : null }).eq("id", q.id);
         if (error) return error;
         for (const sg of buni.slice(1)) {
-          const { error: e3 } = await db.from("pontaj_inlocuiri").insert({ norma_id: q.norma_id, tip: q.tip, de_la: sg.de, pana_la: sg.pana, inlocuitor_angajat_id: q.inlocuitor_angajat_id, inlocuitor_nume: q.inlocuitor_nume, ore: filtrat(q.ore, sg), ore_clase: q.ore_clase ? filtrat(q.ore_clase, sg) : null });
+          const { error: e3 } = await db.from("pontaj_inlocuiri").insert({ norma_id: q.norma_id, tip: q.tip, de_la: sg.de, pana_la: sg.pana, inlocuitor_angajat_id: q.inlocuitor_angajat_id, inlocuitor_nume: q.inlocuitor_nume, ore: filtrat(q.ore, sg), ore_clase: q.ore_clase ? filtrat(q.ore_clase, sg) : null, partial: !!q.partial });
           if (e3) return e3;
         }
       }
