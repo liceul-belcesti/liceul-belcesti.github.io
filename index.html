@@ -937,6 +937,17 @@
     #altfel details.alt-zi { margin:6px 0; padding:6px 8px; border:1px solid var(--line); border-radius:10px; }
     #altfel details.alt-zi > summary { cursor:pointer; font-weight:700; }
     #altfel details.alt-zi strong { display:block; margin:8px 0 2px; font-size:.82rem; }
+    #altfel .ora-sel { display:flex; align-items:center; gap:6px; }
+    #altfel .ora-sel select { flex:1 1 0; min-width:0; }
+    #altfel .ora-sep { font-weight:800; }
+    #altfel details.alt-ghid { margin:8px 0; padding:8px 10px; border:1.5px solid var(--accent); border-radius:12px; background:var(--card); }
+    #altfel details.alt-ghid > summary { cursor:pointer; font-weight:800; color:var(--accent); }
+    #altfel .alt-ghid ol { margin:8px 0 4px; padding-left:20px; }
+    #altfel .alt-ghid li { margin:0 0 10px; }
+    #altfel .alt-pas { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+    #altfel .alt-chip { padding:1px 8px; border-radius:999px; font-size:.72rem; font-weight:800; border:1.5px solid var(--line); color:var(--muted); }
+    #altfel .alt-chip.gata { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+    #altfel .alt-chip.defacut { border-color:var(--err); color:var(--err); }
 </style>
 </head>
 <body>
@@ -5671,6 +5682,7 @@
       const per = (rp.data || [])[0] || null;
       if (!per) {
         antet.appendChild(el("p", "who", "Perioada pentru „" + numeTab + "” nu este introdusă în Structura anului școlar pentru " + a.denumire + ". Adaug-o acolo (fila „" + numeTab + "”), apoi revino aici."));
+        antet.appendChild(ghidAltfel(numeTab, null, new Map(), []));
         return;
       }
       const interval = per.de_la === per.pana_la ? fmtData(per.de_la) : fmtData(per.de_la) + " – " + fmtData(per.pana_la);
@@ -5678,6 +5690,7 @@
       const rez = (ra.data || []).filter((x) => x.perioada_id === per.id);
       const { data: progD } = await db.from("program_zile_altfel").select("data, sediu, nivel, de_la, pana_la").eq("perioada_id", per.id);
       const program = new Map((progD || []).map((r) => [cheieProg(r.data, r.sediu, r.nivel), r]));
+      antet.appendChild(ghidAltfel(numeTab, per, program, rez));
       antet.appendChild(panouProgramZile(a, per, program, poate, () => desenezAltfel()));
       const { data: angs } = await db.from("angajati").select("id, nume").eq("an_id", a.id).is("sters_la", null).order("nume");
       const nume = new Map((angs || []).map((x) => [x.id, x.nume]));
@@ -5790,9 +5803,8 @@
       let zi, de, pana, cl;
       if (x) box.appendChild(el("p", "who", ziRo(x.data) + " · " + x.clasa + (x.de_la || x.ora_de ? " · " + oraTxt(x) : "")));
       else {
-        zi = camp("Ziua", document.createElement("input")); zi.type = "date"; zi.min = per.de_la; zi.max = per.pana_la;
-        de = camp("De la ora", document.createElement("input")); de.type = "time";
-        pana = camp("Până la ora", document.createElement("input")); pana.type = "time";
+        zi = camp("Ziua", selectZi(per));
+        de = camp("De la ora", selectOra("De la")); pana = camp("Până la ora", selectOra("Până la"));
         cl = camp("Clasa", document.createElement("select"));
         clase.forEach((c) => cl.add(new Option(c, c)));
       }
@@ -5825,6 +5837,61 @@
       zona.appendChild(box);
       box.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    // Selector de oră în format 24 de ore (ora 08–17, minutele din 5 în 5), fără AM/PM; `value` este „HH:MM” sau gol.
+    function selectOra(eticheta) {
+      const w = el("span", "ora-sel");
+      const h = document.createElement("select"), m = document.createElement("select");
+      h.setAttribute("aria-label", eticheta + ", ora"); m.setAttribute("aria-label", eticheta + ", minutele");
+      h.add(new Option("ora", "")); for (let i = 8; i <= 17; i++) h.add(new Option(p2(i), p2(i)));
+      m.add(new Option("min", "")); for (let i = 0; i < 60; i += 5) m.add(new Option(p2(i), p2(i)));
+      w.append(h, el("span", "ora-sep", ":"), m);
+      h.addEventListener("change", () => { if (h.value && !m.value) m.value = "00"; if (!h.value) m.value = ""; });
+      Object.defineProperty(w, "value", {
+        get() { return h.value ? h.value + ":" + (m.value || "00") : ""; },
+        set(v) {
+          if (!v) { h.value = ""; m.value = ""; return; }
+          const [hh, mm] = String(v).slice(0, 5).split(":");
+          if (![...h.options].some((o) => o.value === hh)) h.add(new Option(hh, hh));
+          if (![...m.options].some((o) => o.value === mm)) m.add(new Option(mm, mm));
+          h.value = hh; m.value = mm;
+        }
+      });
+      Object.defineProperty(w, "disabled", { get() { return h.disabled; }, set(b) { h.disabled = m.disabled = !!b; } });
+      return w;
+    }
+    // Selector de zi din perioada săptămânii (în locul calendarului): „Luni, 19/10/2026”.
+    function selectZi(per) {
+      const sl = document.createElement("select");
+      sl.add(new Option("Alege ziua", ""));
+      for (let d = new Date(per.de_la + "T00:00:00Z"); d.toISOString().slice(0, 10) <= per.pana_la; d.setUTCDate(d.getUTCDate() + 1)) { const z = d.toISOString().slice(0, 10); sl.add(new Option(ziRo(z), z)); }
+      return sl;
+    }
+    // Ghid pas cu pas pentru administrator: ce are de făcut pentru a organiza și încheia săptămâna; pașii bifați se văd singuri din date.
+    function ghidAltfel(numeTab, per, program, rez) {
+      const toate = rez.length > 0 && rez.every((x) => x.stare === "completat");
+      const pasi = [
+        ["Stabilește perioada", "În „Structura anului școlar”, la fila „" + numeTab + "”, adaugă săptămâna (prima și ultima zi). Fără perioadă nu se poate face nimic mai departe.", per ? "gata" : "de făcut"],
+        ["Stabilește programul zilelor", "Deschide „Programul zilelor” (mai jos). Pentru fiecare zi alegi ora de început și de sfârșit, separat pe structuri și niveluri. „Aplică la toate” completează dintr-o dată toate rândurile zilei. Dacă o zi are programul normal, o lași goală.", per && program.size ? "gata" : "de făcut"],
+        ["Adaugă activitățile comune", "Apasă „+ Adaugă activitate”: alegi ziua, orele, clasa („Toate clasele” pentru o activitate comună), responsabilul și locul. Titlul poate rămâne gol, îl completează responsabilul.", rez.length ? "gata" : "de făcut"],
+        ["Preia orarul normal (dacă ai zile cu orar normal)", "Apasă „Preia orarul normal”, bifează zilele și clasele care țin orarul obișnuit, verifică previzualizarea și confirmă. Fiecare profesor primește câte o activitate pentru orele lui.", rez.some((x) => x.ora_de != null) ? "gata" : "opțional"],
+        ["Profesorii completează", "Fiecare profesor vede la „Activitățile tale” ce are de făcut: completează titlul, descrierea și obiectivele și își poate adăuga și activități proprii. Progresul îl urmărești în numărătoarea „completate / de completat” de mai jos.", toate ? "gata" : "de făcut"],
+        ["Verifică și corectează", "Deschide activitățile necompletate sau neclare și apasă „Modifică” pentru a le corecta. Trimiterea unei notificări către profesor urmează să fie adăugată.", "urmează"],
+        ["După săptămână: raportul", "Fiecare responsabil va completa raportul activității lui, iar tu vei vedea un raport centralizat (pe ecran, ca document și ca tabel Excel). Această parte urmează să fie adăugată.", "urmează"]
+      ];
+      const det = document.createElement("details"); det.className = "alt-ghid";
+      det.open = !per || rez.length === 0;
+      det.appendChild(el("summary", "who", "📋 Cum organizezi " + numeTab + " – pași de urmat"));
+      const ol = document.createElement("ol");
+      pasi.forEach(([t, d, st]) => {
+        const li = document.createElement("li");
+        const cap = el("div", "alt-pas"); cap.appendChild(el("strong", "", t));
+        cap.appendChild(el("span", "alt-chip " + (st === "gata" ? "gata" : st === "de făcut" ? "defacut" : "alt"), st === "gata" ? "✓ făcut" : st));
+        li.append(cap, el("div", "who", d)); ol.appendChild(li);
+      });
+      det.appendChild(ol);
+      det.appendChild(el("p", "who", "Anul școlar următor: repeți aceiași pași. Perioada și programul zilelor se stabilesc din nou pentru noul an."));
+      return det;
+    }
     // Programul școlar al fiecărei zile, pe structuri (sedii) și niveluri de învățământ; gol = program normal.
     const GRUPE_PROGRAM = [["Centru", "Grădiniță"], ["Centru", "Primar"], ["Centru", "Gimnaziu"], ["Centru", "Liceu"], ["Munteni", "Grădiniță"], ["Munteni", "Primar"], ["Munteni", "Gimnaziu"], ["Tansa", "Grădiniță"], ["Tansa", "Primar"]];
     const cheieProg = (z, sediu, nivel) => z + "|" + sediu + "|" + nivel;
@@ -5846,7 +5913,7 @@
       if (!zile.length) { box.appendChild(el("p", "who", "Perioada nu conține zile lucrătoare.")); return det; }
       box.appendChild(el("p", "who", "Stabilește ora de început și de sfârșit pentru fiecare zi, pe structuri și niveluri. Lasă gol pentru programul normal."));
       const inputuri = new Map();
-      const timp = (et) => { const i = document.createElement("input"); i.type = "time"; i.setAttribute("aria-label", et); i.disabled = !poate; return i; };
+      const timp = (et) => { const i = selectOra(et); i.disabled = !poate; return i; };
       zile.forEach((z) => {
         const zd = document.createElement("details"); zd.className = "alt-zi";
         const nrZi = GRUPE_PROGRAM.filter(([s, n]) => program.has(cheieProg(z, s, n))).length;
@@ -5992,9 +6059,8 @@
       const box = el("div", "ang-form");
       box.appendChild(el("h3", "", x ? "Modifică activitatea" : "Adaugă activitate"));
       const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
-      const zi = camp("Ziua", document.createElement("input")); zi.type = "date"; zi.min = per.de_la; zi.max = per.pana_la;
-      const de = camp("De la ora", document.createElement("input")); de.type = "time";
-      const pana = camp("Până la ora", document.createElement("input")); pana.type = "time";
+      const zi = camp("Ziua", selectZi(per));
+      const de = camp("De la ora", selectOra("De la")); const pana = camp("Până la ora", selectOra("Până la"));
       const cl = camp("Clasa", document.createElement("select"));
       cl.add(new Option("Toate clasele (activitate comună)", "Toate clasele"));
       const orar = [];
