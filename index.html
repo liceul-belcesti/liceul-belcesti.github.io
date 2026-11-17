@@ -915,7 +915,7 @@
     #altfel .ang-prog { font-size:.78rem; font-weight:700; letter-spacing:.04em; font-variant-numeric:tabular-nums; color:var(--text); }
     #altfel .ang-prog.lipsa { font-weight:500; letter-spacing:0; color:var(--err); }
     #altfel { font-size:.875rem; }
-    #altfel .mic { display:inline-flex; align-items:center; width:auto; min-height:32px; margin:0; padding:4px 10px; font:inherit; font-size:.78rem; font-weight:700; text-decoration:none;
+    #altfel .mic { display:inline-flex; align-items:center; width:auto; min-height:32px; margin:0; padding:4px 10px; font:inherit; font-size:.78rem; font-weight:700; text-decoration:none; color:var(--text); background:transparent; border:1.5px solid var(--line); border-radius:10px; cursor:pointer; }
     #altfel #altfel-tab { background:transparent; padding:0; gap:6px; margin:6px 0 10px; }
     #altfel #altfel-tab button { min-height:46px; padding:6px 4px; font-size:.9rem; font-weight:700; color:var(--accent); background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
     #altfel #altfel-tab button[aria-selected="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,.25); }
@@ -929,6 +929,10 @@
     #altfel .per-scoala_altfel, #altfel .per-saptamana_verde { border-left-color:#1565c0; } #altfel .per-zi_fara_cursuri, #altfel .per-alta { border-left-color:#757575; }
     #altfel textarea { display:block; width:100%; box-sizing:border-box; padding:8px 10px; font:inherit; font-size:.875rem; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
     #altfel h3 { margin:12px 0 4px; font-size:.9rem; }
+    #altfel label.rand-grup { display:flex; align-items:center; gap:10px; margin:0; padding:5px 0; font-size:.88rem; font-weight:600; }
+    #altfel label.rand-grup input { width:20px; min-height:20px; height:20px; margin:0; padding:0; flex:none; }
+    #altfel div.rand-grup { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:0 12px; margin:2px 0 6px; }
+    #altfel details summary { cursor:pointer; margin:4px 0; }
 </style>
 </head>
 <body>
@@ -5655,7 +5659,7 @@
       const tabSelectat = tabAltfel;
       const [rp, ra] = await Promise.all([
         db.from("structura_an").select("id, denumire, de_la, pana_la").eq("an_id", a.id).eq("tip", tabSelectat).is("sters_la", null).order("de_la").limit(1),
-        db.from("activitati_speciale").select("id, data, de_la, pana_la, clasa, titlu, descriere, obiective, responsabil_id, locul, stare, perioada_id").eq("an_id", a.id).is("sters_la", null).order("data").order("de_la")
+        db.from("activitati_speciale").select("id, data, de_la, pana_la, ora_de, ora_pana, clasa, titlu, descriere, obiective, responsabil_id, locul, stare, perioada_id").eq("an_id", a.id).is("sters_la", null).order("data").order("de_la", { nullsFirst: false }).order("ora_de", { nullsFirst: false })
       ]);
       if (tabSelectat !== tabAltfel || sel.value !== a.id) return; // între timp s-a schimbat fila sau anul
       lista.replaceChildren();
@@ -5675,6 +5679,9 @@
         const b = el("button", "", "+ Adaugă activitate"); b.type = "button";
         b.addEventListener("click", () => formAltfel(a, per, null, angs || [], reincarca));
         lista.appendChild(b);
+        const bo = el("button", "secondary", "Preia orarul normal"); bo.type = "button";
+        bo.addEventListener("click", () => formPreiaOrar(a, per, angs || [], rez, reincarca));
+        lista.appendChild(bo);
       }
       const nrc = rez.filter((x) => x.stare === "completat").length;
       lista.appendChild(el("p", "who", rez.length + (rez.length === 1 ? " activitate" : " activități") + (rez.length ? " · " + nrc + (nrc === 1 ? " completată, " : " completate, ") + (rez.length - nrc) + " de completat" : "")));
@@ -5685,7 +5692,7 @@
         const r = el("div", "ang-rand citire per-" + tabSelectat);
         const st = el("div", "");
         st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
-        const ora = x.de_la ? oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : "Ora nestabilită";
+        const ora = oraTxt(x);
         st.appendChild(el("div", "who", ora + " · " + x.clasa + (x.responsabil_id && nume.get(x.responsabil_id) ? " · " + nume.get(x.responsabil_id) : "") + (x.locul ? " · " + x.locul : "")));
         if (x.descriere) st.appendChild(el("div", "who", x.descriere));
         if (x.obiective) st.appendChild(el("div", "who", "Obiective: " + x.obiective));
@@ -5741,7 +5748,7 @@
         const r = el("div", "ang-rand citire per-" + tabSelectat);
         const st = el("div", "");
         st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
-        const ora = x.de_la ? oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : "Ora nestabilită";
+        const ora = oraTxt(x);
         st.appendChild(el("div", "who", ora + " · " + x.clasa + (x.locul ? " · " + x.locul : "")));
         if (x.descriere) st.appendChild(el("div", "who", x.descriere));
         if (x.obiective) st.appendChild(el("div", "who", "Obiective: " + x.obiective));
@@ -5773,7 +5780,7 @@
       box.appendChild(el("h3", "", x ? "Completează activitatea" : "Adaugă activitate"));
       const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
       let zi, de, pana, cl;
-      if (x) box.appendChild(el("p", "who", ziRo(x.data) + " · " + x.clasa + (x.de_la ? " · " + oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : "")));
+      if (x) box.appendChild(el("p", "who", ziRo(x.data) + " · " + x.clasa + (x.de_la || x.ora_de ? " · " + oraTxt(x) : "")));
       else {
         zi = camp("Ziua", document.createElement("input")); zi.type = "date"; zi.min = per.de_la; zi.max = per.pana_la;
         de = camp("De la ora", document.createElement("input")); de.type = "time";
@@ -5809,6 +5816,102 @@
       ctl.append(ok, nu); box.appendChild(ctl);
       zona.appendChild(box);
       box.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    const oraTxt = (x) => (x.de_la ? oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : x.ora_de ? (x.ora_pana && x.ora_pana !== x.ora_de ? "Orele " + x.ora_de + "–" + x.ora_pana : "Ora " + x.ora_de) : "Ora nestabilită");
+    // Administratorul preia orarul normal: o activitate pentru fiecare profesor, clasă și bloc de ore consecutive, în zilele alese.
+    async function formPreiaOrar(a, per, angs, existente, dupa) {
+      const zona = $("altfel-form"); zona.replaceChildren();
+      const box = el("div", "ang-form");
+      box.appendChild(el("h3", "", "Preia orarul normal"));
+      box.appendChild(el("p", "who", "Se citește orarul profesorilor și se pregătește câte o activitate pentru fiecare profesor și clasă, cu orele consecutive unite. Nu se salvează nimic până nu confirmi."));
+      zona.appendChild(box);
+      box.appendChild(el("p", "who", "Se încarcă orarul…"));
+      const orar = [];
+      for (let pg = 0; pg < 20; pg++) {
+        const { data: bucata, error } = await db.from("orar_profesori").select("angajat_id, zi, ora, clasa").eq("an_id", a.id).range(pg * 1000, pg * 1000 + 999);
+        if (error) { box.replaceChildren(el("p", "who", "Orarul nu a putut fi încărcat. Încearcă din nou.")); return; }
+        if (!bucata || !bucata.length) break;
+        orar.push(...bucata);
+        if (bucata.length < 1000) break;
+      }
+      box.replaceChildren(el("h3", "", "Preia orarul normal"));
+      if (!orar.length) { box.appendChild(el("p", "who", "Nu există orar introdus pentru " + a.denumire + ".")); return; }
+      const nume = new Map(angs.map((x) => [x.id, x.nume]));
+      const iso = (d) => d.getUTCFullYear() + "-" + p2(d.getUTCMonth() + 1) + "-" + p2(d.getUTCDate());
+      const zileData = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+      for (let d = new Date(per.de_la + "T00:00:00Z"); iso(d) <= per.pana_la; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(); if (zileData[w]) zileData[w].push(iso(d)); }
+      const ZN = { 1: "Luni", 2: "Marți", 3: "Miercuri", 4: "Joi", 5: "Vineri" };
+      const camp = (et) => { const l = el("label", "", et); box.appendChild(l); };
+      camp("Zilele cu orar normal");
+      const zr = el("div", "rand-grup"); box.appendChild(zr);
+      const zilaCb = {};
+      [1, 2, 3, 4, 5].filter((w) => zileData[w].length).forEach((w) => {
+        const l = el("label", "rand-grup"); const c = document.createElement("input"); c.type = "checkbox"; c.checked = false;
+        l.append(c, document.createTextNode(" " + ZN[w] + " (" + zileData[w].map((z) => z.slice(8, 10) + "/" + z.slice(5, 7)).join(", ") + ")")); zr.appendChild(l); zilaCb[w] = c;
+      });
+      camp("Clasele care participă");
+      const orePeClasa = new Map(); orar.forEach((r) => orePeClasa.set(r.clasa, (orePeClasa.get(r.clasa) || 0) + 1));
+      const clase = [...orePeClasa.keys()].sort((p, q) => p.localeCompare(q, "ro", { numeric: true }));
+      const ctlSel = el("div", "ctl");
+      const bPG = el("button", "secondary", "Doar primar și gimnaziu"); bPG.type = "button";
+      const bT = el("button", "secondary", "Toate"); bT.type = "button";
+      const bN = el("button", "secondary", "Niciuna"); bN.type = "button";
+      ctlSel.append(bPG, bT, bN); box.appendChild(ctlSel);
+      const cr = el("div", "rand-grup"); box.appendChild(cr);
+      const claseCb = {};
+      clase.forEach((c) => {
+        const l = el("label", "rand-grup"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = false;
+        l.append(cb, document.createTextNode(" " + c + " (" + orePeClasa.get(c) + (orePeClasa.get(c) === 1 ? " oră" : " ore") + ")")); cr.appendChild(l); claseCb[c] = cb;
+      });
+      const prev = el("div", ""); box.appendChild(prev);
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Creează activitățile"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      ctl.append(ok, nu); box.appendChild(ctl);
+      nu.addEventListener("click", () => zona.replaceChildren());
+      const cheie = (x) => [x.data, x.responsabil_id, x.clasa, x.ora_de].join("|");
+      const deja = new Set(existente.filter((x) => x.ora_de != null).map(cheie));
+      let noi = [];
+      const calculeaza = () => {
+        const grupuri = new Map();
+        orar.forEach((r) => { if (!zilaCb[r.zi] || !zilaCb[r.zi].checked || !claseCb[r.clasa] || !claseCb[r.clasa].checked) return; const k = r.angajat_id + "|" + r.zi + "|" + r.clasa; (grupuri.get(k) || grupuri.set(k, []).get(k)).push(r); });
+        noi = []; let sarite = 0;
+        grupuri.forEach((rs) => {
+          rs.sort((p, q) => p.ora - q.ora);
+          const blocuri = []; rs.forEach((r) => { const u = blocuri[blocuri.length - 1]; if (u && r.ora === u.pana + 1) u.pana = r.ora; else if (!u || r.ora !== u.pana) blocuri.push({ de: r.ora, pana: r.ora }); });
+          blocuri.forEach((bl) => zileData[rs[0].zi].forEach((z) => {
+            const rand = { data: z, responsabil_id: rs[0].angajat_id, clasa: rs[0].clasa, ora_de: bl.de, ora_pana: bl.pana };
+            if (deja.has(cheie(rand))) sarite++; else noi.push(rand);
+          }));
+        });
+        prev.replaceChildren();
+        const pePerZi = new Map(); noi.forEach((x) => pePerZi.set(x.data, (pePerZi.get(x.data) || 0) + 1));
+        const pePr = new Map(); noi.forEach((x) => pePr.set(x.responsabil_id, (pePr.get(x.responsabil_id) || 0) + 1));
+        if (!noi.length && !sarite) { prev.appendChild(el("p", "who", "Bifează zilele și clasele care urmează orarul normal.")); ok.disabled = true; ok.textContent = "Creează activitățile"; return; }
+        prev.appendChild(el("p", "who", "Previzualizare: se vor crea " + noi.length + (noi.length === 1 ? " activitate" : " activități") + ", pentru " + pePr.size + (pePr.size === 1 ? " profesor" : " profesori") + (sarite ? " · " + sarite + " există deja și sunt sărite" : "") + "."));
+        [...pePerZi.keys()].sort().forEach((z) => prev.appendChild(el("div", "who", ziRo(z) + ": " + pePerZi.get(z))));
+        if (pePr.size) {
+          const det = document.createElement("details"); det.appendChild(el("summary", "who", "Cine primește activități"));
+          [...pePr.entries()].sort((p, q) => (nume.get(p[0]) || "").localeCompare(nume.get(q[0]) || "", "ro")).forEach(([id, n]) => det.appendChild(el("div", "who", (nume.get(id) || "Angajat necunoscut") + " — " + n)));
+          prev.appendChild(det);
+        }
+        ok.disabled = !noi.length; ok.textContent = noi.length ? "Creează " + noi.length + (noi.length === 1 ? " activitate" : " activități") : "Nimic de creat";
+      };
+      box.addEventListener("change", calculeaza);
+      bPG.addEventListener("click", () => { clase.forEach((c) => { claseCb[c].checked = !/^(9|1[0-2])/.test(c); }); calculeaza(); });
+      bT.addEventListener("click", () => { clase.forEach((c) => { claseCb[c].checked = true; }); calculeaza(); });
+      bN.addEventListener("click", () => { clase.forEach((c) => { claseCb[c].checked = false; }); calculeaza(); });
+      calculeaza();
+      ok.addEventListener("click", async () => {
+        if (!noi.length) return;
+        ok.disabled = true; nu.disabled = true;
+        const randuri = noi.map((x) => ({ ...x, an_id: a.id, perioada_id: per.id, stare: "de_completat" }));
+        let eroare = null;
+        for (let i = 0; i < randuri.length && !eroare; i += 300) { const r = await db.from("activitati_speciale").insert(randuri.slice(i, i + 300)); eroare = r.error; }
+        if (eroare) { ok.disabled = false; nu.disabled = false; return mesajAlt(eroare.code === "23505" ? "Unele activități există deja. Reîncarcă ecranul și încearcă din nou." : "Activitățile nu au putut fi create. Încearcă din nou; dacă s-au creat parțial, reîncarcă ecranul."); }
+        zona.replaceChildren();
+        await dupa(); mesajAlt(randuri.length + (randuri.length === 1 ? " activitate a fost creată" : " activități au fost create") + " din orarul normal.", true);
+      });
     }
     async function formAltfel(a, per, x, angs, dupa) {
       const zona = $("altfel-form"); zona.replaceChildren();
