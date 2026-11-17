@@ -933,6 +933,7 @@
     #altfel label.rand-grup input { width:20px; min-height:20px; height:20px; margin:0; padding:0; flex:none; }
     #altfel div.rand-grup { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:0 12px; margin:2px 0 6px; }
     #altfel details summary { cursor:pointer; margin:4px 0; }
+    #altfel .alt-prog { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:2px 0 6px; }
 </style>
 </head>
 <body>
@@ -5672,6 +5673,9 @@
       const interval = per.de_la === per.pana_la ? fmtData(per.de_la) : fmtData(per.de_la) + " – " + fmtData(per.pana_la);
       antet.appendChild(el("p", "who", numeTab + " · " + interval + " · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "")));
       const rez = (ra.data || []).filter((x) => x.perioada_id === per.id);
+      const { data: progD } = await db.from("program_zile_altfel").select("data, de_la, pana_la").eq("perioada_id", per.id);
+      const program = new Map((progD || []).map((r) => [r.data, r]));
+      antet.appendChild(panouProgramZile(a, per, program, poate, () => desenezAltfel()));
       const { data: angs } = await db.from("angajati").select("id, nume").eq("an_id", a.id).is("sters_la", null).order("nume");
       const nume = new Map((angs || []).map((x) => [x.id, x.nume]));
       const reincarca = () => desenezAltfel();
@@ -5688,7 +5692,7 @@
       if (!rez.length) lista.appendChild(el("p", "who", "Nu ai introdus încă nicio activitate pentru " + numeTab + "."));
       let ziCrt = "";
       rez.forEach((x) => {
-        if (x.data !== ziCrt) { ziCrt = x.data; lista.appendChild(el("h3", "", ziRo(x.data))); }
+        if (x.data !== ziCrt) { ziCrt = x.data; lista.appendChild(el("h3", "", titluZi(x.data, program))); }
         const r = el("div", "ang-rand citire per-" + tabSelectat);
         const st = el("div", "");
         st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
@@ -5723,7 +5727,8 @@
       const tabSelectat = tabAltfel;
       const per = (sel._per || []).find((r) => r.an_id === a.id && r.tip === tabSelectat);
       if (!per) { lista.replaceChildren(); antet.appendChild(el("p", "who", "Perioada pentru „" + numeTab + "” nu a fost încă stabilită pentru " + a.denumire + ".")); return; }
-      const [rm, ro] = await Promise.all([db.rpc("altfel_ale_mele"), db.rpc("orar_propriu")]);
+      const [rm, ro, rpz] = await Promise.all([db.rpc("altfel_ale_mele"), db.rpc("orar_propriu"), db.rpc("altfel_program_zile")]);
+      const program = new Map(((rpz.data || []).filter((r) => r.perioada_id === per.id)).map((r) => [r.data, r]));
       if (tabSelectat !== tabAltfel || sel.value !== a.id) return;
       lista.replaceChildren();
       if (rm.error) return mesajAlt("Activitățile nu au putut fi încărcate. Încearcă din nou.");
@@ -5731,6 +5736,7 @@
       const mele = (rm.data || []).filter((x) => x.an_id === a.id && x.perioada_id === per.id);
       const interval = per.de_la === per.pana_la ? fmtData(per.de_la) : fmtData(per.de_la) + " – " + fmtData(per.pana_la);
       antet.appendChild(el("p", "who", numeTab + " · " + interval + " · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "")));
+      if (program.size) antet.appendChild(panouProgramZile(a, per, program, false, () => desenezAltfel()));
       const reincarca = () => desenezAltfel();
       if (!a.inchis) {
         if (clase.length) {
@@ -5744,7 +5750,7 @@
       if (!mele.length) lista.appendChild(el("p", "who", "Nu ai activități la " + numeTab + " în acest an școlar."));
       let ziCrt = "";
       mele.forEach((x) => {
-        if (x.data !== ziCrt) { ziCrt = x.data; lista.appendChild(el("h3", "", ziRo(x.data))); }
+        if (x.data !== ziCrt) { ziCrt = x.data; lista.appendChild(el("h3", "", titluZi(x.data, program))); }
         const r = el("div", "ang-rand citire per-" + tabSelectat);
         const st = el("div", "");
         st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
@@ -5816,6 +5822,49 @@
       ctl.append(ok, nu); box.appendChild(ctl);
       zona.appendChild(box);
       box.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    const titluZi = (z, program) => { const r = program && program.get(z); return ziRo(z) + (r ? " · program " + oraScurta(r.de_la) + "–" + oraScurta(r.pana_la) : ""); };
+    // Programul școlar al fiecărei zile din săptămână (de ex. începe la 11:00); gol = program normal.
+    function panouProgramZile(a, per, program, poate, dupa) {
+      const det = document.createElement("details");
+      det.appendChild(el("summary", "who", "Programul zilelor" + (program.size ? " · " + program.size + (program.size === 1 ? " zi stabilită" : " zile stabilite") : " · program normal în toate zilele")));
+      const box = el("div", "ang-form"); det.appendChild(box);
+      const zile = [];
+      for (let d = new Date(per.de_la + "T00:00:00Z"); d.toISOString().slice(0, 10) <= per.pana_la; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(); if (w !== 0 && w !== 6) zile.push(d.toISOString().slice(0, 10)); }
+      if (!zile.length) { box.appendChild(el("p", "who", "Perioada nu conține zile lucrătoare.")); return det; }
+      box.appendChild(el("p", "who", poate ? "Stabilește ora de început și de sfârșit a programului în fiecare zi. Lasă gol pentru programul normal." : "Programul stabilit pentru fiecare zi."));
+      const inputuri = new Map();
+      zile.forEach((z) => {
+        box.appendChild(el("strong", "", ziRo(z)));
+        const rand = el("div", "alt-prog");
+        const de = document.createElement("input"); de.type = "time"; de.setAttribute("aria-label", "De la, " + ziRo(z));
+        const pana = document.createElement("input"); pana.type = "time"; pana.setAttribute("aria-label", "Până la, " + ziRo(z));
+        const r = program.get(z); if (r) { de.value = oraScurta(r.de_la); pana.value = oraScurta(r.pana_la); }
+        de.disabled = pana.disabled = !poate;
+        rand.append(de, pana); box.appendChild(rand); inputuri.set(z, [de, pana]);
+      });
+      if (poate) {
+        const ok = el("button", "", "Salvează programul zilelor"); ok.type = "button";
+        ok.addEventListener("click", async () => {
+          const ups = [], gol = [];
+          for (const z of zile) {
+            const [de, pana] = inputuri.get(z);
+            if (!de.value && !pana.value) { if (program.has(z)) gol.push(z); continue; }
+            if (!de.value || !pana.value) return mesajAlt("Pentru " + ziRo(z) + " completează ambele ore sau lasă-le goale.");
+            if (pana.value <= de.value) return mesajAlt("Pentru " + ziRo(z) + ", ora de sfârșit trebuie să fie după ora de început.");
+            ups.push({ an_id: a.id, perioada_id: per.id, data: z, de_la: de.value, pana_la: pana.value });
+          }
+          ok.disabled = true;
+          let err = null;
+          if (ups.length) err = (await db.from("program_zile_altfel").upsert(ups, { onConflict: "perioada_id,data" })).error;
+          if (!err && gol.length) err = (await db.from("program_zile_altfel").delete().eq("perioada_id", per.id).in("data", gol)).error;
+          ok.disabled = false;
+          if (err) return mesajAlt("Programul nu a putut fi salvat. Încearcă din nou.");
+          await dupa(); mesajAlt("Programul zilelor a fost salvat.", true);
+        });
+        box.appendChild(ok);
+      }
+      return det;
     }
     const oraTxt = (x) => (x.de_la ? oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : x.ora_de ? (x.ora_pana && x.ora_pana !== x.ora_de ? "Orele " + x.ora_de + "–" + x.ora_pana : "Ora " + x.ora_de) : "Ora nestabilită");
     // Administratorul preia orarul normal: o activitate pentru fiecare profesor, clasă și bloc de ore consecutive, în zilele alese.
