@@ -5933,9 +5933,10 @@
       // 1. Programul implicit
       {
         const b = sectiune("Programul implicit al săptămânii" + (ctx.implicit.size ? "" : " · valori propuse, nesalvate încă"), "Valabil în toate zilele, pe structuri și niveluri. Primar dimineața 08:00–12:00, primar după-amiaza 12:00–16:00, gimnaziu 08:00–14:00 sunt valorile propuse; le poți schimba. Gol = fără program stabilit.");
-        const inp = new Map();
+        const inp = new Map(); let sediuAnt = "";
         GRUPE_PROGRAM.forEach(([s, n]) => {
-          b.appendChild(el("strong", "", s + " · " + n));
+          if (s !== sediuAnt) { const h = el("strong", "", s); h.style.display = "block"; h.style.marginTop = "10px"; h.style.fontSize = "1.05em"; b.appendChild(h); sediuAnt = s; }
+          b.appendChild(el("div", "who", n));
           const rand = el("div", "alt-prog"); const de = timp("De la, " + s + " " + n), pana = timp("Până la, " + s + " " + n);
           const v = progImplicit(ctx, s, n); if (v) { de.value = v[0]; pana.value = v[1]; }
           rand.append(de, pana); b.appendChild(rand); inp.set(cheieImp(s, n), [de, pana]);
@@ -5990,7 +5991,7 @@
           const zd = document.createElement("details"); zd.className = "alt-zi";
           const nrZi = GRUPE_PROGRAM.filter(([s, n]) => ctx.zile.has(cheieProg(z, s, n))).length;
           zd.appendChild(el("summary", "", ziRo(z) + (nrZi ? " · " + nrZi + (nrZi === 1 ? " excepție" : " excepții") : "")));
-          const rows = [];
+          const rows = []; let sediuAnt = "";
           if (poate) {
             zd.appendChild(el("div", "who", "Toate structurile și nivelurile"));
             const rt = el("div", "alt-prog"); const dt = timp("De la, toate"), pt = timp("Până la, toate"); rt.append(dt, pt); zd.appendChild(rt);
@@ -6000,7 +6001,8 @@
           }
           GRUPE_PROGRAM.forEach(([s, n]) => {
             const imp = progImplicit(ctx, s, n);
-            zd.appendChild(el("strong", "", s + " · " + n + (imp ? " (implicit " + imp[0] + "–" + imp[1] + ")" : "")));
+            if (s !== sediuAnt) { const h = el("strong", "", s); h.style.display = "block"; h.style.marginTop = "10px"; h.style.fontSize = "1.05em"; zd.appendChild(h); sediuAnt = s; }
+            zd.appendChild(el("div", "who", n + (imp ? " (implicit " + imp[0] + "–" + imp[1] + ")" : "")));
             const rand = el("div", "alt-prog");
             const de = timp("De la, " + s + " " + n + ", " + ziRo(z)), pana = timp("Până la, " + s + " " + n + ", " + ziRo(z));
             const r = ctx.zile.get(cheieProg(z, s, n)); if (r) { de.value = oraScurta(r.de_la); pana.value = oraScurta(r.pana_la); }
