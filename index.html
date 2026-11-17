@@ -486,9 +486,10 @@
     #structura { font-size:.875rem; }
     #structura .mic { display:inline-flex; align-items:center; width:auto; min-height:32px; margin:0; padding:4px 10px; font:inherit; font-size:.78rem; font-weight:700; text-decoration:none;
                    color:var(--text); background:transparent; border:1.5px solid var(--line); border-radius:10px; cursor:pointer; }
+    .tabs.t5 { grid-template-columns:repeat(5,1fr); }
     .tabs.t6 { grid-template-columns:repeat(6,1fr); }
-    @media (max-width:1000px) { .tabs.t6 { grid-template-columns:repeat(3,1fr); } }
-    @media (max-width:560px) { .tabs.t6 { grid-template-columns:1fr 1fr; } }
+    @media (max-width:1000px) { .tabs.t6, .tabs.t5 { grid-template-columns:repeat(3,1fr); } }
+    @media (max-width:560px) { .tabs.t6, .tabs.t5 { grid-template-columns:1fr 1fr; } }
     #structura #tab-str { background:transparent; padding:0; gap:6px; margin:6px 0 10px; }
     #structura #tab-str button { min-height:46px; padding:6px 4px; font-size:.9rem; font-weight:700; color:var(--accent); background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
     #structura #tab-str button[aria-selected="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,.25); }
@@ -1125,10 +1126,9 @@
         <label for="str-an" class="an-et">Anul școlar</label>
         <select id="str-an"></select>
       </div>
-      <div class="tabs t6" role="tablist" id="tab-str">
+      <div class="tabs t5" role="tablist" id="tab-str">
         <button type="button" role="tab" data-v="structura" aria-selected="true">📆 Structura anului școlar</button>
-        <button type="button" role="tab" data-v="altfel" aria-selected="false">🎨 Școala Altfel</button>
-        <button type="button" role="tab" data-v="verde" aria-selected="false">🌿 Săptămâna Verde</button>
+        <button type="button" role="tab" data-v="altfel" aria-selected="false">🎨 Școala Altfel și Săptămâna Verde</button>
         <button type="button" role="tab" data-v="practica" aria-selected="false">🛠 Practică comasată</button>
         <button type="button" role="tab" data-v="orar" aria-selected="false">🗓 Orar profesori</button>
         <button type="button" role="tab" data-v="libere" aria-selected="false">🏖 Zile libere</button>
@@ -3651,8 +3651,14 @@
       if (tabS === "orar") return incarcaOrar(a);
       const CFG = {
         structura: {},
-        altfel: { filtru: (p) => p.tip === "scoala_altfel", buton: "+ Adaugă Școala Altfel", preset: { tip: "scoala_altfel", den: "Școala Altfel", pc: true }, gol: "Nu ai introdus încă săptămâna „Școala Altfel”." },
-        verde: { filtru: (p) => p.tip === "saptamana_verde", buton: "+ Adaugă Săptămâna Verde", preset: { tip: "saptamana_verde", den: "Săptămâna Verde", pc: true }, gol: "Nu ai introdus încă Săptămâna Verde." }
+        altfel: {
+          filtru: (p) => p.tip === "scoala_altfel" || p.tip === "saptamana_verde",
+          butoane: [
+            { text: "+ Adaugă Școala Altfel", preset: { tip: "scoala_altfel", den: "Școala Altfel", pc: true } },
+            { text: "+ Adaugă Săptămâna Verde", preset: { tip: "saptamana_verde", den: "Săptămâna Verde", pc: true } }
+          ],
+          gol: "Nu ai introdus încă „Școala Altfel” și nici Săptămâna Verde."
+        }
       };
       incarcaStructura($("str-lista"), a, poate, CFG[tabS]);
     }
@@ -3815,9 +3821,11 @@
       if (error) { sec.appendChild(el("p", "who", "Structura anului școlar nu a putut fi încărcată.")); return; }
       data = cfg.filtru ? data.filter(cfg.filtru) : data;
       if (poate) {
-        const b = el("button", "", cfg.buton || "+ Adaugă perioadă"); b.type = "button";
-        b.addEventListener("click", () => formStructura(a, null, () => incarcaStructura(sec, a, poate, cfg), cfg.preset));
-        sec.appendChild(b);
+        (cfg.butoane || [{ text: cfg.buton || "+ Adaugă perioadă", preset: cfg.preset }]).forEach((bc) => {
+          const b = el("button", "", bc.text); b.type = "button";
+          b.addEventListener("click", () => formStructura(a, null, () => incarcaStructura(sec, a, poate, cfg), bc.preset));
+          sec.appendChild(b);
+        });
       }
       const nrp = data.filter((p) => p.practica_comasata).length;
       $("str-numar").textContent = data.length + (data.length === 1 ? " perioadă" : " perioade") + (cfg.filtru ? "" : " · " + nrp + " cu practică comasată") + " · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "");
@@ -3832,7 +3840,7 @@
         r.appendChild(st);
         if (poate) {
           const ed = el("button", "mic", "Modifică"); ed.type = "button";
-          ed.addEventListener("click", () => formStructura(a, p, () => incarcaStructura(sec, a, poate, cfg), cfg.preset));
+          ed.addEventListener("click", () => formStructura(a, p, () => incarcaStructura(sec, a, poate, cfg), null));
           const sterge = el("button", "mic off", "Șterge"); sterge.type = "button";
           let armat = false, timer = null;
           sterge.addEventListener("click", async () => {
