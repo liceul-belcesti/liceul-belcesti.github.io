@@ -1284,7 +1284,7 @@
       director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "registru"],
       secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
-      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "anunturi"],
+      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -1357,6 +1357,7 @@
         const t = document.createElement("div"); t.className = "t"; t.textContent = m.t; text.appendChild(t);
         (m.sub || [m.d]).forEach((x) => { const d = document.createElement("div"); d.className = "d"; d.textContent = x; text.appendChild(d); });
         if (cheie === "pontaj" && !roluri.some((r) => ["administrator", "director", "secretariat", "contabilitate"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Pontajele închise ale tale" })); }
+        if (cheie === "altfel" && !roluri.some((r) => ["administrator", "director", "secretariat"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Activitățile tale" })); }
         if (m.activ) c.append(ico, text); else c.append(soon, ico, text);
         if (cheie === "anunturi" && anunturiNoi > 0) {
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = anunturiNoi;
@@ -5630,9 +5631,15 @@
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("altfel").classList.remove("hidden");
       mesajAlt(""); $("altfel-form").replaceChildren(); $("altfel-lista").replaceChildren(el("p", "who", "Se încarcă…"));
-      const { data, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false });
-      if (error || !data.length) { $("altfel-lista").replaceChildren(); return mesajAlt("Anii școlari nu au putut fi încărcați."); }
-      const sel = $("altfel-an"); const vechi = sel.value; sel.replaceChildren();
+      let data, error, perProf = null;
+      if (poateModificaAng()) ({ data, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false }));
+      else {
+        const r = await db.rpc("altfel_perioade"); error = r.error; perProf = r.data || [];
+        const vazuti = new Map(); perProf.forEach((x) => { if (!vazuti.has(x.an_id)) vazuti.set(x.an_id, { id: x.an_id, denumire: x.an, inchis: x.an_inchis }); });
+        data = [...vazuti.values()];
+      }
+      if (error || !data.length) { $("altfel-lista").replaceChildren(); return mesajAlt(error ? "Anii școlari nu au putut fi încărcați." : "Administratorul nu a stabilit încă perioadele pentru Școala Altfel și Săptămâna Verde."); }
+      const sel = $("altfel-an"); const vechi = sel.value; sel.replaceChildren(); sel._per = perProf;
       data.forEach((x) => sel.add(new Option(x.denumire + (x.inchis ? " · închis" : ""), x.id)));
       sel.value = data.some((x) => x.id === vechi) ? vechi : (data.find((x) => x.denumire === anulScolarZilei()) || data[0]).id;
       sel._ani = data;
@@ -5642,6 +5649,7 @@
       const sel = $("altfel-an"); const a = (sel._ani || []).find((x) => x.id === sel.value); if (!a) return;
       const lista = $("altfel-lista"), antet = $("altfel-antet"); $("altfel-form").replaceChildren();
       lista.replaceChildren(el("p", "who", "Se încarcă…")); antet.replaceChildren();
+      if (!poateModificaAng()) return desenezAltfelProfesor(a);
       const poate = poateModificaAng() && !a.inchis;
       const numeTab = tabAltfel === "scoala_altfel" ? "Școala Altfel" : "Săptămâna Verde";
       const tabSelectat = tabAltfel;
@@ -5699,6 +5707,108 @@
         }
         lista.appendChild(r);
       });
+    }
+    // Profesorul își vede și completează doar activitățile lui; adăugarea și ștergerea trec prin funcții protejate din baza de date.
+    const erAltfel = (e) => (e && e.code === "P0001" && e.message ? e.message : "Operația nu a putut fi făcută. Încearcă din nou.");
+    async function desenezAltfelProfesor(a) {
+      const sel = $("altfel-an"), lista = $("altfel-lista"), antet = $("altfel-antet");
+      const numeTab = tabAltfel === "scoala_altfel" ? "Școala Altfel" : "Săptămâna Verde";
+      const tabSelectat = tabAltfel;
+      const per = (sel._per || []).find((r) => r.an_id === a.id && r.tip === tabSelectat);
+      if (!per) { lista.replaceChildren(); antet.appendChild(el("p", "who", "Perioada pentru „" + numeTab + "” nu a fost încă stabilită pentru " + a.denumire + ".")); return; }
+      const [rm, ro] = await Promise.all([db.rpc("altfel_ale_mele"), db.rpc("orar_propriu")]);
+      if (tabSelectat !== tabAltfel || sel.value !== a.id) return;
+      lista.replaceChildren();
+      if (rm.error) return mesajAlt("Activitățile nu au putut fi încărcate. Încearcă din nou.");
+      const clase = [...new Set((ro.data || []).filter((r) => r.an_id === a.id).map((r) => r.clasa))].sort((p, q) => p.localeCompare(q, "ro", { numeric: true }));
+      const mele = (rm.data || []).filter((x) => x.an_id === a.id && x.perioada_id === per.id);
+      const interval = per.de_la === per.pana_la ? fmtData(per.de_la) : fmtData(per.de_la) + " – " + fmtData(per.pana_la);
+      antet.appendChild(el("p", "who", numeTab + " · " + interval + " · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "")));
+      const reincarca = () => desenezAltfel();
+      if (!a.inchis) {
+        if (clase.length) {
+          const b = el("button", "", "+ Adaugă o activitate a mea"); b.type = "button";
+          b.addEventListener("click", () => formAltfelProfesor(a, per, null, clase, reincarca));
+          lista.appendChild(b);
+        } else lista.appendChild(el("p", "who", "Nu ai clase în orar, așa că nu poți adăuga activități proprii."));
+      }
+      const nrc = mele.filter((x) => x.stare === "completat").length;
+      lista.appendChild(el("p", "who", mele.length + (mele.length === 1 ? " activitate" : " activități") + (mele.length ? " · " + nrc + (nrc === 1 ? " completată, " : " completate, ") + (mele.length - nrc) + " de completat" : "")));
+      if (!mele.length) lista.appendChild(el("p", "who", "Nu ai activități la " + numeTab + " în acest an școlar."));
+      let ziCrt = "";
+      mele.forEach((x) => {
+        if (x.data !== ziCrt) { ziCrt = x.data; lista.appendChild(el("h3", "", ziRo(x.data))); }
+        const r = el("div", "ang-rand citire per-" + tabSelectat);
+        const st = el("div", "");
+        st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
+        const ora = x.de_la ? oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : "Ora nestabilită";
+        st.appendChild(el("div", "who", ora + " · " + x.clasa + (x.locul ? " · " + x.locul : "")));
+        if (x.descriere) st.appendChild(el("div", "who", x.descriere));
+        if (x.obiective) st.appendChild(el("div", "who", "Obiective: " + x.obiective));
+        st.appendChild(el("span", "eticheta-pc", x.stare === "completat" ? "Completat" : "De completat"));
+        r.appendChild(st);
+        if (!a.inchis) {
+          const ed = el("button", "mic", x.stare === "completat" ? "Modifică" : "Completează"); ed.type = "button";
+          ed.addEventListener("click", () => formAltfelProfesor(a, per, x, clase, reincarca));
+          r.appendChild(ed);
+          if (x.proprie) {
+            const sterge = el("button", "mic off", "Șterge"); sterge.type = "button";
+            let armat = false, timer = null;
+            sterge.addEventListener("click", async () => {
+              if (!armat) { armat = true; sterge.textContent = "Sigur?"; timer = setTimeout(() => { armat = false; sterge.textContent = "Șterge"; }, 4000); return; }
+              clearTimeout(timer); sterge.disabled = true;
+              const { error } = await db.rpc("altfel_sterge_a_mea", { p_id: x.id });
+              if (error) { mesajAlt(erAltfel(error)); sterge.disabled = false; return; }
+              await reincarca(); mesajAlt("Activitatea a fost ștearsă.", true);
+            });
+            r.appendChild(sterge);
+          }
+        }
+        lista.appendChild(r);
+      });
+    }
+    function formAltfelProfesor(a, per, x, clase, dupa) {
+      const zona = $("altfel-form"); zona.replaceChildren();
+      const box = el("div", "ang-form");
+      box.appendChild(el("h3", "", x ? "Completează activitatea" : "Adaugă activitate"));
+      const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
+      let zi, de, pana, cl;
+      if (x) box.appendChild(el("p", "who", ziRo(x.data) + " · " + x.clasa + (x.de_la ? " · " + oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : "")));
+      else {
+        zi = camp("Ziua", document.createElement("input")); zi.type = "date"; zi.min = per.de_la; zi.max = per.pana_la;
+        de = camp("De la ora", document.createElement("input")); de.type = "time";
+        pana = camp("Până la ora", document.createElement("input")); pana.type = "time";
+        cl = camp("Clasa", document.createElement("select"));
+        clase.forEach((c) => cl.add(new Option(c, c)));
+      }
+      const titlu = camp("Titlul activității", document.createElement("input")); titlu.maxLength = 150; titlu.autocomplete = "off";
+      const descr = camp("Descriere", document.createElement("textarea")); descr.rows = 3; descr.maxLength = 1000;
+      const obi = camp("Obiective", document.createElement("textarea")); obi.rows = 3; obi.maxLength = 1000;
+      const loc = camp("Locul (sală, curte, în afara școlii)", document.createElement("input")); loc.maxLength = 100; loc.autocomplete = "off";
+      if (x) { titlu.value = x.titlu || ""; descr.value = x.descriere || ""; obi.value = x.obiective || ""; loc.value = x.locul || ""; }
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", x ? "Salvează" : "Adaugă"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        if (!titlu.value.trim()) return mesajAlt("Scrie titlul activității.");
+        if (!x) {
+          if (!zi.value) return mesajAlt("Alege ziua.");
+          if (zi.value < per.de_la || zi.value > per.pana_la) return mesajAlt("Ziua trebuie să fie în perioada " + fmtData(per.de_la) + " – " + fmtData(per.pana_la) + ".");
+          if (de.value && pana.value && pana.value <= de.value) return mesajAlt("Ora de sfârșit trebuie să fie după ora de început.");
+        }
+        ok.disabled = true;
+        const { error } = x
+          ? await db.rpc("altfel_completeaza", { p_id: x.id, p_titlu: titlu.value, p_descriere: descr.value, p_obiective: obi.value, p_locul: loc.value })
+          : await db.rpc("altfel_adauga", { p_perioada: per.id, p_data: zi.value, p_de: de.value || null, p_pana: pana.value || null, p_clasa: cl.value, p_titlu: titlu.value, p_descriere: descr.value, p_obiective: obi.value, p_locul: loc.value });
+        ok.disabled = false;
+        if (error) return mesajAlt(erAltfel(error));
+        zona.replaceChildren();
+        await dupa(); mesajAlt(x ? "Activitatea a fost salvată." : "Activitatea a fost adăugată.", true);
+      });
+      ctl.append(ok, nu); box.appendChild(ctl);
+      zona.appendChild(box);
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     async function formAltfel(a, per, x, angs, dupa) {
       const zona = $("altfel-form"); zona.replaceChildren();
