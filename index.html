@@ -5688,10 +5688,15 @@
       const interval = per.de_la === per.pana_la ? fmtData(per.de_la) : fmtData(per.de_la) + " – " + fmtData(per.pana_la);
       antet.appendChild(el("p", "who", numeTab + " · " + interval + " · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "")));
       const rez = (ra.data || []).filter((x) => x.perioada_id === per.id);
-      const { data: progD } = await db.from("program_zile_altfel").select("data, sediu, nivel, de_la, pana_la").eq("perioada_id", per.id);
-      const program = new Map((progD || []).map((r) => [cheieProg(r.data, r.sediu, r.nivel), r]));
-      antet.appendChild(ghidAltfel(numeTab, per, program, rez));
-      antet.appendChild(panouProgramZile(a, per, program, poate, () => desenezAltfel()));
+      const [rz, ri, rs, claseA] = await Promise.all([
+        db.from("program_zile_altfel").select("data, sediu, nivel, de_la, pana_la").eq("perioada_id", per.id),
+        db.from("program_implicit_altfel").select("sediu, nivel, de_la, pana_la").eq("perioada_id", per.id),
+        db.from("clase_dupa_amiaza").select("clasa").eq("an_id", a.id),
+        claseAn(a)
+      ]);
+      const ctx = progCtx(rz.data || [], ri.data || [], rs.data || []);
+      antet.appendChild(ghidAltfel(numeTab, per, ctx, rez));
+      antet.appendChild(panouProgram(a, per, ctx, poate, () => desenezAltfel(), claseA));
       const { data: angs } = await db.from("angajati").select("id, nume").eq("an_id", a.id).is("sters_la", null).order("nume");
       const nume = new Map((angs || []).map((x) => [x.id, x.nume]));
       const reincarca = () => desenezAltfel();
@@ -5713,7 +5718,7 @@
         const st = el("div", "");
         st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
         const ora = oraTxt(x);
-        st.appendChild(el("div", "who", ora + " · " + x.clasa + (progClasa(program, x.data, x.clasa) ? " · " + progClasa(program, x.data, x.clasa) : "") + (x.responsabil_id && nume.get(x.responsabil_id) ? " · " + nume.get(x.responsabil_id) : "") + (x.locul ? " · " + x.locul : "")));
+        st.appendChild(el("div", "who", ora + " · " + x.clasa + (progClasa(ctx, x.data, x.clasa) ? " · " + progClasa(ctx, x.data, x.clasa) : "") + (x.responsabil_id && nume.get(x.responsabil_id) ? " · " + nume.get(x.responsabil_id) : "") + (x.locul ? " · " + x.locul : "")));
         if (x.descriere) st.appendChild(el("div", "who", x.descriere));
         if (x.obiective) st.appendChild(el("div", "who", "Obiective: " + x.obiective));
         st.appendChild(el("span", "eticheta-pc", x.stare === "completat" ? "Completat" : "De completat"));
@@ -5743,8 +5748,9 @@
       const tabSelectat = tabAltfel;
       const per = (sel._per || []).find((r) => r.an_id === a.id && r.tip === tabSelectat);
       if (!per) { lista.replaceChildren(); antet.appendChild(el("p", "who", "Perioada pentru „" + numeTab + "” nu a fost încă stabilită pentru " + a.denumire + ".")); return; }
-      const [rm, ro, rpz] = await Promise.all([db.rpc("altfel_ale_mele"), db.rpc("orar_propriu"), db.rpc("altfel_program_zile")]);
-      const program = new Map(((rpz.data || []).filter((r) => r.perioada_id === per.id)).map((r) => [cheieProg(r.data, r.sediu, r.nivel), r]));
+      const [rm, ro, rpz] = await Promise.all([db.rpc("altfel_ale_mele"), db.rpc("orar_propriu"), db.rpc("altfel_program_complet")]);
+      const rpr = rpz.data || [];
+      const ctx = progCtx(rpr.filter((r) => r.kind === "zi" && r.perioada_id === per.id), rpr.filter((r) => r.kind === "implicit" && r.perioada_id === per.id), rpr.filter((r) => r.kind === "schimb" && r.an_id === a.id));
       if (tabSelectat !== tabAltfel || sel.value !== a.id) return;
       lista.replaceChildren();
       if (rm.error) return mesajAlt("Activitățile nu au putut fi încărcate. Încearcă din nou.");
@@ -5770,7 +5776,7 @@
         const st = el("div", "");
         st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
         const ora = oraTxt(x);
-        st.appendChild(el("div", "who", ora + " · " + x.clasa + (progClasa(program, x.data, x.clasa) ? " · " + progClasa(program, x.data, x.clasa) : "") + (x.locul ? " · " + x.locul : "")));
+        st.appendChild(el("div", "who", ora + " · " + x.clasa + (progClasa(ctx, x.data, x.clasa) ? " · " + progClasa(ctx, x.data, x.clasa) : "") + (x.locul ? " · " + x.locul : "")));
         if (x.descriere) st.appendChild(el("div", "who", x.descriere));
         if (x.obiective) st.appendChild(el("div", "who", "Obiective: " + x.obiective));
         st.appendChild(el("span", "eticheta-pc", x.stare === "completat" ? "Completat" : "De completat"));
@@ -5867,11 +5873,11 @@
       return sl;
     }
     // Ghid pas cu pas pentru administrator: ce are de făcut pentru a organiza și încheia săptămâna; pașii bifați se văd singuri din date.
-    function ghidAltfel(numeTab, per, program, rez) {
+    function ghidAltfel(numeTab, per, ctx, rez) {
       const toate = rez.length > 0 && rez.every((x) => x.stare === "completat");
       const pasi = [
         ["Stabilește perioada", "În „Structura anului școlar”, la fila „" + numeTab + "”, adaugă săptămâna (prima și ultima zi). Fără perioadă nu se poate face nimic mai departe.", per ? "gata" : "de făcut"],
-        ["Stabilește programul zilelor", "Deschide „Programul zilelor” (mai jos). Pentru fiecare zi alegi ora de început și de sfârșit, separat pe structuri și niveluri. „Aplică la toate” completează dintr-o dată toate rândurile zilei. Dacă o zi are programul normal, o lași goală.", per && program.size ? "gata" : "de făcut"],
+        ["Verifică programul", "Mai jos, la „Programul implicit”, sunt propuse: primar dimineața 08:00–12:00, primar după-amiaza 12:00–16:00, gimnaziu 08:00–14:00 (poți schimba orele și le salvezi). La „Clasele de primar cu program după-amiaza” bifezi clasele care învață după-amiaza. Dacă o zi are alt program (de exemplu începe la 11:00), îl stabilești la „Excepții pe zile”.", per && (ctx.implicit.size || ctx.zile.size) ? "gata" : "de verificat"],
         ["Adaugă activitățile comune", "Apasă „+ Adaugă activitate”: alegi ziua, orele, clasa („Toate clasele” pentru o activitate comună), responsabilul și locul. Titlul poate rămâne gol, îl completează responsabilul.", rez.length ? "gata" : "de făcut"],
         ["Preia orarul normal (dacă ai zile cu orar normal)", "Apasă „Preia orarul normal”, bifează zilele și clasele care țin orarul obișnuit, verifică previzualizarea și confirmă. Fiecare profesor primește câte o activitate pentru orele lui.", rez.some((x) => x.ora_de != null) ? "gata" : "opțional"],
         ["Profesorii completează", "Fiecare profesor vede la „Activitățile tale” ce are de făcut: completează titlul, descrierea și obiectivele și își poate adăuga și activități proprii. Progresul îl urmărești în numărătoarea „completate / de completat” de mai jos.", toate ? "gata" : "de făcut"],
@@ -5885,78 +5891,143 @@
       pasi.forEach(([t, d, st]) => {
         const li = document.createElement("li");
         const cap = el("div", "alt-pas"); cap.appendChild(el("strong", "", t));
-        cap.appendChild(el("span", "alt-chip " + (st === "gata" ? "gata" : st === "de făcut" ? "defacut" : "alt"), st === "gata" ? "✓ făcut" : st));
+        cap.appendChild(el("span", "alt-chip " + (st === "gata" ? "gata" : st === "de făcut" || st === "de verificat" ? "defacut" : "alt"), st === "gata" ? "✓ făcut" : st));
         li.append(cap, el("div", "who", d)); ol.appendChild(li);
       });
       det.appendChild(ol);
       det.appendChild(el("p", "who", "Anul școlar următor: repeți aceiași pași. Perioada și programul zilelor se stabilesc din nou pentru noul an."));
       return det;
     }
-    // Programul școlar al fiecărei zile, pe structuri (sedii) și niveluri de învățământ; gol = program normal.
-    const GRUPE_PROGRAM = [["Centru", "Grădiniță"], ["Centru", "Primar"], ["Centru", "Gimnaziu"], ["Centru", "Liceu"], ["Munteni", "Grădiniță"], ["Munteni", "Primar"], ["Munteni", "Gimnaziu"], ["Tansa", "Grădiniță"], ["Tansa", "Primar"]];
-    const cheieProg = (z, sediu, nivel) => z + "|" + sediu + "|" + nivel;
+    // Programul școlar în săptămână: program implicit pe structuri (sedii) și niveluri, cu excepții pe zile.
+    const GRUPE_PROGRAM = [["Centru", "Grădiniță"], ["Centru", "Primar dimineața"], ["Centru", "Primar după-amiaza"], ["Centru", "Gimnaziu"], ["Centru", "Liceu"], ["Munteni", "Grădiniță"], ["Munteni", "Primar dimineața"], ["Munteni", "Primar după-amiaza"], ["Munteni", "Gimnaziu"], ["Tansa", "Grădiniță"], ["Tansa", "Primar dimineața"], ["Tansa", "Primar după-amiaza"]];
+    const PROGRAM_PROPUS = { "Primar dimineața": ["08:00", "12:00"], "Primar după-amiaza": ["12:00", "16:00"], "Gimnaziu": ["08:00", "14:00"] };
+    const cheieProg = (z, s, n) => z + "|" + s + "|" + n;
+    const cheieImp = (s, n) => s + "|" + n;
     // Din numele clasei: „Mun…” = Munteni, „Tan…” = Tansa, altfel Centru; clasa pregătitoare și clasele 1–4 = Primar, 5–8 = Gimnaziu, 9–12 = Liceu.
-    const grupaClasei = (c) => {
+    const grupaBaza = (c) => {
       if (!c || /^toate/i.test(c)) return null;
       const sediu = /Mun/.test(c) ? "Munteni" : /Tan/.test(c) ? "Tansa" : "Centru";
       let nivel = null;
       if (/CP/.test(c)) nivel = "Primar"; else { const m = c.match(/\d+/); const n = m ? +m[0] : 0; nivel = n >= 1 && n <= 4 ? "Primar" : n >= 5 && n <= 8 ? "Gimnaziu" : n >= 9 && n <= 12 ? "Liceu" : null; }
       return nivel ? [sediu, nivel] : null;
     };
-    const progClasa = (program, z, clasa) => { const g = grupaClasei(clasa); const r = g && program.get(cheieProg(z, g[0], g[1])); return r ? "program " + oraScurta(r.de_la) + "–" + oraScurta(r.pana_la) : ""; };
-    function panouProgramZile(a, per, program, poate, dupa) {
-      const det = document.createElement("details");
-      det.appendChild(el("summary", "who", "Programul zilelor" + (program.size ? " · " + program.size + (program.size === 1 ? " program stabilit" : " programe stabilite") : " · program normal peste tot")));
-      const box = el("div", "ang-form"); det.appendChild(box);
-      const zile = [];
-      for (let d = new Date(per.de_la + "T00:00:00Z"); d.toISOString().slice(0, 10) <= per.pana_la; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(); if (w !== 0 && w !== 6) zile.push(d.toISOString().slice(0, 10)); }
-      if (!zile.length) { box.appendChild(el("p", "who", "Perioada nu conține zile lucrătoare.")); return det; }
-      box.appendChild(el("p", "who", "Stabilește ora de început și de sfârșit pentru fiecare zi, pe structuri și niveluri. Lasă gol pentru programul normal."));
-      const inputuri = new Map();
-      const timp = (et) => { const i = selectOra(et); i.disabled = !poate; return i; };
-      zile.forEach((z) => {
-        const zd = document.createElement("details"); zd.className = "alt-zi";
-        const nrZi = GRUPE_PROGRAM.filter(([s, n]) => program.has(cheieProg(z, s, n))).length;
-        zd.appendChild(el("summary", "", ziRo(z) + (nrZi ? " · " + nrZi + (nrZi === 1 ? " program" : " programe") : "")));
-        const rows = [];
-        if (poate) {
-          const tl = el("div", "who", "Toate structurile și nivelurile"); zd.appendChild(tl);
-          const rt = el("div", "alt-prog"); const dt = timp("De la, toate"), pt = timp("Până la, toate"); rt.append(dt, pt); zd.appendChild(rt);
-          const ap = el("button", "secondary", "Aplică la toate"); ap.type = "button";
-          ap.addEventListener("click", () => rows.forEach(([d2, p2]) => { d2.value = dt.value; p2.value = pt.value; }));
-          zd.appendChild(ap);
-        }
-        GRUPE_PROGRAM.forEach(([s, n]) => {
-          zd.appendChild(el("strong", "", s + " · " + n));
-          const rand = el("div", "alt-prog");
-          const de = timp("De la, " + s + " " + n + ", " + ziRo(z)), pana = timp("Până la, " + s + " " + n + ", " + ziRo(z));
-          const r = program.get(cheieProg(z, s, n)); if (r) { de.value = oraScurta(r.de_la); pana.value = oraScurta(r.pana_la); }
-          rand.append(de, pana); zd.appendChild(rand); inputuri.set(cheieProg(z, s, n), [de, pana]); rows.push([de, pana]);
-        });
-        box.appendChild(zd);
-      });
-      if (poate) {
-        const ok = el("button", "", "Salvează programul zilelor"); ok.type = "button";
-        ok.addEventListener("click", async () => {
-          const ups = [], gol = [];
-          for (const z of zile) for (const [s, n] of GRUPE_PROGRAM) {
-            const k = cheieProg(z, s, n), [de, pana] = inputuri.get(k);
-            if (!de.value && !pana.value) { if (program.has(k)) gol.push({ z, s, n }); continue; }
-            if (!de.value || !pana.value) return mesajAlt(ziRo(z) + ", " + s + " " + n + ": completează ambele ore sau lasă-le goale.");
-            if (pana.value <= de.value) return mesajAlt(ziRo(z) + ", " + s + " " + n + ": ora de sfârșit trebuie să fie după ora de început.");
-            ups.push({ an_id: a.id, perioada_id: per.id, data: z, sediu: s, nivel: n, de_la: de.value, pana_la: pana.value });
-          }
-          ok.disabled = true;
-          let err = null;
-          if (ups.length) err = (await db.from("program_zile_altfel").upsert(ups, { onConflict: "perioada_id,data,sediu,nivel" })).error;
-          for (const g of gol) { if (err) break; err = (await db.from("program_zile_altfel").delete().eq("perioada_id", per.id).eq("data", g.z).eq("sediu", g.s).eq("nivel", g.n)).error; }
-          ok.disabled = false;
-          if (err) return mesajAlt("Programul nu a putut fi salvat. Încearcă din nou.");
-          await dupa(); mesajAlt("Programul zilelor a fost salvat.", true);
-        });
-        box.appendChild(ok);
+    const grupaClasei = (c, schimb) => { const g = grupaBaza(c); if (!g) return null; return g[1] === "Primar" ? [g[0], schimb && schimb.has(c) ? "Primar după-amiaza" : "Primar dimineața"] : g; };
+    const progCtx = (zile, implicit, schimb) => ({ zile: new Map(zile.map((r) => [cheieProg(r.data, r.sediu, r.nivel), r])), implicit: new Map(implicit.map((r) => [cheieImp(r.sediu, r.nivel), r])), schimb: new Set(schimb.map((r) => r.clasa)) });
+    const progImplicit = (ctx, s, n) => { if (ctx.implicit.size) { const r = ctx.implicit.get(cheieImp(s, n)); return r ? [oraScurta(r.de_la), oraScurta(r.pana_la)] : null; } return PROGRAM_PROPUS[n] || null; };
+    const progEfectiv = (ctx, z, s, n) => { const r = ctx.zile.get(cheieProg(z, s, n)); return r ? [oraScurta(r.de_la), oraScurta(r.pana_la)] : progImplicit(ctx, s, n); };
+    const progClasa = (ctx, z, clasa) => { const g = grupaClasei(clasa, ctx.schimb); const r = g && progEfectiv(ctx, z, g[0], g[1]); return r ? "program " + r[0] + "–" + r[1] : ""; };
+    async function claseAn(a) {
+      const orar = [];
+      for (let pg = 0; pg < 20; pg++) {
+        const { data: bucata } = await db.from("orar_profesori").select("clasa").eq("an_id", a.id).range(pg * 1000, pg * 1000 + 999);
+        if (!bucata || !bucata.length) break;
+        orar.push(...bucata); if (bucata.length < 1000) break;
       }
-      return det;
+      return [...new Set(orar.map((r) => r.clasa).filter(Boolean))].sort((p, q) => p.localeCompare(q, "ro", { numeric: true }));
+    }
+    function panouProgram(a, per, ctx, poate, dupa, clase) {
+      const tot = el("div", "");
+      const timp = (et) => { const i = selectOra(et); i.disabled = !poate; return i; };
+      const sectiune = (titlu, explicatie) => { const d = document.createElement("details"); d.appendChild(el("summary", "who", titlu)); const b = el("div", "ang-form"); d.appendChild(b); if (explicatie) b.appendChild(el("p", "who", explicatie)); tot.appendChild(d); return b; };
+      const termina = async (err, mesaj) => { if (err) return mesajAlt("Datele nu au putut fi salvate. Încearcă din nou."); await dupa(); mesajAlt(mesaj, true); };
+      // 1. Programul implicit
+      {
+        const b = sectiune("Programul implicit al săptămânii" + (ctx.implicit.size ? "" : " · valori propuse, nesalvate încă"), "Valabil în toate zilele, pe structuri și niveluri. Primar dimineața 08:00–12:00, primar după-amiaza 12:00–16:00, gimnaziu 08:00–14:00 sunt valorile propuse; le poți schimba. Gol = fără program stabilit.");
+        const inp = new Map();
+        GRUPE_PROGRAM.forEach(([s, n]) => {
+          b.appendChild(el("strong", "", s + " · " + n));
+          const rand = el("div", "alt-prog"); const de = timp("De la, " + s + " " + n), pana = timp("Până la, " + s + " " + n);
+          const v = progImplicit(ctx, s, n); if (v) { de.value = v[0]; pana.value = v[1]; }
+          rand.append(de, pana); b.appendChild(rand); inp.set(cheieImp(s, n), [de, pana]);
+        });
+        if (poate) {
+          const ok = el("button", "", "Salvează programul implicit"); ok.type = "button";
+          ok.addEventListener("click", async () => {
+            const ups = [], gol = [];
+            for (const [s, n] of GRUPE_PROGRAM) {
+              const k = cheieImp(s, n), [de, pana] = inp.get(k);
+              if (!de.value && !pana.value) { if (ctx.implicit.has(k)) gol.push([s, n]); continue; }
+              if (!de.value || !pana.value) return mesajAlt(s + " " + n + ": completează ambele ore sau lasă-le goale.");
+              if (pana.value <= de.value) return mesajAlt(s + " " + n + ": ora de sfârșit trebuie să fie după ora de început.");
+              ups.push({ an_id: a.id, perioada_id: per.id, sediu: s, nivel: n, de_la: de.value, pana_la: pana.value });
+            }
+            ok.disabled = true; let err = null;
+            if (ups.length) err = (await db.from("program_implicit_altfel").upsert(ups, { onConflict: "perioada_id,sediu,nivel" })).error;
+            for (const [s, n] of gol) { if (err) break; err = (await db.from("program_implicit_altfel").delete().eq("perioada_id", per.id).eq("sediu", s).eq("nivel", n)).error; }
+            ok.disabled = false; termina(err, "Programul implicit a fost salvat.");
+          });
+          b.appendChild(ok);
+        }
+      }
+      // 2. Clasele de după-amiază
+      {
+        const primare = clase.filter((c) => { const g = grupaBaza(c); return g && g[1] === "Primar"; });
+        const b = sectiune("Clasele de primar care au program după-amiaza" + (ctx.schimb.size ? " · " + ctx.schimb.size : ""), "Bifează clasele care învață după-amiaza în acest an școlar. Restul claselor de primar sunt considerate de dimineață.");
+        const cb = new Map(); const g = el("div", "rand-grup");
+        primare.forEach((c) => { const l = el("label", "rand-grup"); const i = document.createElement("input"); i.type = "checkbox"; i.checked = ctx.schimb.has(c); i.disabled = !poate; l.append(i, document.createTextNode(" " + c)); g.appendChild(l); cb.set(c, i); });
+        b.appendChild(g);
+        if (!primare.length) b.appendChild(el("p", "who", "Nu există clase de primar în orarul acestui an."));
+        if (poate && primare.length) {
+          const ok = el("button", "", "Salvează clasele de după-amiază"); ok.type = "button";
+          ok.addEventListener("click", async () => {
+            const noi = primare.filter((c) => cb.get(c).checked && !ctx.schimb.has(c)), scoase = primare.filter((c) => !cb.get(c).checked && ctx.schimb.has(c));
+            ok.disabled = true; let err = null;
+            if (noi.length) err = (await db.from("clase_dupa_amiaza").insert(noi.map((c) => ({ an_id: a.id, clasa: c })))).error;
+            if (!err && scoase.length) err = (await db.from("clase_dupa_amiaza").delete().eq("an_id", a.id).in("clasa", scoase)).error;
+            ok.disabled = false; termina(err, "Clasele de după-amiază au fost salvate.");
+          });
+          b.appendChild(ok);
+        }
+      }
+      // 3. Excepții pe zile
+      {
+        const b = sectiune("Excepții pe zile" + (ctx.zile.size ? " · " + ctx.zile.size : ""), "Dacă într-o zi programul este altul decât cel implicit (de exemplu începe la 11:00), stabilește-l aici. Gol = programul implicit.");
+        const zile = [];
+        for (let d = new Date(per.de_la + "T00:00:00Z"); d.toISOString().slice(0, 10) <= per.pana_la; d.setUTCDate(d.getUTCDate() + 1)) { const w = d.getUTCDay(); if (w !== 0 && w !== 6) zile.push(d.toISOString().slice(0, 10)); }
+        if (!zile.length) { b.appendChild(el("p", "who", "Perioada nu conține zile lucrătoare.")); }
+        const inputuri = new Map();
+        zile.forEach((z) => {
+          const zd = document.createElement("details"); zd.className = "alt-zi";
+          const nrZi = GRUPE_PROGRAM.filter(([s, n]) => ctx.zile.has(cheieProg(z, s, n))).length;
+          zd.appendChild(el("summary", "", ziRo(z) + (nrZi ? " · " + nrZi + (nrZi === 1 ? " excepție" : " excepții") : "")));
+          const rows = [];
+          if (poate) {
+            zd.appendChild(el("div", "who", "Toate structurile și nivelurile"));
+            const rt = el("div", "alt-prog"); const dt = timp("De la, toate"), pt = timp("Până la, toate"); rt.append(dt, pt); zd.appendChild(rt);
+            const ap = el("button", "secondary", "Aplică la toate"); ap.type = "button";
+            ap.addEventListener("click", () => rows.forEach(([d2, p2]) => { d2.value = dt.value; p2.value = pt.value; }));
+            zd.appendChild(ap);
+          }
+          GRUPE_PROGRAM.forEach(([s, n]) => {
+            const imp = progImplicit(ctx, s, n);
+            zd.appendChild(el("strong", "", s + " · " + n + (imp ? " (implicit " + imp[0] + "–" + imp[1] + ")" : "")));
+            const rand = el("div", "alt-prog");
+            const de = timp("De la, " + s + " " + n + ", " + ziRo(z)), pana = timp("Până la, " + s + " " + n + ", " + ziRo(z));
+            const r = ctx.zile.get(cheieProg(z, s, n)); if (r) { de.value = oraScurta(r.de_la); pana.value = oraScurta(r.pana_la); }
+            rand.append(de, pana); zd.appendChild(rand); inputuri.set(cheieProg(z, s, n), [de, pana]); rows.push([de, pana]);
+          });
+          b.appendChild(zd);
+        });
+        if (poate && zile.length) {
+          const ok = el("button", "", "Salvează excepțiile pe zile"); ok.type = "button";
+          ok.addEventListener("click", async () => {
+            const ups = [], gol = [];
+            for (const z of zile) for (const [s, n] of GRUPE_PROGRAM) {
+              const k = cheieProg(z, s, n), [de, pana] = inputuri.get(k);
+              if (!de.value && !pana.value) { if (ctx.zile.has(k)) gol.push({ z, s, n }); continue; }
+              if (!de.value || !pana.value) return mesajAlt(ziRo(z) + ", " + s + " " + n + ": completează ambele ore sau lasă-le goale.");
+              if (pana.value <= de.value) return mesajAlt(ziRo(z) + ", " + s + " " + n + ": ora de sfârșit trebuie să fie după ora de început.");
+              ups.push({ an_id: a.id, perioada_id: per.id, data: z, sediu: s, nivel: n, de_la: de.value, pana_la: pana.value });
+            }
+            ok.disabled = true; let err = null;
+            if (ups.length) err = (await db.from("program_zile_altfel").upsert(ups, { onConflict: "perioada_id,data,sediu,nivel" })).error;
+            for (const g of gol) { if (err) break; err = (await db.from("program_zile_altfel").delete().eq("perioada_id", per.id).eq("data", g.z).eq("sediu", g.s).eq("nivel", g.n)).error; }
+            ok.disabled = false; termina(err, "Excepțiile pe zile au fost salvate.");
+          });
+          b.appendChild(ok);
+        }
+      }
+      return tot;
     }
     const oraTxt = (x) => (x.de_la ? oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : x.ora_de ? (x.ora_pana && x.ora_pana !== x.ora_de ? "Orele " + x.ora_de + "–" + x.ora_pana : "Ora " + x.ora_de) : "Ora nestabilită");
     // Administratorul preia orarul normal: o activitate pentru fiecare profesor, clasă și bloc de ore consecutive, în zilele alese.
