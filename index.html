@@ -896,7 +896,40 @@
     #pontaj .ang-form .nr .prog .zi { display:flex; flex-direction:column; align-items:center; gap:2px; margin:0; font-size:.7rem; font-weight:700; color:var(--muted); }
     #pontaj .ang-form .nr .prog input { grid-column:auto; width:46px; min-height:38px; padding:4px 2px; text-align:center; font-size:.9rem; }
     #pontaj .ang-form .nr .prog .mic { align-self:flex-end; min-height:38px; }
-  </style>
+      #altfel .hello { font-size:1.2rem; margin:0 0 2px; }
+    #altfel .back { min-height:34px; margin:0 0 8px; padding:4px 12px; font-size:.85rem; }
+    #altfel .an-bara { display:flex; align-items:center; gap:8px; margin:4px 0 8px; }
+    #altfel .an-et { margin:0; font-size:.8rem; white-space:nowrap; color:var(--muted); }
+    #altfel .an-bara select { min-height:38px; padding:4px 10px; font-size:.9rem; }
+    #altfel .who { margin:4px 0; font-size:.78rem; }
+    #altfel .ang-rand { min-height:34px; padding:6px 10px; margin-bottom:3px; border-radius:8px; font-size:.875rem; }
+    #altfel .ang-info { font-size:.75rem; }
+    #altfel .ang-form { padding:10px; margin:6px 0; }
+    #altfel .ang-form h3 { margin:0 0 4px; font-size:.95rem; }
+    #altfel .ang-form label { margin:8px 0 3px; font-size:.78rem; }
+    #altfel .ang-form input, #altfel .ang-form select { min-height:38px; padding:4px 10px; font-size:.875rem; }
+    #altfel .ang-form button { min-height:36px; font-size:.82rem; margin-top:8px; }
+    #altfel .ang-form .ctl button { margin-top:0; }
+    #altfel .panel-msg { margin:6px 0; padding:8px 10px; font-size:.85rem; }
+    #altfel .mic.hidden { display:none; }
+    #altfel .ang-prog { font-size:.78rem; font-weight:700; letter-spacing:.04em; font-variant-numeric:tabular-nums; color:var(--text); }
+    #altfel .ang-prog.lipsa { font-weight:500; letter-spacing:0; color:var(--err); }
+    #altfel { font-size:.875rem; }
+    #altfel .mic { display:inline-flex; align-items:center; width:auto; min-height:32px; margin:0; padding:4px 10px; font:inherit; font-size:.78rem; font-weight:700; text-decoration:none;
+    #altfel #altfel-tab { background:transparent; padding:0; gap:6px; margin:6px 0 10px; }
+    #altfel #altfel-tab button { min-height:46px; padding:6px 4px; font-size:.9rem; font-weight:700; color:var(--accent); background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
+    #altfel #altfel-tab button[aria-selected="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,.25); }
+    #altfel .ang-rand { border-left:5px solid var(--line); }
+    #altfel .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
+    #altfel .orar-t { border-collapse:collapse; width:100%; min-width:560px; font-size:.9rem; }
+    #altfel .orar-t th, #altfel .orar-t td { border:1px solid var(--line); padding:8px 4px; text-align:center; }
+    #altfel .orar-t td.plin { background:color-mix(in srgb, var(--accent) 22%, var(--card)); font-weight:700; }
+    #altfel .orar-t thead th { background:var(--bg); }
+    #altfel .per-cursuri { border-left-color:#2e7d32; } #altfel .per-vacanta, #altfel .per-vacanta_mobila { border-left-color:#ef6c00; }
+    #altfel .per-scoala_altfel, #altfel .per-saptamana_verde { border-left-color:#1565c0; } #altfel .per-zi_fara_cursuri, #altfel .per-alta { border-left-color:#757575; }
+    #altfel textarea { display:block; width:100%; box-sizing:border-box; padding:8px 10px; font:inherit; font-size:.875rem; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
+    #altfel h3 { margin:12px 0 4px; font-size:.9rem; }
+</style>
 </head>
 <body>
   <!-- AUTENTIFICARE -->
@@ -1139,6 +1172,23 @@
       <div id="str-lista"></div>
     </main>
 
+    <main id="altfel" class="wrap hidden">
+      <button id="inapoi-altfel" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Școala Altfel și Săptămâna Verde</h1>
+      <div class="an-bara">
+        <label for="altfel-an" class="an-et">Anul școlar</label>
+        <select id="altfel-an"></select>
+      </div>
+      <div class="tabs" role="tablist" id="altfel-tab">
+        <button type="button" role="tab" data-v="scoala_altfel" aria-selected="true">🎨 Școala Altfel</button>
+        <button type="button" role="tab" data-v="saptamana_verde" aria-selected="false">🌿 Săptămâna Verde</button>
+      </div>
+      <div id="altfel-msg" class="panel-msg" role="status"></div>
+      <div id="altfel-antet"></div>
+      <div id="altfel-form"></div>
+      <div id="altfel-lista"></div>
+    </main>
+
     <main id="anunturi" class="wrap hidden">
       <button id="inapoi-anunturi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Anunțuri</h1>
@@ -1224,7 +1274,7 @@
       evaluare: { ico: "✅", t: "Evaluare", d: "Teste pentru clasele și disciplinele tale", sub: ["Clasele mele"], activ: true },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul profesorilor și al claselor, tipărire", sub: ["Orarul profesorilor", "Orarul claselor"], activ: true },
       structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
-      altfel:   { ico: "🎨", t: "Școala Altfel și Săptămâna Verde", d: "Programul celor două săptămâni", sub: ["Școala Altfel", "Săptămâna Verde"] },
+      altfel:   { ico: "🎨", t: "Școala Altfel și Săptămâna Verde", d: "Programul celor două săptămâni", sub: ["Școala Altfel", "Săptămâna Verde"], activ: true },
       registru: { ico: "📁", t: "Registratură", d: "Documente și numere de înregistrare", sub: ["Documente", "Numere de înregistrare"] },
       catalog:  { ico: "📘", t: "Situație școlară", d: "Note și absențe", sub: ["Note", "Absențe"] }
     };
@@ -1232,7 +1282,7 @@
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
       director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "registru"],
-      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "registru"],
+      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
       profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
@@ -1345,6 +1395,7 @@
       $("azi").classList.add("hidden");
       $("cereri").classList.add("hidden");
       $("evaluare").classList.add("hidden");
+      $("altfel").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -1352,8 +1403,9 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare" && cheie !== "altfel") return;
       if (cheie === "cereri") return deschideCereri();
+      if (cheie === "altfel") return deschideAltfel();
       if (cheie === "evaluare") return deschideEvaluare();
       if (cheie === "azi") return deschideAzi();
       if (cheie === "orar") return deschideOrar();
@@ -5559,9 +5611,155 @@
     $("ang-cauta").addEventListener("input", deseneazaAngajati);
     $("ang-loc").addEventListener("change", deseneazaAngajati);
 
+    // ---------- Școala Altfel și Săptămâna Verde ----------
+    let tabAltfel = "scoala_altfel";
+    const mesajAlt = (text, ok) => { $("altfel-msg").textContent = text || ""; $("altfel-msg").className = "panel-msg" + (ok ? " ok" : ""); };
+    const ZILE_RO = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+    const ziRo = (z) => ZILE_RO[new Date(z + "T00:00:00Z").getUTCDay()] + ", " + z.split("-").reverse().join("/");
+    const oraScurta = (t) => (t || "").slice(0, 5);
+    $("inapoi-altfel").addEventListener("click", arataPrincipal);
+    $("altfel-tab").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button[data-v]"); if (!b) return;
+      tabAltfel = b.dataset.v;
+      $("altfel-tab").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+      mesajAlt(""); desenezAltfel();
+    });
+    $("altfel-an").addEventListener("change", desenezAltfel);
+    async function deschideAltfel() {
+      memoreazaVedere("altfel");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("altfel").classList.remove("hidden");
+      mesajAlt(""); $("altfel-form").replaceChildren(); $("altfel-lista").replaceChildren(el("p", "who", "Se încarcă…"));
+      const { data, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false });
+      if (error || !data.length) { $("altfel-lista").replaceChildren(); return mesajAlt("Anii școlari nu au putut fi încărcați."); }
+      const sel = $("altfel-an"); const vechi = sel.value; sel.replaceChildren();
+      data.forEach((x) => sel.add(new Option(x.denumire + (x.inchis ? " · închis" : ""), x.id)));
+      sel.value = data.some((x) => x.id === vechi) ? vechi : (data.find((x) => x.denumire === anulScolarZilei()) || data[0]).id;
+      sel._ani = data;
+      desenezAltfel();
+    }
+    async function desenezAltfel() {
+      const sel = $("altfel-an"); const a = (sel._ani || []).find((x) => x.id === sel.value); if (!a) return;
+      const lista = $("altfel-lista"), antet = $("altfel-antet"); $("altfel-form").replaceChildren();
+      lista.replaceChildren(el("p", "who", "Se încarcă…")); antet.replaceChildren();
+      const poate = poateModificaAng() && !a.inchis;
+      const numeTab = tabAltfel === "scoala_altfel" ? "Școala Altfel" : "Săptămâna Verde";
+      const tabSelectat = tabAltfel;
+      const [rp, ra] = await Promise.all([
+        db.from("structura_an").select("id, denumire, de_la, pana_la").eq("an_id", a.id).eq("tip", tabSelectat).is("sters_la", null).order("de_la").limit(1),
+        db.from("activitati_speciale").select("id, data, de_la, pana_la, clasa, titlu, descriere, obiective, responsabil_id, locul, stare, perioada_id").eq("an_id", a.id).is("sters_la", null).order("data").order("de_la")
+      ]);
+      if (tabSelectat !== tabAltfel || sel.value !== a.id) return; // între timp s-a schimbat fila sau anul
+      lista.replaceChildren();
+      if (rp.error || ra.error) return mesajAlt("Datele nu au putut fi încărcate. Încearcă din nou.");
+      const per = (rp.data || [])[0] || null;
+      if (!per) {
+        antet.appendChild(el("p", "who", "Perioada pentru „" + numeTab + "” nu este introdusă în Structura anului școlar pentru " + a.denumire + ". Adaug-o acolo (fila „" + numeTab + "”), apoi revino aici."));
+        return;
+      }
+      const interval = per.de_la === per.pana_la ? fmtData(per.de_la) : fmtData(per.de_la) + " – " + fmtData(per.pana_la);
+      antet.appendChild(el("p", "who", numeTab + " · " + interval + " · " + a.denumire + (a.inchis ? " · an închis, doar consultare" : "")));
+      const rez = (ra.data || []).filter((x) => x.perioada_id === per.id);
+      const { data: angs } = await db.from("angajati").select("id, nume").eq("an_id", a.id).is("sters_la", null).order("nume");
+      const nume = new Map((angs || []).map((x) => [x.id, x.nume]));
+      const reincarca = () => desenezAltfel();
+      if (poate) {
+        const b = el("button", "", "+ Adaugă activitate"); b.type = "button";
+        b.addEventListener("click", () => formAltfel(a, per, null, angs || [], reincarca));
+        lista.appendChild(b);
+      }
+      const nrc = rez.filter((x) => x.stare === "completat").length;
+      lista.appendChild(el("p", "who", rez.length + (rez.length === 1 ? " activitate" : " activități") + (rez.length ? " · " + nrc + (nrc === 1 ? " completată, " : " completate, ") + (rez.length - nrc) + " de completat" : "")));
+      if (!rez.length) lista.appendChild(el("p", "who", "Nu ai introdus încă nicio activitate pentru " + numeTab + "."));
+      let ziCrt = "";
+      rez.forEach((x) => {
+        if (x.data !== ziCrt) { ziCrt = x.data; lista.appendChild(el("h3", "", ziRo(x.data))); }
+        const r = el("div", "ang-rand citire per-" + tabSelectat);
+        const st = el("div", "");
+        st.appendChild(el("strong", "", x.titlu || "(titlu de completat)"));
+        const ora = x.de_la ? oraScurta(x.de_la) + (x.pana_la ? "–" + oraScurta(x.pana_la) : "") : "Ora nestabilită";
+        st.appendChild(el("div", "who", ora + " · " + x.clasa + (x.responsabil_id && nume.get(x.responsabil_id) ? " · " + nume.get(x.responsabil_id) : "") + (x.locul ? " · " + x.locul : "")));
+        if (x.descriere) st.appendChild(el("div", "who", x.descriere));
+        if (x.obiective) st.appendChild(el("div", "who", "Obiective: " + x.obiective));
+        st.appendChild(el("span", "eticheta-pc", x.stare === "completat" ? "Completat" : "De completat"));
+        r.appendChild(st);
+        if (poate) {
+          const ed = el("button", "mic", "Modifică"); ed.type = "button";
+          ed.addEventListener("click", () => formAltfel(a, per, x, angs || [], reincarca));
+          const sterge = el("button", "mic off", "Șterge"); sterge.type = "button";
+          let armat = false, timer = null;
+          sterge.addEventListener("click", async () => {
+            if (!armat) { armat = true; sterge.textContent = "Sigur?"; timer = setTimeout(() => { armat = false; sterge.textContent = "Șterge"; }, 4000); return; }
+            clearTimeout(timer); sterge.disabled = true;
+            const { error } = await db.from("activitati_speciale").update({ sters_la: new Date().toISOString() }).eq("id", x.id);
+            if (error) { mesajAlt("Activitatea nu a putut fi ștearsă."); sterge.disabled = false; return; }
+            await reincarca(); mesajAlt("Activitatea a fost ștearsă.", true);
+          });
+          r.append(ed, sterge);
+        }
+        lista.appendChild(r);
+      });
+    }
+    async function formAltfel(a, per, x, angs, dupa) {
+      const zona = $("altfel-form"); zona.replaceChildren();
+      const box = el("div", "ang-form");
+      box.appendChild(el("h3", "", x ? "Modifică activitatea" : "Adaugă activitate"));
+      const camp = (et, input) => { const l = el("label", "", et); box.appendChild(l); box.appendChild(input); return input; };
+      const zi = camp("Ziua", document.createElement("input")); zi.type = "date"; zi.min = per.de_la; zi.max = per.pana_la;
+      const de = camp("De la ora", document.createElement("input")); de.type = "time";
+      const pana = camp("Până la ora", document.createElement("input")); pana.type = "time";
+      const cl = camp("Clasa", document.createElement("select"));
+      cl.add(new Option("Toate clasele (activitate comună)", "Toate clasele"));
+      const orar = [];
+      for (let pg = 0; pg < 10; pg++) {
+        const { data: bucata } = await db.from("orar_profesori").select("clasa").eq("an_id", a.id).range(pg * 1000, pg * 1000 + 999);
+        if (!bucata || !bucata.length) break;
+        orar.push(...bucata);
+        if (bucata.length < 1000) break;
+      }
+      const clase = [...new Set(orar.map((r) => r.clasa).filter(Boolean))].sort((p, q) => p.localeCompare(q, "ro", { numeric: true }));
+      clase.forEach((c) => cl.add(new Option(c, c)));
+      if (x && ![...cl.options].some((o) => o.value === x.clasa)) cl.add(new Option(x.clasa, x.clasa));
+      const titlu = camp("Titlul activității (poate fi completat și de profesor)", document.createElement("input")); titlu.maxLength = 150; titlu.autocomplete = "off";
+      const descr = camp("Descriere", document.createElement("textarea")); descr.rows = 3; descr.maxLength = 1000;
+      const obi = camp("Obiective", document.createElement("textarea")); obi.rows = 3; obi.maxLength = 1000;
+      const resp = camp("Responsabil", document.createElement("select"));
+      resp.add(new Option("— nealocat —", ""));
+      angs.forEach((p) => resp.add(new Option(p.nume, p.id)));
+      const loc = camp("Locul (sală, curte, în afara școlii)", document.createElement("input")); loc.maxLength = 100; loc.autocomplete = "off";
+      if (x) { zi.value = x.data; de.value = oraScurta(x.de_la); pana.value = oraScurta(x.pana_la); cl.value = x.clasa; titlu.value = x.titlu || ""; descr.value = x.descriere || ""; obi.value = x.obiective || ""; resp.value = x.responsabil_id || ""; loc.value = x.locul || ""; }
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", x ? "Salvează" : "Adaugă"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        if (!zi.value) return mesajAlt("Alege ziua.");
+        if (zi.value < per.de_la || zi.value > per.pana_la) return mesajAlt("Ziua trebuie să fie în perioada " + fmtData(per.de_la) + " – " + fmtData(per.pana_la) + ".");
+        if (de.value && pana.value && pana.value <= de.value) return mesajAlt("Ora de sfârșit trebuie să fie după ora de început.");
+        const t = titlu.value.trim(), d = descr.value.trim(), o = obi.value.trim();
+        const rand = {
+          data: zi.value, de_la: de.value || null, pana_la: pana.value || null, clasa: cl.value,
+          titlu: t || null, descriere: d || null, obiective: o || null,
+          responsabil_id: resp.value || null, locul: loc.value.trim() || null,
+          stare: t && d && o ? "completat" : "de_completat"
+        };
+        ok.disabled = true;
+        const { error } = x ? await db.from("activitati_speciale").update(rand).eq("id", x.id)
+          : await db.from("activitati_speciale").insert({ ...rand, an_id: a.id, perioada_id: per.id });
+        ok.disabled = false;
+        if (error) return mesajAlt("Activitatea nu a putut fi salvată. Încearcă din nou.");
+        zona.replaceChildren();
+        await dupa(); mesajAlt(x ? "Activitatea a fost modificată." : "Activitatea a fost adăugată.", true);
+      });
+      ctl.append(ok, nu); box.appendChild(ctl);
+      zona.replaceChildren();
+      zona.appendChild(box);
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi-altfel", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
