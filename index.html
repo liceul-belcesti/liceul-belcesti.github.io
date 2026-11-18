@@ -344,7 +344,8 @@
     .clopot-meniu button { width:100%; margin:0; text-align:left; background:transparent; color:var(--text); border:0; padding:10px 12px; min-height:44px; font-weight:700; }
     .bar #bar-pontaj { display:flex; gap:8px; }
     .bar #bar-pontaj.hidden { display:none; }
-    .bar #bar-pontaj #btn-admin { background:#fff; color:var(--accent); border:0; font-weight:800; }
+    .bar #btn-admin { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; background:#fff; color:var(--accent); border:0; font-weight:800; }
+    .bar #btn-admin.hidden { display:none; }
     .bar #bar-pontaj #btn-pco { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); font-weight:800; }
     .bar .bar-user { text-align:right; line-height:1.2; font-size:.85rem; font-weight:700; min-width:0; }
     .bar .bar-user small { display:block; font-weight:400; opacity:.85; font-size:.74rem; }
@@ -452,7 +453,6 @@
     #pontaj .pco-val input { width:68px; min-height:36px; padding:2px 6px; font-size:.9rem; text-align:right; }
     #pontaj .pco-rand.activ { border-color:var(--accent); }
     #pontaj #pco-cauta { min-height:38px; padding:4px 10px; font-size:.875rem; margin:4px 0; }
-    #pontaj #btn-admin { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; }
     #pontaj .an-bara { display:flex; align-items:center; gap:8px; margin:4px 0 8px; }
     #pontaj .an-et { margin:0; font-size:.8rem; white-space:nowrap; color:var(--muted); }
     #pontaj .an-bara select { min-height:38px; padding:4px 10px; font-size:.9rem; }
@@ -1092,9 +1092,9 @@
       <div class="name">Spațiul virtual al școlii<small>Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești</small></div>
       <div class="bar-dreapta">
         <button id="clopot" class="clopot hidden" type="button" aria-label="Anunțuri noi">🔔<span id="clopot-nr" class="clopot-nr hidden"></span></button>
+        <button id="btn-admin" class="hidden" type="button">⚙ Administrare</button>
         <div id="bar-pontaj" class="hidden">
           <button id="btn-pco" class="secondary" type="button">Plata cu ora</button>
-          <button id="btn-admin" type="button">⚙ Administrare</button>
         </div>
         <div id="bar-user" class="bar-user"><span id="bar-email"></span><small id="bar-functie"></small></div>
         <button id="iesire" type="button">Ieși din cont</button>
@@ -1185,7 +1185,7 @@
         <div id="pco-lista"></div>
       </div>
       <div id="administrare" class="hidden">
-      <button id="inapoi-admin" class="back" type="button">← Pontaj</button>
+      <button id="inapoi-admin" class="back" type="button">← Înapoi</button>
       <h3 class="sect">Administrare</h3>
       <div id="an-actiuni" class="an-actiuni hidden">
         <button id="an-nou" class="secondary" type="button">+ Anul școlar nou</button>
@@ -1359,7 +1359,7 @@
       utilizatori: { ico: "👥", t: "Utilizatori", d: "Aprobă conturi și atribuie roluri", sub: ["Conturi în așteptare", "Roluri"], activ: true },
       azi:      { ico: "🏫", t: "Azi în școală", d: "Cine lipsește, ore neacoperite, suplinitori, practică", sub: ["Situația zilei"], activ: true },
       cereri:   { ico: "📝", t: "Cereri de învoire", d: "Cere o învoire și vezi răspunsul", sub: ["Cererile mele"], activ: true },
-      pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora", "Administrare"], activ: true },
+      pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orarul meu"], activ: true },
       evaluare: { ico: "✅", t: "Evaluare", d: "Teste pentru clasele și disciplinele tale", sub: ["Clasele mele"], activ: true },
@@ -1433,6 +1433,7 @@
     function deseneazaModule(roluri) {
       const zona = $("module");
       zona.replaceChildren();
+      $("btn-admin").classList.toggle("hidden", !roluri.some((r) => ["administrator", "director", "secretariat", "contabilitate"].includes(r)));
       moduleleMele(roluri).forEach((cheie) => {
         const m = MODULE[cheie];
         const c = document.createElement("div");
@@ -3331,21 +3332,30 @@
     const anulScolarZilei = () => { const d = new Date(); const y = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; return y + "–" + (y + 1); };
 
     // Profesorul (fără drepturi de pontaj) vede doar propriile pontaje închise, fără modificări.
-    let modPropriu = false, inchiseMele = [];
-    async function deschidePontaj() {
-      modPropriu = !poatePontaj() && euRoluri.includes("profesor");
+    let modPropriu = false, inchiseMele = [], modAdmin = false;
+    // Administrare: ecran de sine stătător (angajați, ani școlari, diriginți), deschis din butonul permanent din antet.
+    async function deschideAdministrare() {
+      if (!poatePontaj()) return;
+      memoreazaVedere("administrare");
+      arataPrincipal(true);
+      return deschidePontaj(true);
+    }
+    async function deschidePontaj(admin) {
+      modAdmin = admin === true;
+      modPropriu = !modAdmin && !poatePontaj() && euRoluri.includes("profesor");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("pontaj").classList.remove("hidden");
       $("pontaj").classList.toggle("mod-propriu", modPropriu);
+      $("pontaj").classList.toggle("mod-admin", modAdmin);
       $("info-profesor").classList.toggle("hidden", !modPropriu);
-      document.querySelector("#pontaj .hello").textContent = modPropriu ? "Pontajul meu" : "Pontaj";
+      document.querySelector("#pontaj .hello").textContent = modAdmin ? "Administrare" : modPropriu ? "Pontajul meu" : "Pontaj";
       mesajPontaj("");
       $("ang-form-loc").replaceChildren();
       $("an-nou-form").classList.add("hidden");
       $("an-actiuni").classList.toggle("hidden", !poateAni());
-      $("administrare").classList.add("hidden");
-      $("pont-principal").classList.remove("hidden");
-      $("btn-admin").classList.toggle("hidden", modPropriu); $("btn-pco").classList.toggle("hidden", modPropriu);
+      $("administrare").classList.toggle("hidden", !modAdmin);
+      $("pont-principal").classList.toggle("hidden", modAdmin);
+      $("btn-pco").classList.toggle("hidden", modPropriu);
       $("plata-ora").classList.add("hidden");
       await incarcaAni();
     }
@@ -4159,6 +4169,7 @@
       sel.value = lunaSel;
     }
     async function incarcaFoaie() {
+      if (modAdmin) return;
       const cont = $("foaie");
       if (!anId || !anCurent()) { cont.replaceChildren(); return; }
       pregatesteLuni();
@@ -5450,14 +5461,14 @@
 
     $("btn-pco").addEventListener("click", () => {
       $("pont-principal").classList.add("hidden");
-      $("btn-admin").classList.add("hidden"); $("btn-pco").classList.add("hidden");
+      $("btn-pco").classList.add("hidden");
       $("plata-ora").classList.remove("hidden");
       mesajPontaj("");
       incarcaPCO();
     });
     $("inapoi-pco").addEventListener("click", () => {
       $("plata-ora").classList.add("hidden");
-      $("btn-admin").classList.remove("hidden"); $("btn-pco").classList.remove("hidden");
+      $("btn-pco").classList.remove("hidden");
       $("pont-principal").classList.remove("hidden");
       $("pco-form-loc").replaceChildren();
       mesajPontaj("");
@@ -6384,7 +6395,7 @@
       pas("Scutirile", "La fila „Scutiri” treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
       const arePers = c.zone.some((z) => z.tip === "fix") ? c.persoane.some((p) => p.tip === "pool") : true;
       pas("Persoanele stabilite", "La fila „Zone și clase”, la zona sălii de sport apasă „Persoane” și adaugă profesorii care pot face serviciu acolo; la zonele cu profesori poți adăuga persoane cu prioritate (de exemplu cei de la ateliere); la zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
-      pas("Graficul pe pauze", "La fila „Grafic” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Dirigintele clasei (trecut la Pontaj → Administrare → Diriginți) are prioritate la zona clasei lui. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
+      pas("Graficul pe pauze", "La fila „Grafic” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Dirigintele clasei (trecut la Administrare → Diriginți) are prioritate la zona clasei lui. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
       pas("Profesorii își văd serviciul", "Fiecare va vedea în „Orarul meu” când și unde este de serviciu.", "urmeaza");
       det.appendChild(ol); return det;
     }
@@ -7089,7 +7100,7 @@
       function sincronizeaza() {
         let gasit = false;
         lista.forEach((x) => { const arata = !gasit && vizibil(x.p); if (arata) gasit = true; x.b.style.display = arata ? "" : "none"; });
-        $("bar-pontaj").classList.toggle("hidden", !vizibil($("pontaj")));
+        $("bar-pontaj").classList.toggle("hidden", !vizibil($("pontaj")) || vizibil($("administrare")));
       }
       // Săgeata „înapoi” a browserului merge la ecranul anterior din platformă, nu la pagina Google.
       const cheie = () => { const x = lista.find((y) => vizibil(y.p)); return x ? x.b.id : ""; };
@@ -7120,20 +7131,11 @@
       sincronizeaza();
     })();
     $("inapoi-pontaj").addEventListener("click", arataPrincipal);
-    $("btn-admin").addEventListener("click", () => {
-      $("pont-principal").classList.add("hidden");
-      $("btn-admin").classList.add("hidden"); $("btn-pco").classList.add("hidden");
-      $("administrare").classList.remove("hidden");
-      mesajPontaj("");
-      incarcaTab();
-    });
+    $("btn-admin").addEventListener("click", deschideAdministrare);
     $("inapoi-admin").addEventListener("click", () => {
-      $("administrare").classList.add("hidden");
-      $("btn-admin").classList.remove("hidden"); $("btn-pco").classList.remove("hidden");
-      $("pont-principal").classList.remove("hidden");
       $("ang-form-loc").replaceChildren();
       mesajPontaj("");
-      incarcaFoaie();
+      arataPrincipal();
     });
 
     $("activ-ca").addEventListener("change", () => {
@@ -7213,7 +7215,8 @@
       $("bar-email").textContent = sesiune.user.email; $("bar-functie").textContent = $("rol").textContent;
       pregatesteComutator();
       let v = ""; try { v = sessionStorage.getItem("vedere") || ""; } catch (e) {}
-      if (v && moduleleMele(euRoluri).includes(v) && MODULE[v] && MODULE[v].activ) deschideModul(v);
+      if (v === "administrare" && poatePontaj()) deschideAdministrare();
+      else if (v && moduleleMele(euRoluri).includes(v) && MODULE[v] && MODULE[v].activ) deschideModul(v);
     }
 
     const ETICHETA_DETALII = {
