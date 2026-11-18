@@ -6383,7 +6383,7 @@
       pas("Zonele și clasele lor", "La fila „Zone și clase” definești pentru fiecare structură corpurile și zonele (parter, etaj), cine le supraveghează și clasele din fiecare zonă. Corpurile legate între ele primesc aceeași grupă.", c.zone.length ? (faraZona.length ? "defacut" : "gata") : "defacut");
       pas("Scutirile", "La fila „Scutiri” treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
       const arePers = c.zone.some((z) => z.tip === "fix") ? c.persoane.some((p) => p.tip === "pool") : true;
-      pas("Persoanele stabilite", "La fila „Zone și clase”, la zona sălii de sport apasă „Persoane” și adaugă profesorii care pot face serviciu acolo; la zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
+      pas("Persoanele stabilite", "La fila „Zone și clase”, la zona sălii de sport apasă „Persoane” și adaugă profesorii care pot face serviciu acolo; la zonele cu profesori poți adăuga persoane cu prioritate (de exemplu cei de la ateliere); la zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
       pas("Graficul pe pauze", "La fila „Grafic” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Dirigintele clasei (trecut la Pontaj → Administrare → Diriginți) are prioritate la zona clasei lui. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
       pas("Profesorii își văd serviciul", "Fiecare va vedea în „Orarul meu” când și unde este de serviciu.", "urmeaza");
       det.appendChild(ol); return det;
@@ -6411,8 +6411,8 @@
           st.appendChild(el("div", "ang-info", TIP_ZONA[z.tip] + " · " + nr));
           st.appendChild(el("div", "ang-info", "Clase: " + (cl.length ? cl.join(", ") : "—")));
           if (z.grupa_corp !== z.corp) st.appendChild(el("div", "ang-info", "Legat cu: " + z.grupa_corp));
-          const pz = c.persoane.filter((p) => p.zona_id === z.id && (p.tip === "pool" || p.tip === "rotatie_dimineata"));
-          if (pz.length) st.appendChild(el("div", "ang-info", "Persoane: " + pz.map((p) => ((c.angs.find((x) => x.id === p.angajat_id) || {}).nume || "?") + (p.pana_la ? " (până la " + p.pana_la + ")" : "")).join(", ")));
+          const pz = c.persoane.filter((p) => p.zona_id === z.id && (p.tip === "pool" || p.tip === "rotatie_dimineata" || p.tip === "prioritar"));
+          if (pz.length) st.appendChild(el("div", "ang-info", (z.tip === "profesori" ? "Cu prioritate: " : "Persoane: ") + pz.map((p) => ((c.angs.find((x) => x.id === p.angajat_id) || {}).nume || "?") + (p.pana_la ? " (până la " + p.pana_la + ")" : "")).join(", ")));
           else if (z.tip === "fix") st.appendChild(el("div", "ang-info", "Persoane: niciuna încă – apasă „Persoane”"));
           r.appendChild(st);
           if (c.poate) {
@@ -6424,7 +6424,7 @@
               const { error } = await db.from("serviciu_zone").delete().eq("id", z.id);
               if (error) return mesajServ("Zona nu a putut fi ștearsă."); mesajServ("Zona a fost ștearsă.", true); desenezServiciu();
             });
-            ac.append(m); if (z.tip !== "profesori") ac.appendChild(pe); ac.appendChild(d); r.appendChild(ac);
+            ac.append(m, pe); ac.appendChild(d); r.appendChild(ac);
           }
           lista.appendChild(r);
         });
@@ -6623,6 +6623,9 @@
       const scutiti = new Set(d.scutiti.map((x) => x.angajat_id));
       const fixe = d.fixe || [];
       const dirDe = new Map((d.diriginti || []).map((x) => [x.clasa, x.angajat_id]));
+      // Persoane cu prioritate la o zonă (de exemplu cei de la ateliere): ora lor contează oriunde în sediu.
+      const prioZ = new Map();
+      d.persoane.filter((p) => p.tip === "prioritar" && !scutiti.has(p.angajat_id)).forEach((p) => (prioZ.get(p.zona_id) || prioZ.set(p.zona_id, new Set()).get(p.zona_id)).add(p.angajat_id));
       const zoneCl = new Map(d.zone.map((z) => [z.id, new Set()]));
       d.clase.forEach((x) => zoneCl.has(x.zona_id) && zoneCl.get(x.zona_id).add(x.clasa));
       const grup = (z) => z.sediu + "|" + z.grupa_corp;
@@ -6653,11 +6656,18 @@
       // Ore ale persoanei la clasele chiar din zona respectivă (nu doar din corpul legat).
       const oreZona = (t, z) => { let n = 0; zoneCl.get(z.id).forEach((c) => { const v = orePeClasa.get(c) && orePeClasa.get(c).get(t); if (v) n += v.n; }); return n; };
       const faraZona = (t, z) => (oreZona(t, z) ? 0 : 1);
+      // Potrivirea unei persoane cu o zonă: bonus pentru cei cu prioritate, penalizare pentru ceilalți când zona are persoane prioritare.
+      const pot = (t, z, wa, wz) => {
+        const pr = prioZ.get(z.id);
+        if (pr && pr.has(t)) return -25;
+        return wa * (1 - afin(t, grup(z))) + wz * faraZona(t, z) + (pr && pr.size ? 14 : 0);
+      };
       // Dirigintele unei clase din zonă are prioritate la zona clasei lui.
       const dirZona = (t, z) => { let da = 0; zoneCl.get(z.id).forEach((c) => { if (dirDe.get(c) === t) da = 1; }); return da; };
       // Cât de potrivită este o persoană la o pauză: 0 = are oră înainte și după în zonă, 3 = fereastră între ore în zonă.
       const tier = (t, s) => {
-        const cg = claseDe(s.z), cz = zoneCl.get(s.z.id), fix = s.z.tip === "fix";
+        const pr = prioZ.get(s.z.id), priT = !!(pr && pr.has(t));
+        const cg = priT ? claseSediu.get(s.z.sediu) : claseDe(s.z), cz = zoneCl.get(s.z.id), fix = s.z.tip === "fix" || priT;
         const a = cl(t, s.zi, s.k), b = cl(t, s.zi, s.k + 1), ia = !!(a && cg.has(a)), ib = !!(b && cg.has(b));
         if (ia && ib) return (fix || cz.has(a) || cz.has(b)) ? 0 : 1;
         if (ia || ib) return 2;
@@ -6680,7 +6690,7 @@
       const sloturi = [];
       d.zone.filter((z) => z.tip === "profesori" || z.tip === "fix").forEach((z) => { for (let zi = 1; zi <= 5; zi++) for (let k = 1; k <= 5; k++) for (let i = 0; i < z.nr_supraveghetori; i++) sloturi.push({ z, zi, k, lay: i, cand: new Map(), who: null, locked: false }); });
       sloturi.forEach((s) => {
-        const ids = s.z.tip === "fix" ? [...poolZ.get(s.z.id)].filter((t) => classAt.has(t)) : [...classAt.keys()].filter((t) => !scutiti.has(t) && !salaPool.has(t) && oreGrup(t, grup(s.z)) > 0);
+        const ids = s.z.tip === "fix" ? [...poolZ.get(s.z.id)].filter((t) => classAt.has(t)) : [...new Set([...classAt.keys()].filter((t) => !scutiti.has(t) && !salaPool.has(t) && oreGrup(t, grup(s.z)) > 0).concat([...(prioZ.get(s.z.id) || [])].filter((t) => classAt.has(t) && !salaPool.has(t))))];
         ids.forEach((t) => { const tr = tier(t, s); if (tr >= 0) s.cand.set(t, tr); });
         s.candArr = [...s.cand.keys()];
       });
@@ -6744,7 +6754,7 @@
         let best = null, bs = 1e9;
         s.cand.forEach((tr, t) => {
           if (ocupat(t, s.zi, s.k) || ziL(t, s.zi) >= PLAFON_ZI || incarcare(t) >= MAX_PAUZE) return;
-          const sc = tr * 3 + 10 * incarcare(t) / Math.max(1, tintaDe(t)) + 20 * (1 - afin(t, grup(s.z))) + 14 * faraZona(t, s.z) - 10 * dirZona(t, s.z);
+          const sc = tr * 3 + 10 * incarcare(t) / Math.max(1, tintaDe(t)) + pot(t, s.z, 20, 14) - 10 * dirZona(t, s.z);
           if (sc < bs || (sc === bs && numeDe(t).localeCompare(numeDe(best), "ro") < 0)) { bs = sc; best = t; }
         });
         if (best) { put(s, best); return true; }
@@ -6776,7 +6786,7 @@
           arr.sort((a, b) => a.k - b.k);
           let blocuri = 0, len = 0, prev = null;
           arr.forEach((s) => {
-            const tr = s.cand.get(t); c += TC[tr === undefined ? 3 : tr] + AFIN * (1 - afin(t, grup(s.z))) + FZONA * faraZona(t, s.z) - DIRB * dirZona(t, s.z);
+            const tr = s.cand.get(t); c += TC[tr === undefined ? 3 : tr] + pot(t, s.z, AFIN, FZONA) - DIRB * dirZona(t, s.z);
             if (prev && s.k === prev.k + 1) { len++; if (s.z.id !== prev.z.id) c += grup(s.z) === grup(prev.z) ? 1 : 4; }
             else { if (prev) c += RUN[Math.min(len, 4)]; blocuri++; len = 1; }
             prev = s;
@@ -6905,9 +6915,12 @@
         if (error) return mesajServ(error.code === "23505" ? "Persoana este deja trecută." : "Nu am putut salva.");
         mesajServ(mesaj, true); desenezServiciu();
       };
-      if (z.tip === "fix") {
-        box.appendChild(el("p", "who", "Adaugă persoanele care pot face serviciu aici (de exemplu profesorii de educație fizică). Platforma le pune pe pauze, în funcție de orarul lor: la fiecare pauză este de serviciu cineva care are oră în acel moment."));
-        const existente = c.persoane.filter((p) => p.zona_id === z.id && p.tip === "pool");
+      if (z.tip === "fix" || z.tip === "profesori") {
+        const tipP = z.tip === "fix" ? "pool" : "prioritar";
+        box.appendChild(el("p", "who", z.tip === "fix"
+          ? "Adaugă persoanele care pot face serviciu aici (de exemplu profesorii de educație fizică). Platforma le pune pe pauze, în funcție de orarul lor: la fiecare pauză este de serviciu cineva care are oră în acel moment."
+          : "Adaugă persoanele care fac serviciu aici cu prioritate, chiar dacă orarul nu le arată la clasele zonei (de exemplu cei de la ateliere). Platforma le pune primii, pe pauzele din apropierea orelor lor; ceilalți profesori sunt folosiți doar când este nevoie."));
+        const existente = c.persoane.filter((p) => p.zona_id === z.id && p.tip === tipP);
         if (!existente.length) box.appendChild(el("p", "who", "Nu ai adăugat încă nicio persoană."));
         existente.forEach((p) => {
           const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", nume.get(p.angajat_id) || "Angajat necunoscut"));
@@ -6919,7 +6932,7 @@
         const s = document.createElement("select"); optiuni(s, "Alege…"); box.appendChild(s);
         const ctl = el("div", "ctl"); const ok = el("button", "", "Adaugă"); ok.type = "button"; const nu = el("button", "secondary", "Închide"); nu.type = "button";
         ctl.append(ok, nu); box.appendChild(ctl); nu.addEventListener("click", () => zona.replaceChildren());
-        ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: "pool" }], "Persoana a fost adăugată."); });
+        ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: tipP }], "Persoana a fost adăugată."); });
       } else {
         box.appendChild(el("p", "who", "Învățătorii claselor zonei intră automat în rotație, pe schimbul lor. Aici adaugi alte persoane care fac serviciu în rotația de dimineață (de exemplu educatoarea), cu ora până la care stau."));
         const existente = c.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata");
