@@ -986,6 +986,13 @@
     #serviciu .ora-sel { display:flex; align-items:center; gap:6px; }
     #serviciu .ora-sel select { flex:1 1 0; min-width:0; }
     #serviciu .ora-sep { font-weight:800; }
+    #serviciu .gr-w { overflow-x:auto; margin:4px 0 12px; border:1px solid var(--line); border-radius:8px; }
+    #serviciu .gr-t { border-collapse:collapse; width:100%; min-width:520px; font-size:.72rem; }
+    #serviciu .gr-t th, #serviciu .gr-t td { border:1px solid var(--line); padding:5px 4px; text-align:center; vertical-align:middle; white-space:pre-line; }
+    #serviciu .gr-t thead th, #serviciu .gr-t tbody th { background:var(--bg); font-weight:700; }
+    #serviciu .gr-t td.gol { background:color-mix(in srgb, var(--err) 12%, var(--card)); }
+    #serviciu .gr-t td.man { box-shadow:inset 0 0 0 2px var(--accent); }
+    #serviciu .gr-t td.click { cursor:pointer; }
     #serviciu details.alt-ghid { margin:8px 0; padding:8px 10px; border:1.5px solid var(--accent); border-radius:12px; background:var(--card); }
     #serviciu details.alt-ghid > summary { cursor:pointer; font-weight:800; color:var(--accent); }
     #serviciu .alt-ghid ol { margin:8px 0 4px; padding-left:20px; }
@@ -1261,9 +1268,10 @@
         <label for="serviciu-an" class="an-et">Anul școlar</label>
         <select id="serviciu-an"></select>
       </div>
-      <div class="tabs" role="tablist" id="serviciu-tab">
+      <div class="tabs t3" role="tablist" id="serviciu-tab">
         <button type="button" role="tab" data-v="zone" aria-selected="true">🏢 Zone și clase</button>
         <button type="button" role="tab" data-v="scutiri" aria-selected="false">🚫 Scutiri</button>
+        <button type="button" role="tab" data-v="grafic" aria-selected="false">🗓️ Grafic</button>
       </div>
       <div id="serviciu-msg" class="panel-msg" role="status"></div>
       <div id="serviciu-antet"></div>
@@ -6294,21 +6302,23 @@
       const lista = $("serviciu-lista"), antet = $("serviciu-antet"); $("serviciu-form").replaceChildren();
       lista.replaceChildren(el("p", "who", "Se încarcă…")); antet.replaceChildren();
       const tabCurent = tabServ;
-      const [rz, rc, rs, ra, claseA] = await Promise.all([
+      const [rz, rc, rs, ra, claseA, rp, rg] = await Promise.all([
         db.from("serviciu_zone").select("id, sediu, corp, grupa_corp, denumire, tip, nr_supraveghetori, nr_dupa_amiaza, ordine").eq("an_id", a.id).order("sediu").order("ordine").order("corp").order("denumire"),
         db.from("serviciu_zona_clase").select("id, zona_id, clasa").eq("an_id", a.id),
         db.from("serviciu_scutiti").select("id, angajat_id, motiv").eq("an_id", a.id),
         db.from("angajati").select("id, nume").eq("an_id", a.id).is("sters_la", null).order("nume"),
-        claseAn(a)
+        claseAn(a),
+        db.from("serviciu_persoane").select("id, zona_id, angajat_id, tip, zi, pana_la").eq("an_id", a.id),
+        db.from("serviciu_grafic").select("id, zona_id, zi, pauza, schimb, angajat_id, manual, nota").eq("an_id", a.id)
       ]);
       if (tabCurent !== tabServ || sel.value !== a.id) return;
       lista.replaceChildren();
-      if (rz.error || rc.error || rs.error || ra.error) return mesajServ("Datele nu au putut fi încărcate. Încearcă din nou.");
+      if (rz.error || rc.error || rs.error || ra.error || rp.error || rg.error) return mesajServ("Datele nu au putut fi încărcate. Încearcă din nou.");
       const poate = poateModificaAng() && !a.inchis;
-      const ctx = { a, poate, zone: rz.data || [], clase: rc.data || [], scutiti: rs.data || [], angs: ra.data || [], claseA };
+      const ctx = { a, poate, zone: rz.data || [], clase: rc.data || [], scutiti: rs.data || [], angs: ra.data || [], claseA, persoane: rp.data || [], grafic: rg.data || [] };
       antet.appendChild(ghidServiciu(ctx));
       if (a.inchis) antet.appendChild(el("p", "who", "An școlar închis: doar consultare."));
-      if (tabServ === "zone") desenezZone(ctx); else desenezScutiri(ctx);
+      if (tabServ === "zone") desenezZone(ctx); else if (tabServ === "scutiri") desenezScutiri(ctx); else desenezGrafic(ctx);
     }
     function ghidServiciu(c) {
       const det = document.createElement("details"); det.className = "alt-ghid";
@@ -6323,9 +6333,10 @@
       const faraZona = c.claseA.filter((x) => !c.clase.some((y) => y.clasa === x));
       pas("Zonele și clasele lor", "La fila „Zone și clase” definești pentru fiecare structură corpurile și zonele (parter, etaj), cine le supraveghează și clasele din fiecare zonă. Corpurile legate între ele primesc aceeași grupă.", c.zone.length ? (faraZona.length ? "defacut" : "gata") : "defacut");
       pas("Scutirile", "La fila „Scutiri” treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
-      pas("Persoanele stabilite", "Pentru zonele cu persoane fixe (sala de sport, învățătoarea de după-amiază de la Munteni) se trec numele și programul lor.", "urmeaza");
-      pas("Graficul pe pauze", "Platforma propune graficul din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu rotație echitabilă; tu îl modifici.", "urmeaza");
-      pas("Profesorii își văd serviciul", "Fiecare vede în „Orarul meu” când și unde este de serviciu.", "urmeaza");
+      const arePers = c.persoane.length > 0 || !c.zone.some((z) => z.tip !== "profesori");
+      pas("Persoanele stabilite", "La fila „Zone și clase”, la zonele cu învățători sau persoane fixe, apasă „Persoane”: pentru sala de sport alegi cine face serviciu în fiecare zi, iar pentru zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
+      pas("Graficul pe pauze", "La fila „Grafic” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil. Verifici previzualizarea, completezi locurile rămase goale și salvezi. După salvare poți schimba orice căsuță.", c.grafic.length ? "gata" : "defacut");
+      pas("Profesorii își văd serviciul", "Fiecare va vedea în „Orarul meu” când și unde este de serviciu.", "urmeaza");
       det.appendChild(ol); return det;
     }
     function desenezZone(c) {
@@ -6355,12 +6366,13 @@
           if (c.poate) {
             const ac = el("div", "ctl");
             const m = el("button", "mic secondary", "Modifică"); m.type = "button"; m.addEventListener("click", () => formZona(c, z));
+            const pe = el("button", "mic secondary", "Persoane"); pe.type = "button"; pe.addEventListener("click", () => formPersoane(c, z));
             const d = el("button", "mic secondary", "Șterge"); d.type = "button"; d.addEventListener("click", async () => {
               if (!confirm("Ștergi zona „" + z.corp + " · " + z.denumire + "”?")) return;
               const { error } = await db.from("serviciu_zone").delete().eq("id", z.id);
               if (error) return mesajServ("Zona nu a putut fi ștearsă."); mesajServ("Zona a fost ștearsă.", true); desenezServiciu();
             });
-            ac.append(m, d); r.appendChild(ac);
+            ac.append(m); if (z.tip !== "profesori") ac.appendChild(pe); ac.appendChild(d); r.appendChild(ac);
           }
           lista.appendChild(r);
         });
@@ -6531,6 +6543,275 @@
         const { error } = await db.from("serviciu_scutiti").insert(prop.map((x) => ({ an_id: c.a.id, angajat_id: x.id, motiv: x.motiv })));
         if (error) { ok.disabled = false; return mesajServ("Scutirile nu au putut fi salvate."); }
         zona.replaceChildren(); mesajServ("Au fost salvate " + prop.length + " scutiri.", true); desenezServiciu();
+      });
+    }
+
+    // ===== Serviciu pe școală: persoane stabilite, generare și afișare grafic =====
+    const ZILE_SC = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
+    const PAUZE_ET = ["", "1–2", "2–3", "3–4", "4–5", "5–6"];
+    async function orarAn(a) {
+      const orar = [];
+      for (let pg = 0; pg < 20; pg++) {
+        const { data, error } = await db.from("orar_profesori").select("angajat_id, zi, ora, clasa").eq("an_id", a.id).range(pg * 1000, pg * 1000 + 999);
+        if (error) return null;
+        if (!data || !data.length) break;
+        orar.push(...data); if (data.length < 1000) break;
+      }
+      return orar;
+    }
+    // Generează graficul din orar, zone și reguli. Nu scrie nimic în baza de date.
+    function genereazaGrafic(d) {
+      const nume = new Map(d.angs.map((x) => [x.id, x.nume]));
+      const scutiti = new Set(d.scutiti.map((x) => x.angajat_id));
+      const zoneCl = new Map(d.zone.map((z) => [z.id, new Set()]));
+      d.clase.forEach((x) => zoneCl.has(x.zona_id) && zoneCl.get(x.zona_id).add(x.clasa));
+      const grup = (z) => z.sediu + "|" + z.grupa_corp;
+      const classAt = new Map(), orePeClasa = new Map();
+      d.orar.forEach((r) => {
+        if (!classAt.has(r.angajat_id)) classAt.set(r.angajat_id, {});
+        const m = classAt.get(r.angajat_id); (m[r.zi] || (m[r.zi] = new Map())).set(r.ora, r.clasa);
+        if (!orePeClasa.has(r.clasa)) orePeClasa.set(r.clasa, new Map());
+        const c = orePeClasa.get(r.clasa); const v = c.get(r.angajat_id) || { n: 0, min: 99 }; v.n++; v.min = Math.min(v.min, r.ora); c.set(r.angajat_id, v);
+      });
+      const out = [], lipsa = [];
+      const load = new Map(), dayLoad = new Map(), busy = new Set();
+      const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
+      const cheieB = (t, zi, k) => t + "|" + zi + "|" + k;
+      // 1) Persoane stabilite pe zile (sala de sport): ocupă toate pauzele zilei.
+      d.zone.filter((z) => z.tip === "fix").forEach((z) => {
+        for (let zi = 1; zi <= 5; zi++) {
+          const ps = d.persoane.filter((p) => p.zona_id === z.id && p.tip === "zi_fixa" && p.zi === zi);
+          if (!ps.length) { lipsa.push({ z, zi, k: null, schimb: null, sugestii: [] }); continue; }
+          ps.forEach((p) => { for (let k = 1; k <= 5; k++) { out.push({ zona_id: z.id, zi, pauza: k, schimb: null, angajat_id: p.angajat_id, nota: null }); busy.add(cheieB(p.angajat_id, zi, k)); inc(load, p.angajat_id); inc(dayLoad, p.angajat_id + "|" + zi); } });
+        }
+      });
+      // 2) Zone cu profesori: pe pauze, din cei care au ore la clasele zonei.
+      const claseGrup = new Map();
+      d.zone.filter((z) => z.tip === "profesori").forEach((z) => { const g = grup(z); const s = claseGrup.get(g) || new Set(); zoneCl.get(z.id).forEach((c) => s.add(c)); claseGrup.set(g, s); });
+      const oreGrup = (t, g) => { let n = 0; claseGrup.get(g).forEach((c) => { const v = orePeClasa.get(c) && orePeClasa.get(c).get(t); if (v) n += v.n; }); return n; };
+      const cl = (t, zi, o) => { const m = classAt.get(t); return m && m[zi] ? m[zi].get(o) : undefined; };
+      const tier = (t, s) => {
+        const cg = claseGrup.get(grup(s.z)), cz = zoneCl.get(s.z.id);
+        const a = cl(t, s.zi, s.k), b = cl(t, s.zi, s.k + 1), ia = !!(a && cg.has(a)), ib = !!(b && cg.has(b));
+        if (ia && ib) return (cz.has(a) || cz.has(b)) ? 0 : 1;
+        if (ia || ib) return 2;
+        if (!a && !b) {
+          const m = classAt.get(t) && classAt.get(t)[s.zi]; let inainte = false, dupa = false;
+          if (m) m.forEach((c, o) => { if (cg.has(c)) { if (o < s.k) inainte = true; if (o > s.k + 1) dupa = true; } });
+          if (inainte && dupa) return 3;
+        }
+        return -1;
+      };
+      const sloturi = [];
+      d.zone.filter((z) => z.tip === "profesori").forEach((z) => { for (let zi = 1; zi <= 5; zi++) for (let k = 1; k <= 5; k++) for (let i = 0; i < z.nr_supraveghetori; i++) sloturi.push({ z, zi, k }); });
+      const eligibili = (s) => [...classAt.keys()].filter((t) => !scutiti.has(t) && oreGrup(t, grup(s.z)) > 0).map((t) => ({ t, tr: tier(t, s) })).filter((x) => x.tr >= 0);
+      sloturi.forEach((s) => { s.cand = eligibili(s); });
+      sloturi.sort((p, q) => p.cand.length - q.cand.length);
+      const factor = (t, g) => Math.min(2, Math.max(0.5, oreGrup(t, g) / 12));
+      sloturi.forEach((s) => {
+        const g = grup(s.z);
+        const ok = s.cand.filter((x) => !busy.has(cheieB(x.t, s.zi, s.k)) && (dayLoad.get(x.t + "|" + s.zi) || 0) < 2);
+        if (!ok.length) {
+          const disp = [...classAt.keys()].filter((t) => !scutiti.has(t) && oreGrup(t, g) > 0 && !busy.has(cheieB(t, s.zi, s.k)))
+            .filter((t) => { const a = cl(t, s.zi, s.k), b = cl(t, s.zi, s.k + 1); const cg = claseGrup.get(g); return (!a || cg.has(a)) && (!b || cg.has(b)); })
+            .sort((p, q) => (load.get(p) || 0) - (load.get(q) || 0) || (nume.get(p) || "").localeCompare(nume.get(q) || "", "ro")).slice(0, 5);
+          lipsa.push({ z: s.z, zi: s.zi, k: s.k, schimb: null, sugestii: disp }); return;
+        }
+        ok.sort((p, q) => {
+          const sp = p.tr * 3 + 10 * (load.get(p.t) || 0) / factor(p.t, g), sq = q.tr * 3 + 10 * (load.get(q.t) || 0) / factor(q.t, g);
+          return sp - sq || (nume.get(p.t) || "").localeCompare(nume.get(q.t) || "", "ro");
+        });
+        const alesul = ok[0].t;
+        out.push({ zona_id: s.z.id, zi: s.zi, pauza: s.k, schimb: null, angajat_id: alesul, nota: null });
+        busy.add(cheieB(alesul, s.zi, s.k)); inc(load, alesul); inc(dayLoad, alesul + "|" + s.zi);
+      });
+      // 3) Zone cu învățători: pe zile întregi, din învățătorii claselor zonei, pe schimburi.
+      const zileInv = new Map();
+      d.zone.filter((z) => z.tip === "invatatori").forEach((z) => {
+        const poolD = new Map(), poolA = new Map();
+        zoneCl.get(z.id).forEach((c) => {
+          const m = orePeClasa.get(c); if (!m) return;
+          let best = null; m.forEach((v, t) => { if (!best || v.n > best.v.n) best = { t, v }; });
+          if (!best || scutiti.has(best.t)) return;
+          (best.v.min <= 3 ? poolD : poolA).set(best.t, null);
+        });
+        d.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata" && !scutiti.has(p.angajat_id)).forEach((p) => poolD.set(p.angajat_id, p.pana_la ? "până la " + p.pana_la : null));
+        [["dimineata", poolD, z.nr_supraveghetori], ["dupa_amiaza", poolA, z.nr_dupa_amiaza]].forEach(([schimb, pool, nr]) => {
+          const ids = [...pool.keys()]; const cnt = new Map(ids.map((t) => [t, 0])), ultima = new Map(ids.map((t) => [t, 0]));
+          for (let zi = 1; zi <= 5; zi++) {
+            const ordine = ids.slice().sort((p, q) => cnt.get(p) - cnt.get(q) || ultima.get(p) - ultima.get(q) || (nume.get(p) || "").localeCompare(nume.get(q) || "", "ro"));
+            for (let i = 0; i < nr; i++) {
+              const t = ordine[i];
+              if (!t) { lipsa.push({ z, zi, k: null, schimb, sugestii: [] }); continue; }
+              out.push({ zona_id: z.id, zi, pauza: null, schimb, angajat_id: t, nota: pool.get(t) });
+              cnt.set(t, cnt.get(t) + 1); ultima.set(t, zi); inc(zileInv, t);
+            }
+          }
+        });
+      });
+      return { out, lipsa, load, zileInv, nume };
+    }
+    function formPersoane(c, z) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", "Persoane stabilite · " + z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "")));
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      const optiuni = (sel, gol) => { sel.add(new Option(gol, "")); c.angs.forEach((x) => sel.add(new Option(x.nume, x.id))); };
+      const salveaza = async (rows, mesaj) => {
+        const { error } = await db.from("serviciu_persoane").insert(rows);
+        if (error) return mesajServ(error.code === "23505" ? "Persoana este deja trecută." : "Nu am putut salva.");
+        mesajServ(mesaj, true); desenezServiciu();
+      };
+      if (z.tip === "fix") {
+        box.appendChild(el("p", "who", "Alege cine face serviciu în fiecare zi. Persoana rămâne de serviciu la toate pauzele zilei."));
+        const sels = {};
+        for (let zi = 1; zi <= 5; zi++) {
+          const cur = c.persoane.find((p) => p.zona_id === z.id && p.tip === "zi_fixa" && p.zi === zi);
+          box.appendChild(el("label", "", ZILE_SC[zi]));
+          const s = document.createElement("select"); optiuni(s, "— nimeni —"); s.value = cur ? cur.angajat_id : ""; box.appendChild(s); sels[zi] = { s, cur };
+        }
+        const ctl = el("div", "ctl"); const ok = el("button", "", "Salvează"); ok.type = "button"; const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+        ctl.append(ok, nu); box.appendChild(ctl); nu.addEventListener("click", () => zona.replaceChildren());
+        ok.addEventListener("click", async () => {
+          ok.disabled = true;
+          const { error: e1 } = await db.from("serviciu_persoane").delete().eq("zona_id", z.id).eq("tip", "zi_fixa");
+          if (e1) { ok.disabled = false; return mesajServ("Nu am putut salva."); }
+          const rows = [1, 2, 3, 4, 5].filter((zi) => sels[zi].s.value).map((zi) => ({ an_id: c.a.id, zona_id: z.id, angajat_id: sels[zi].s.value, tip: "zi_fixa", zi }));
+          if (rows.length) { const { error } = await db.from("serviciu_persoane").insert(rows); if (error) { ok.disabled = false; return mesajServ("Nu am putut salva."); } }
+          zona.replaceChildren(); mesajServ("Persoanele au fost salvate.", true); desenezServiciu();
+        });
+      } else {
+        box.appendChild(el("p", "who", "Învățătorii claselor zonei intră automat în rotație, pe schimbul lor. Aici adaugi alte persoane care fac serviciu în rotația de dimineață (de exemplu educatoarea), cu ora până la care stau."));
+        const existente = c.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata");
+        existente.forEach((p) => {
+          const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", (nume.get(p.angajat_id) || "Angajat necunoscut") + (p.pana_la ? " · până la " + p.pana_la : "")));
+          const d = el("button", "mic secondary", "Scoate"); d.type = "button";
+          d.addEventListener("click", async () => { const { error } = await db.from("serviciu_persoane").delete().eq("id", p.id); if (error) return mesajServ("Nu am putut scoate."); mesajServ("Persoana a fost scoasă.", true); desenezServiciu(); });
+          r.appendChild(el("div", "ctl")).appendChild(d); box.appendChild(r);
+        });
+        box.appendChild(el("label", "", "Adaugă persoana"));
+        const s = document.createElement("select"); optiuni(s, "Alege…"); box.appendChild(s);
+        box.appendChild(el("label", "", "Stă de serviciu până la ora (opțional)"));
+        const ora = document.createElement("select"); ora.add(new Option("Toată dimineața", ""));
+        ["09:00", "10:00", "11:00", "12:00", "13:00"].forEach((h) => ora.add(new Option(h, h))); box.appendChild(ora);
+        const ctl = el("div", "ctl"); const ok = el("button", "", "Adaugă"); ok.type = "button"; const nu = el("button", "secondary", "Închide"); nu.type = "button";
+        ctl.append(ok, nu); box.appendChild(ctl); nu.addEventListener("click", () => zona.replaceChildren());
+        ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: "rotatie_dimineata", pana_la: ora.value || null }], "Persoana a fost adăugată."); });
+      }
+      box.scrollIntoView({ block: "nearest" });
+    }
+    function celulaGrafic(c, z, zi, pauza, schimb) {
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === zi && (g.pauza || null) === pauza && (g.schimb || null) === schimb);
+      return { rows, nume };
+    }
+    function desenezGrafic(c) {
+      const lista = $("serviciu-lista");
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      if (c.poate) {
+        const ctl = el("div", "ctl");
+        const g = el("button", "", c.grafic.length ? "Generează din nou" : "Generează graficul"); g.type = "button"; g.addEventListener("click", () => previzualizeazaGrafic(c));
+        ctl.appendChild(g); lista.appendChild(ctl);
+      }
+      if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, la fila „Zone și clase”."));
+      if (!c.grafic.length) return lista.appendChild(el("p", "who", "Graficul nu a fost încă generat pentru " + c.a.denumire + "."));
+      lista.appendChild(el("p", "who", "Apasă pe o căsuță ca să schimbi persoana. Modificările făcute de tine se păstrează."));
+      SEDII_SERV.forEach((s) => {
+        const zs = c.zone.filter((z) => z.sediu === s && c.grafic.some((g) => g.zona_id === z.id)); if (!zs.length) return;
+        lista.appendChild(el("h3", "grup-clasa", s));
+        zs.forEach((z) => {
+          lista.appendChild(el("div", "ang-nume", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "")));
+          const w = el("div", "gr-w"); const t = document.createElement("table"); t.className = "gr-t";
+          const cap = z.tip === "invatatori" ? [["Dimineața", null, "dimineata"], ["După-amiaza", null, "dupa_amiaza"]] : [1, 2, 3, 4, 5].map((k) => ["Pauza " + PAUZE_ET[k], k, null]);
+          const thead = document.createElement("thead"); const tr0 = document.createElement("tr"); tr0.appendChild(document.createElement("th"));
+          cap.forEach((x) => { const th = document.createElement("th"); th.textContent = x[0]; tr0.appendChild(th); }); thead.appendChild(tr0); t.appendChild(thead);
+          const tb = document.createElement("tbody");
+          for (let zi = 1; zi <= 5; zi++) {
+            const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = ZILE_SC[zi]; tr.appendChild(th);
+            cap.forEach((x) => {
+              const td = document.createElement("td"); const { rows } = celulaGrafic(c, z, zi, x[1], x[2]);
+              td.textContent = rows.map((r) => (nume.get(r.angajat_id) || "?") + (r.nota ? " (" + r.nota + ")" : "")).join("\n");
+              if (!rows.length) td.classList.add("gol"); if (rows.some((r) => r.manual)) td.classList.add("man");
+              if (c.poate) { td.classList.add("click"); td.addEventListener("click", () => formCelula(c, z, zi, x[1], x[2])); }
+              tr.appendChild(td);
+            });
+            tb.appendChild(tr);
+          }
+          t.appendChild(tb); w.appendChild(t); lista.appendChild(w);
+        });
+      });
+    }
+    function formCelula(c, z, zi, pauza, schimb) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " · " + ZILE_SC[zi] + " · " + (pauza ? "pauza " + PAUZE_ET[pauza] : schimb === "dimineata" ? "dimineața" : "după-amiaza")));
+      const { rows, nume } = celulaGrafic(c, z, zi, pauza, schimb);
+      if (!rows.length) box.appendChild(el("p", "who", "Nimeni de serviciu."));
+      rows.forEach((r) => {
+        const rd = el("div", "ang-rand citire"); rd.appendChild(el("div", "ang-nume", (nume.get(r.angajat_id) || "?") + (r.nota ? " (" + r.nota + ")" : "")));
+        const d = el("button", "mic secondary", "Scoate"); d.type = "button";
+        d.addEventListener("click", async () => { const { error } = await db.from("serviciu_grafic").delete().eq("id", r.id); if (error) return mesajServ("Nu am putut scoate."); mesajServ("Persoana a fost scoasă.", true); desenezServiciu(); });
+        rd.appendChild(el("div", "ctl")).appendChild(d); box.appendChild(rd);
+      });
+      box.appendChild(el("label", "", "Adaugă persoana"));
+      const s = document.createElement("select"); s.add(new Option("Alege…", "")); c.angs.forEach((x) => s.add(new Option(x.nume, x.id))); box.appendChild(s);
+      const ctl = el("div", "ctl"); const ok = el("button", "", "Adaugă"); ok.type = "button"; const nu = el("button", "secondary", "Închide"); nu.type = "button";
+      ctl.append(ok, nu); box.appendChild(ctl); nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true;
+        const { error } = await db.from("serviciu_grafic").insert({ an_id: c.a.id, zona_id: z.id, zi, pauza: pauza || null, schimb: schimb || null, angajat_id: s.value, manual: true });
+        if (error) { ok.disabled = false; return mesajServ(error.code === "23505" ? "Persoana este deja trecută aici." : "Nu am putut adăuga."); }
+        mesajServ("Persoana a fost adăugată.", true); desenezServiciu();
+      });
+      box.scrollIntoView({ block: "nearest" });
+    }
+    async function previzualizeazaGrafic(c) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", "Graficul propus"));
+      box.appendChild(el("p", "who", "Se citește orarul și se calculează…"));
+      const orar = await orarAn(c.a);
+      if (!orar || !orar.length) { box.replaceChildren(el("h3", "", "Graficul propus"), el("p", "who", orar ? "Nu există orar pentru " + c.a.denumire + "." : "Orarul nu a putut fi încărcat.")); return; }
+      const r = genereazaGrafic({ zone: c.zone, clase: c.clase, orar, scutiti: c.scutiti, persoane: c.persoane, angs: c.angs });
+      const nume = r.nume;
+      box.replaceChildren(el("h3", "", "Graficul propus"));
+      box.appendChild(el("p", "who", "Previzualizare: " + r.out.length + " rânduri" + (r.lipsa.length ? ", " + r.lipsa.length + " locuri rămase neacoperite" : ", toate locurile sunt acoperite") + ". Nu se salvează nimic până nu confirmi."));
+      const det = document.createElement("details"); det.appendChild(el("summary", "who", "Încărcarea fiecărei persoane"));
+      const toti = new Set([...r.load.keys(), ...r.zileInv.keys()]);
+      [...toti].sort((p, q) => ((r.load.get(q) || 0) + (r.zileInv.get(q) || 0)) - ((r.load.get(p) || 0) + (r.zileInv.get(p) || 0)) || (nume.get(p) || "").localeCompare(nume.get(q) || "", "ro")).forEach((t) => {
+        const parti = []; if (r.load.get(t)) parti.push(r.load.get(t) + " pauze"); if (r.zileInv.get(t)) parti.push(r.zileInv.get(t) + (r.zileInv.get(t) === 1 ? " zi" : " zile"));
+        det.appendChild(el("div", "who", (nume.get(t) || "?") + " — " + parti.join(", ")));
+      });
+      box.appendChild(det);
+      const alese = new Map();
+      if (r.lipsa.length) {
+        box.appendChild(el("h3", "", "Locuri fără supraveghetor"));
+        box.appendChild(el("p", "who", "Pentru fiecare loc îți propun persoane disponibile în acea clădire, cu cea mai mică încărcare. Poți alege acum sau poți lăsa gol și completa mai târziu."));
+        r.lipsa.forEach((l, i) => {
+          const et = l.z.corp + (l.z.denumire !== l.z.corp ? " · " + l.z.denumire : "") + " · " + ZILE_SC[l.zi] + " · " + (l.k ? "pauza " + PAUZE_ET[l.k] : l.schimb === "dimineata" ? "dimineața" : l.schimb === "dupa_amiaza" ? "după-amiaza" : "toată ziua");
+          box.appendChild(el("label", "", et));
+          const s = document.createElement("select"); s.add(new Option(l.sugestii.length ? "— lasă gol —" : "— nicio persoană disponibilă —", ""));
+          l.sugestii.forEach((t) => s.add(new Option(nume.get(t) || "?", t)));
+          s.addEventListener("change", () => alese.set(i, s.value)); box.appendChild(s);
+        });
+      }
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", c.grafic.length ? "Înlocuiește graficul" : "Salvează graficul"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      ctl.append(ok, nu); box.appendChild(ctl);
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        if (c.grafic.some((g) => g.manual) && !confirm("Graficul actual are modificări făcute de tine. Generarea le înlocuiește. Continui?")) return;
+        ok.disabled = true;
+        const extra = []; alese.forEach((t, i) => { if (t) { const l = r.lipsa[i]; extra.push({ zona_id: l.z.id, zi: l.zi, pauza: l.k || (l.z.tip === "fix" ? 1 : null), schimb: l.schimb || null, angajat_id: t, nota: null, manual: true }); } });
+        const { error: e1 } = await db.from("serviciu_grafic").delete().eq("an_id", c.a.id);
+        if (e1) { ok.disabled = false; return mesajServ("Graficul vechi nu a putut fi șters."); }
+        const rows = r.out.map((x) => ({ ...x, an_id: c.a.id, manual: false })).concat(extra.map((x) => ({ ...x, an_id: c.a.id })));
+        for (let i = 0; i < rows.length; i += 300) {
+          const { error } = await db.from("serviciu_grafic").insert(rows.slice(i, i + 300));
+          if (error) { ok.disabled = false; return mesajServ("Graficul nu a putut fi salvat complet. Generează din nou."); }
+        }
+        zona.replaceChildren(); mesajServ("Graficul a fost salvat (" + rows.length + " rânduri).", true); desenezServiciu();
       });
     }
 
