@@ -6335,7 +6335,7 @@
       pas("Scutirile", "La fila „Scutiri” treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
       const arePers = c.zone.some((z) => z.tip === "fix") ? c.persoane.some((p) => p.tip === "pool") : true;
       pas("Persoanele stabilite", "La fila „Zone și clase”, la zona sălii de sport apasă „Persoane” și adaugă profesorii care pot face serviciu acolo; la zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
-      pas("Graficul pe pauze", "La fila „Grafic” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare persoană primește cel puțin 5 pauze, acolo unde orarul permite. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. După salvare poți schimba orice căsuță.", c.grafic.length ? "gata" : "defacut");
+      pas("Graficul pe pauze", "La fila „Grafic” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
       pas("Profesorii își văd serviciul", "Fiecare va vedea în „Orarul meu” când și unde este de serviciu.", "urmeaza");
       det.appendChild(ol); return det;
     }
@@ -6563,19 +6563,24 @@
       return orar;
     }
     // Generează graficul din orar, zone și reguli. Nu scrie nimic în baza de date.
-    // Fiecare loc este o pauză (zi + pauza 1–5) dintr-o zonă. Un loc fără persoană rămâne gol doar pentru acea pauză.
-    const MIN_PAUZE = 5, PLAFON_ZI = 3, PREFERAT_ZI = 2;
+    // Zone cu profesori: fiecare loc este o pauză (zi + pauza 1–5); fiecare profesor primește între 4 și 8 pauze,
+    // proporțional cu orele din orar, de preferat blocuri de 2–3 pauze consecutive în aceeași zonă.
+    // Sala de sport: o persoană pe zi întreagă sau, dacă nu se poate, pe intervalele 8–11 și 11–14.
+    // Căsuțele modificate manual (d.fixe) rămân neschimbate.
+    const MIN_PAUZE = 4, MAX_PAUZE = 8, PLAFON_ZI = 3;
     function genereazaGrafic(d) {
       const nume = new Map(d.angs.map((x) => [x.id, x.nume]));
       const numeDe = (t) => nume.get(t) || "";
       const scutiti = new Set(d.scutiti.map((x) => x.angajat_id));
+      const fixe = d.fixe || [];
       const zoneCl = new Map(d.zone.map((z) => [z.id, new Set()]));
       d.clase.forEach((x) => zoneCl.has(x.zona_id) && zoneCl.get(x.zona_id).add(x.clasa));
       const grup = (z) => z.sediu + "|" + z.grupa_corp;
-      const classAt = new Map(), orePeClasa = new Map();
+      const classAt = new Map(), orePeClasa = new Map(), ore = new Map();
       d.orar.forEach((r) => {
         if (!classAt.has(r.angajat_id)) classAt.set(r.angajat_id, {});
         const m = classAt.get(r.angajat_id); (m[r.zi] || (m[r.zi] = new Map())).set(r.ora, r.clasa);
+        ore.set(r.angajat_id, (ore.get(r.angajat_id) || 0) + 1);
         if (!orePeClasa.has(r.clasa)) orePeClasa.set(r.clasa, new Map());
         const c = orePeClasa.get(r.clasa); const v = c.get(r.angajat_id) || { n: 0, min: 99 }; v.n++; v.min = Math.min(v.min, r.ora); c.set(r.angajat_id, v);
       });
@@ -6583,7 +6588,6 @@
       const cl = (t, zi, o) => { const m = classAt.get(t); return m && m[zi] ? m[zi].get(o) : undefined; };
       const claseGrup = new Map();
       d.zone.filter((z) => z.tip === "profesori").forEach((z) => { const g = grup(z); const s = claseGrup.get(g) || new Set(); zoneCl.get(z.id).forEach((c) => s.add(c)); claseGrup.set(g, s); });
-      // Clasele întregului sediu: pentru zonele fixe (sala de sport) contează orice oră în acel sediu.
       const claseSediu = new Map();
       d.zone.forEach((z) => { const s = claseSediu.get(z.sediu) || new Set(); zoneCl.get(z.id).forEach((c) => s.add(c)); claseSediu.set(z.sediu, s); });
       const claseDe = (z) => (z.tip === "fix" ? claseSediu.get(z.sediu) : claseGrup.get(grup(z)));
@@ -6601,91 +6605,172 @@
         }
         return -1;
       };
-      // Locurile: zone cu profesori și zone fixe (sala de sport), câte unul pe pauză și pe supraveghetor.
+      // Persoanele din grupul sălii de sport fac serviciu doar acolo.
       const poolZ = new Map(d.zone.filter((z) => z.tip === "fix").map((z) => [z.id, new Set(d.persoane.filter((p) => p.zona_id === z.id && p.tip === "pool").map((p) => p.angajat_id))]));
+      const salaPool = new Set(); poolZ.forEach((st) => st.forEach((t) => salaPool.add(t)));
+      // Învățătorii titulari ai claselor din zonele cu învățători.
+      const invat = new Set();
+      d.zone.filter((z) => z.tip === "invatatori").forEach((z) => zoneCl.get(z.id).forEach((c) => {
+        const m = orePeClasa.get(c); if (!m) return; let best = null; m.forEach((v, t) => { if (!best || v.n > best.v.n) best = { t, v }; }); if (best) invat.add(best.t);
+      }));
+      // Locurile: câte unul pe pauză și pe supraveghetor, în zonele cu profesori și în zonele fixe.
       const sloturi = [];
-      d.zone.filter((z) => z.tip === "profesori" || z.tip === "fix").forEach((z) => { for (let zi = 1; zi <= 5; zi++) for (let k = 1; k <= 5; k++) for (let i = 0; i < z.nr_supraveghetori; i++) sloturi.push({ z, zi, k, cand: new Map(), who: null }); });
+      d.zone.filter((z) => z.tip === "profesori" || z.tip === "fix").forEach((z) => { for (let zi = 1; zi <= 5; zi++) for (let k = 1; k <= 5; k++) for (let i = 0; i < z.nr_supraveghetori; i++) sloturi.push({ z, zi, k, lay: i, cand: new Map(), who: null, locked: false }); });
       sloturi.forEach((s) => {
-        const ids = s.z.tip === "fix" ? [...poolZ.get(s.z.id)].filter((t) => classAt.has(t)) : [...classAt.keys()].filter((t) => !scutiti.has(t) && oreGrup(t, grup(s.z)) > 0);
+        const ids = s.z.tip === "fix" ? [...poolZ.get(s.z.id)].filter((t) => classAt.has(t)) : [...classAt.keys()].filter((t) => !scutiti.has(t) && !salaPool.has(t) && oreGrup(t, grup(s.z)) > 0);
         ids.forEach((t) => { const tr = tier(t, s); if (tr >= 0) s.cand.set(t, tr); });
+        s.candArr = [...s.cand.keys()];
       });
       const slotsOf = new Map();
-      sloturi.forEach((s) => s.cand.forEach((tr, t) => (slotsOf.get(t) || slotsOf.set(t, []).get(t)).push(s)));
-      slotsOf.forEach((l, t) => l.sort((p, q) => p.cand.get(t) - q.cand.get(t)));
+      sloturi.filter((s) => s.z.tip === "profesori").forEach((s) => s.cand.forEach((tr, t) => (slotsOf.get(t) || slotsOf.set(t, []).get(t)).push(s)));
       const elig = [...slotsOf.keys()];
       // Starea curentă
-      const load = new Map(), dayL = new Map(), at = new Map();
+      const load = new Map(), dayL = new Map(), at = new Map(), mine = new Map(), blk = new Set();
       const inc = (m, k, v = 1) => m.set(k, (m.get(k) || 0) + v);
       const incarcare = (t) => load.get(t) || 0;
       const ziL = (t, zi) => dayL.get(t + "|" + zi) || 0;
-      const put = (s, t) => { s.who = t; at.set(key(t, s.zi, s.k), s); inc(load, t); inc(dayL, t + "|" + s.zi); };
-      const take = (s) => { const t = s.who; s.who = null; at.delete(key(t, s.zi, s.k)); inc(load, t, -1); inc(dayL, t + "|" + s.zi, -1); return t; };
-      // Pune pe cel mai potrivit și mai puțin încărcat dintre cei liberi la acea pauză.
-      const umple = (s, cap) => {
+      const ocupat = (t, zi, k) => at.has(key(t, zi, k)) || blk.has(key(t, zi, k));
+      const put = (s, t) => { s.who = t; at.set(key(t, s.zi, s.k), s); inc(load, t); inc(dayL, t + "|" + s.zi); (mine.get(t) || mine.set(t, new Set()).get(t)).add(s); };
+      const take = (s) => { const t = s.who; s.who = null; at.delete(key(t, s.zi, s.k)); inc(load, t, -1); inc(dayL, t + "|" + s.zi, -1); mine.get(t).delete(s); return t; };
+      // Căsuțele modificate manual rămân cum sunt.
+      fixe.filter((r) => r.pauza).forEach((r) => {
+        if (ocupat(r.angajat_id, r.zi, r.pauza)) return;
+        const s = sloturi.find((x) => x.z.id === r.zona_id && x.zi === r.zi && x.k === r.pauza && !x.who);
+        if (s) { s.locked = true; put(s, r.angajat_id); } else blk.add(key(r.angajat_id, r.zi, r.pauza));
+      });
+      // 1) Sala de sport (zone fixe): zi întreagă cu o persoană, altfel pe intervalele 8–11 și 11–14, altfel pe pauze.
+      const ultimaZi = new Map();
+      d.zone.filter((z) => z.tip === "fix").forEach((z) => {
+        const pool = [...poolZ.get(z.id)];
+        for (let zi = 1; zi <= 5; zi++) for (let lay = 0; lay < z.nr_supraveghetori; lay++) {
+          const sl = [0].concat([1, 2, 3, 4, 5].map((k) => sloturi.find((s) => s.z.id === z.id && s.zi === zi && s.k === k && s.lay === lay)));
+          const alege = (K) => pool.filter((t) => K.every((k) => sl[k].cand.has(t) && !ocupat(t, zi, k)))
+            .sort((p, q) => incarcare(p) - incarcare(q) || (ultimaZi.get(p) || 0) - (ultimaZi.get(q) || 0) || numeDe(p).localeCompare(numeDe(q), "ro"))[0];
+          const da = (K, t) => { K.forEach((k) => put(sl[k], t)); ultimaZi.set(t, zi); };
+          const libere = [1, 2, 3, 4, 5].filter((k) => !sl[k].who);
+          if (!libere.length) continue;
+          const toata = alege(libere);
+          if (toata) { da(libere, toata); continue; }
+          [[1, 2, 3], [4, 5]].forEach((I) => {
+            const K = I.filter((k) => !sl[k].who); if (!K.length) return;
+            const t = alege(K);
+            if (t) return da(K, t);
+            K.forEach((k) => { const u = alege([k]); if (u) da([k], u); });
+          });
+        }
+      });
+      // 2) Zone cu profesori: ținte proporționale cu orele, între 4 și 8 pauze.
+      const profSloturi = sloturi.filter((s) => s.z.tip === "profesori");
+      const tinta = new Map();
+      {
+        const w = (t) => Math.max(1, ore.get(t) || 1);
+        let libere = elig.slice(), ramas = profSloturi.length;
+        while (libere.length) {
+          const sw = libere.reduce((a, t) => a + w(t), 0), v = new Map(libere.map((t) => [t, ramas * w(t) / sw]));
+          const jos = libere.filter((t) => v.get(t) < MIN_PAUZE), sus = libere.filter((t) => v.get(t) > MAX_PAUZE);
+          if (!jos.length && !sus.length) { libere.forEach((t) => tinta.set(t, v.get(t))); break; }
+          const fixT = jos.length ? jos : sus, val = jos.length ? MIN_PAUZE : MAX_PAUZE;
+          fixT.forEach((t) => { tinta.set(t, val); ramas -= val; });
+          libere = libere.filter((t) => !fixT.includes(t));
+        }
+        elig.forEach((t) => { const pos = new Set(slotsOf.get(t).map((s) => s.zi + "|" + s.k)).size; if (tinta.get(t) > pos) tinta.set(t, pos); });
+      }
+      const tintaDe = (t) => tinta.has(t) ? tinta.get(t) : MIN_PAUZE + 1;
+      // Prima umplere (locurile cu cei mai puțini candidați întâi), apoi îmbunătățire prin căutare.
+      const umple = (s) => {
         let best = null, bs = 1e9;
         s.cand.forEach((tr, t) => {
-          if (at.has(key(t, s.zi, s.k)) || ziL(t, s.zi) >= cap) return;
-          const sc = tr * 3 + 10 * incarcare(t) + (ziL(t, s.zi) >= PREFERAT_ZI ? 15 : 0);
+          if (ocupat(t, s.zi, s.k) || ziL(t, s.zi) >= PLAFON_ZI || incarcare(t) >= MAX_PAUZE) return;
+          const sc = tr * 3 + 10 * incarcare(t) / Math.max(1, tintaDe(t));
           if (sc < bs || (sc === bs && numeDe(t).localeCompare(numeDe(best), "ro") < 0)) { bs = sc; best = t; }
         });
         if (best) { put(s, best); return true; }
         return false;
       };
-      // Dacă toți candidații sunt ocupați la altă zonă în aceeași pauză, mută acolo pe altcineva.
       const umple2 = (s) => {
-        for (const [x] of s.cand) {
-          const s2 = at.get(key(x, s.zi, s.k)); if (!s2) continue;
-          for (const [y] of s2.cand) {
-            if (y === x || at.has(key(y, s.zi, s.k)) || ziL(y, s.zi) >= PLAFON_ZI) continue;
+        for (const x of s.candArr) {
+          const s2 = at.get(key(x, s.zi, s.k)); if (!s2 || s2.locked || s2.z.tip !== "profesori") continue;
+          for (const y of s2.candArr) {
+            if (y === x || ocupat(y, s.zi, s.k) || ziL(y, s.zi) >= PLAFON_ZI || incarcare(y) >= MAX_PAUZE) continue;
             take(s2); put(s, x); put(s2, y); return true;
           }
         }
         return false;
       };
-      // Caută un lanț de mutări prin care persoana p primește un loc, iar cineva cu încărcare mai mare cu cel puțin 2 renunță la unul.
-      const gaseste = (p, cap, maxAd) => {
-        const lp = incarcare(p);
-        const rec = (x, ad, viz, cale) => {
-          const prev = cale.length ? cale[cale.length - 1] : null;
-          const opt = new Map();
-          for (const s of slotsOf.get(x) || []) {
-            const q = s.who; if (!q || q === x || viz.has(q) || opt.has(q)) continue;
-            const ocup = at.get(key(x, s.zi, s.k)); if (ocup && ocup !== prev) continue;
-            if (ziL(x, s.zi) - (prev && prev.zi === s.zi ? 1 : 0) + 1 > cap) continue;
-            opt.set(q, s);
-          }
-          const lista = [...opt.entries()].sort((a, b) => incarcare(b[0]) - incarcare(a[0]));
-          for (const [q, s] of lista) if (incarcare(q) >= lp + 2) return cale.concat([s]);
-          if (ad < maxAd) for (const [q, s] of lista) { if (incarcare(q) <= lp) continue; const r = rec(q, ad + 1, new Set([...viz, q]), cale.concat([s])); if (r) return r; }
-          return null;
-        };
-        return rec(p, 1, new Set([p]), []);
-      };
-      const aplica = (p, cale) => {
-        const det = cale.map((s) => s.who);
-        cale.forEach((s) => take(s));
-        put(cale[0], p); for (let i = 1; i < cale.length; i++) put(cale[i], det[i - 1]);
-      };
-      const echilibreaza = (cap) => {
-        for (let it = 0; it < 600; it++) {
-          const pers = elig.slice().sort((p, q) => incarcare(p) - incarcare(q) || numeDe(p).localeCompare(numeDe(q), "ro"));
-          const mx = Math.max(0, ...pers.map(incarcare));
-          let schimbat = false;
-          for (const p of pers) {
-            if (incarcare(p) >= mx - 1) break;
-            const cale = gaseste(p, cap, incarcare(p) < MIN_PAUZE ? 3 : 2);
-            if (cale) { aplica(p, cale); schimbat = true; break; }
-          }
-          if (!schimbat) break;
-        }
-      };
-      const completeaza = () => sloturi.filter((s) => !s.who).forEach((s) => { if (!umple(s, PLAFON_ZI)) umple2(s); });
-      // 1) Prima umplere: întâi locurile cu cei mai puțini candidați (sala de sport, orele puține).
-      sloturi.sort((p, q) => p.cand.size - q.cand.size);
-      sloturi.forEach((s) => umple(s, PLAFON_ZI));
+      const completeaza = () => profSloturi.filter((s) => !s.who).forEach((s) => { if (!umple(s)) umple2(s); });
+      profSloturi.slice().sort((p, q) => p.cand.size - q.cand.size).forEach((s) => { if (!s.who) umple(s); });
       completeaza();
-      // 2) Echilibrare: mai întâi cu cel mult 2 pauze pe zi, apoi cu cel mult 3; scopul este minim 5 pauze pentru toți și diferențe mici.
-      echilibreaza(PREFERAT_ZI); completeaza(); echilibreaza(PLAFON_ZI); completeaza(); echilibreaza(PLAFON_ZI);
+      // Costul unei persoane: abaterea de la țintă, blocuri scurte, zile multe, potrivire slabă la pauze.
+      const TC = [0, 0.5, 1.5, 3], RUN = [0, 6, 1, 0, 50];
+      const cost = (t) => {
+        const L = mine.get(t), n = L ? L.size : 0, T = tintaDe(t);
+        let c = 6 * (n - T) * (n - T);
+        if (n < MIN_PAUZE) c += 150 * (MIN_PAUZE - n);
+        if (n > MAX_PAUZE) c += 1000 * (n - MAX_PAUZE);
+        if (!n) return c;
+        const zile = new Map(); L.forEach((s) => (zile.get(s.zi) || zile.set(s.zi, []).get(s.zi)).push(s));
+        zile.forEach((arr) => {
+          arr.sort((a, b) => a.k - b.k);
+          let blocuri = 0, len = 0, prev = null;
+          arr.forEach((s) => {
+            const tr = s.cand.get(t); c += TC[tr === undefined ? 3 : tr];
+            if (prev && s.k === prev.k + 1) { len++; if (s.z.id !== prev.z.id) c += grup(s.z) === grup(prev.z) ? 1 : 4; }
+            else { if (prev) c += RUN[Math.min(len, 4)]; blocuri++; len = 1; }
+            prev = s;
+          });
+          c += RUN[Math.min(len, 4)] + 3 * (blocuri - 1) + 1.5;
+        });
+        return c;
+      };
+      let seed = 20260101;
+      const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+      const mobile = profSloturi.filter((s) => !s.locked && s.candArr.length);
+      const cur = new Map(elig.map((t) => [t, cost(t)]));
+      const costP = (t) => (cur.has(t) ? cur.get(t) : cost(t));
+      let total = 0; elig.forEach((t) => (total += cur.get(t))); total += 500 * profSloturi.filter((s) => !s.who).length;
+      const muta = (lista) => { lista.forEach(([s]) => { if (s.who) take(s); }); lista.forEach(([s, w]) => { if (w) put(s, w); }); };
+      let bestTotal = total, bestState = mobile.map((s) => s.who);
+      const ITER = mobile.length ? 70000 : 0;
+      for (let it = 0; it < ITER; it++) {
+        const Temp = 4 * Math.pow(0.1 / 4, it / ITER);
+        const s = mobile[(rnd() * mobile.length) | 0], p = s.who;
+        const x = s.candArr[(rnd() * s.candArr.length) | 0]; if (x === p) continue;
+        let lista = null, rev = null, afectati = null;
+        const r = rnd();
+        if (r < 0.7) {
+          const s2 = at.get(key(x, s.zi, s.k));
+          if (!s2) {
+            if (blk.has(key(x, s.zi, s.k)) || incarcare(x) >= MAX_PAUZE || ziL(x, s.zi) >= PLAFON_ZI) continue;
+            lista = [[s, x]]; rev = [[s, p]]; afectati = p ? [p, x] : [x];
+          } else {
+            if (s2.locked || s2.z.tip !== "profesori" || !p || !s2.cand.has(p)) continue;
+            lista = [[s, x], [s2, p]]; rev = [[s, p], [s2, x]]; afectati = [p, x];
+          }
+        } else {
+          const s2 = mobile[(rnd() * mobile.length) | 0], q = s2.who;
+          if (s2 === s || !p || !q || p === q || !s2.cand.has(p) || !s.cand.has(q)) continue;
+          const mismoMoment = s2.zi === s.zi && s2.k === s.k;
+          if (!mismoMoment && (ocupat(p, s2.zi, s2.k) || ocupat(q, s.zi, s.k))) continue;
+          const dp = ziL(p, s2.zi) + 1 - (s2.zi === s.zi ? 1 : 0), dq = ziL(q, s.zi) + 1 - (s2.zi === s.zi ? 1 : 0);
+          if (dp > PLAFON_ZI || dq > PLAFON_ZI) continue;
+          lista = [[s, q], [s2, p]]; rev = [[s, p], [s2, q]]; afectati = [p, q];
+        }
+        const inainte = afectati.reduce((a, t) => a + costP(t), 0);
+        muta(lista);
+        const noi = afectati.map((t) => cost(t));
+        const dupa = noi.reduce((a, v) => a + v, 0);
+        const delta = dupa - inainte - (p ? 0 : 500);
+        if (delta <= 0 || rnd() < Math.exp(-delta / Temp)) {
+          afectati.forEach((t, i) => { if (cur.has(t)) cur.set(t, noi[i]); });
+          total += delta;
+          if (total < bestTotal - 1e-9) { bestTotal = total; bestState = mobile.map((m) => m.who); }
+        } else muta(rev);
+      }
+      if (ITER) {
+        const dorit = mobile.map((m, i) => [m, bestState[i]]);
+        muta(dorit);
+      }
+      completeaza();
       // 3) Rezultatul pe pauze și locurile rămase goale (doar pe pauza respectivă).
       const out = [], lipsa = [];
       const dist = (t, zi, k, cg) => {
@@ -6695,33 +6780,24 @@
         let best = Infinity; m.forEach((c, o) => { if (cg.has(c)) best = Math.min(best, o <= k ? k - o : o - (k + 1)); });
         return best;
       };
-      // Învățătorii titulari ai claselor din zonele cu învățători stau cu clasa lor, deci nu se propun la pauze.
-      const invat = new Set();
-      d.zone.filter((z) => z.tip === "invatatori").forEach((z) => zoneCl.get(z.id).forEach((c) => {
-        const m = orePeClasa.get(c); if (!m) return; let best = null; m.forEach((v, t) => { if (!best || v.n > best.v.n) best = { t, v }; }); if (best) invat.add(best.t);
-      }));
       const sugestii = (s) => {
         const cg = claseDe(s.z), pl = poolZ.get(s.z.id);
-        return [...classAt.keys()].filter((t) => !scutiti.has(t) && !invat.has(t) && !at.has(key(t, s.zi, s.k)))
+        return [...classAt.keys()].filter((t) => !scutiti.has(t) && !invat.has(t) && !ocupat(t, s.zi, s.k) && (s.z.tip === "fix" || !salaPool.has(t)))
           .map((t) => ({ t, dd: dist(t, s.zi, s.k, cg) })).filter((x) => x.dd < Infinity)
           .sort((p, q) => (pl && pl.has(q.t) ? 1 : 0) - (pl && pl.has(p.t) ? 1 : 0) || p.dd - q.dd || incarcare(p.t) - incarcare(q.t) || numeDe(p.t).localeCompare(numeDe(q.t), "ro"))
           .slice(0, 6).map((x) => x.t);
       };
       sloturi.sort((p, q) => p.z.id.localeCompare(q.z.id) || p.zi - q.zi || p.k - q.k);
       sloturi.forEach((s) => {
-        if (s.who) out.push({ zona_id: s.z.id, zi: s.zi, pauza: s.k, schimb: null, angajat_id: s.who, nota: null });
+        if (s.who) { if (!s.locked) out.push({ zona_id: s.z.id, zi: s.zi, pauza: s.k, schimb: null, angajat_id: s.who, nota: null }); }
         else lipsa.push({ z: s.z, zi: s.zi, k: s.k, schimb: null, sugestii: sugestii(s) });
       });
-      // Persoane care nu ajung la minimul de pauze și motivul.
-      const sub = elig.filter((t) => incarcare(t) < MIN_PAUZE).map((t) => {
-        const pauze = new Set((slotsOf.get(t) || []).map((s) => s.zi + "|" + s.k));
-        return { t, n: incarcare(t), posibile: pauze.size };
-      }).sort((p, q) => p.n - q.n || numeDe(p.t).localeCompare(numeDe(q.t), "ro"));
-      const media = elig.length ? elig.reduce((n, t) => n + incarcare(t), 0) / elig.length : 0;
-      const peste = elig.filter((t) => incarcare(t) >= media + 3).map((t) => ({ t, n: incarcare(t) })).sort((p, q) => q.n - p.n);
+      const sub = elig.filter((t) => incarcare(t) < MIN_PAUZE).map((t) => ({ t, n: incarcare(t), posibile: new Set(slotsOf.get(t).map((s) => s.zi + "|" + s.k)).size }))
+        .sort((p, q) => p.n - q.n || numeDe(p.t).localeCompare(numeDe(q.t), "ro"));
+      const deasupra = elig.filter((t) => incarcare(t) > MAX_PAUZE).map((t) => ({ t, n: incarcare(t) })).sort((p, q) => q.n - p.n);
       const capac = [];
       SEDII_SERV.forEach((sd) => {
-        const sl = sloturi.filter((s) => s.z.sediu === sd); if (!sl.length) return;
+        const sl = profSloturi.filter((s) => s.z.sediu === sd); if (!sl.length) return;
         const ps = new Set(); sl.forEach((s) => s.cand.forEach((tr, t) => ps.add(t)));
         capac.push({ sediu: sd, locuri: sl.length, persoane: ps.size });
       });
@@ -6739,8 +6815,11 @@
         [["dimineata", poolD, z.nr_supraveghetori], ["dupa_amiaza", poolA, z.nr_dupa_amiaza]].forEach(([schimb, pool, nr]) => {
           const ids = [...pool.keys()]; const cnt = new Map(ids.map((t) => [t, 0])), ultima = new Map(ids.map((t) => [t, 0]));
           for (let zi = 1; zi <= 5; zi++) {
-            const ordine = ids.slice().sort((p, q) => cnt.get(p) - cnt.get(q) || ultima.get(p) - ultima.get(q) || numeDe(p).localeCompare(numeDe(q), "ro"));
-            for (let i = 0; i < nr; i++) {
+            const manual = fixe.filter((r) => r.zona_id === z.id && r.zi === zi && r.schimb === schimb);
+            manual.forEach((r) => { if (cnt.has(r.angajat_id)) { cnt.set(r.angajat_id, cnt.get(r.angajat_id) + 1); ultima.set(r.angajat_id, zi); } inc(zileInv, r.angajat_id); });
+            const luati = new Set(manual.map((r) => r.angajat_id));
+            const ordine = ids.filter((t) => !luati.has(t)).sort((p, q) => cnt.get(p) - cnt.get(q) || ultima.get(p) - ultima.get(q) || numeDe(p).localeCompare(numeDe(q), "ro"));
+            for (let i = 0; i < nr - manual.length; i++) {
               const t = ordine[i];
               if (!t) { lipsa.push({ z, zi, k: null, schimb, sugestii: [] }); continue; }
               out.push({ zona_id: z.id, zi, pauza: null, schimb, angajat_id: t, nota: pool.get(t) });
@@ -6749,7 +6828,7 @@
           }
         });
       });
-      return { out, lipsa, load, zileInv, nume, sub, peste, media, capac, minim: MIN_PAUZE };
+      return { out, lipsa, load, zileInv, nume, sub, deasupra, capac, minim: MIN_PAUZE, maxim: MAX_PAUZE };
     }
     function formPersoane(c, z) {
       const zona = $("serviciu-form"); zona.replaceChildren();
@@ -6869,10 +6948,10 @@
       box.appendChild(el("p", "who", "Se citește orarul și se calculează…"));
       const orar = await orarAn(c.a);
       if (!orar || !orar.length) { box.replaceChildren(el("h3", "", "Graficul propus"), el("p", "who", orar ? "Nu există orar pentru " + c.a.denumire + "." : "Orarul nu a putut fi încărcat.")); return; }
-      const r = genereazaGrafic({ zone: c.zone, clase: c.clase, orar, scutiti: c.scutiti, persoane: c.persoane, angs: c.angs });
+      const r = genereazaGrafic({ zone: c.zone, clase: c.clase, orar, scutiti: c.scutiti, persoane: c.persoane, angs: c.angs, fixe: c.grafic.filter((g) => g.manual) });
       const nume = r.nume;
       box.replaceChildren(el("h3", "", "Graficul propus"));
-      box.appendChild(el("p", "who", "Previzualizare: " + r.out.length + " rânduri" + (r.lipsa.length ? ", " + r.lipsa.length + " locuri rămase neacoperite" : ", toate locurile sunt acoperite") + ". Nu se salvează nimic până nu confirmi."));
+      box.appendChild(el("p", "who", "Previzualizare: " + r.out.length + " rânduri noi" + (r.lipsa.length ? ", " + r.lipsa.length + " locuri rămase neacoperite" : ", toate locurile sunt acoperite") + ". Nu se salvează nimic până nu confirmi."));
       const sedFix = c.zone.filter((z) => z.tip === "fix" && !c.persoane.some((p) => p.zona_id === z.id && p.tip === "pool"));
       sedFix.forEach((z) => box.appendChild(el("p", "who", "⚠️ Pentru " + z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " nu ai adăugat persoanele care pot face serviciu (butonul „Persoane” de la fila „Zone și clase”). Până atunci toate pauzele de acolo rămân de completat.")));
       (r.sub.length ? r.capac : []).filter((x) => x.persoane && x.locuri / x.persoane < r.minim).forEach((x) => box.appendChild(el("p", "who", "⚠️ " + x.sediu + ": sunt " + x.locuri + " locuri la pauze pentru " + x.persoane + " persoane (în medie " + (Math.round(x.locuri / x.persoane * 10) / 10).toString().replace(".", ",") + " pauze). Pentru " + r.minim + " pauze fiecăruia ar fi nevoie de " + x.persoane * r.minim + " locuri.")));
@@ -6881,11 +6960,9 @@
         r.sub.forEach((x) => box.appendChild(el("div", "who", (nume.get(x.t) || "?") + " — " + x.n + (x.n === 1 ? " pauză" : " pauze") + (x.posibile < r.minim ? " (orarul lui se potrivește cu doar " + x.posibile + " pauze din zone)" : " (locurile potrivite sunt necesare și altora care au tot puține)"))));
         box.appendChild(el("p", "who", "Cum poți rezolva: (1) crești numărul de supraveghetori la o zonă din clădirea respectivă, la fila „Zone și clase”; (2) treci persoana la „Scutiri”, dacă nu trebuie să facă serviciu; (3) după salvare, completezi manual din căsuțele graficului."));
       }
-      if (r.peste.length) {
-        const mm = (Math.round(r.media * 10) / 10).toString().replace(".", ",");
-        box.appendChild(el("h3", "", "Persoane cu mult peste medie (" + r.peste.length + ")"));
-        r.peste.forEach((x) => box.appendChild(el("div", "who", (nume.get(x.t) || "?") + " — " + x.n + " pauze, față de media de " + mm)));
-        box.appendChild(el("p", "who", "Cum poți rezolva: la zonele fixe (de exemplu sala de sport) adaugă la „Persoane” și alți profesori care pot face serviciu, ca locurile să se împartă mai bine."));
+      if (r.deasupra.length) {
+        box.appendChild(el("h3", "", "Persoane cu mai mult de " + r.maxim + " pauze (" + r.deasupra.length + ")"));
+        r.deasupra.forEach((x) => box.appendChild(el("div", "who", (nume.get(x.t) || "?") + " — " + x.n + " pauze (din cauza căsuțelor completate manual)")));
       }
       const det = document.createElement("details"); det.appendChild(el("summary", "who", "Încărcarea fiecărei persoane"));
       const toti = new Set([...r.load.keys(), ...r.zileInv.keys()]);
@@ -6912,10 +6989,9 @@
       ctl.append(ok, nu); box.appendChild(ctl);
       nu.addEventListener("click", () => zona.replaceChildren());
       ok.addEventListener("click", async () => {
-        if (c.grafic.some((g) => g.manual) && !confirm("Graficul actual are modificări făcute de tine. Generarea le înlocuiește. Continui?")) return;
         ok.disabled = true;
         const extra = []; alese.forEach((t, i) => { if (t) { const l = r.lipsa[i]; extra.push({ zona_id: l.z.id, zi: l.zi, pauza: l.k || (l.z.tip === "fix" ? 1 : null), schimb: l.schimb || null, angajat_id: t, nota: null, manual: true }); } });
-        const { error: e1 } = await db.from("serviciu_grafic").delete().eq("an_id", c.a.id);
+        const { error: e1 } = await db.from("serviciu_grafic").delete().eq("an_id", c.a.id).eq("manual", false);
         if (e1) { ok.disabled = false; return mesajServ("Graficul vechi nu a putut fi șters."); }
         const rows = r.out.map((x) => ({ ...x, an_id: c.a.id, manual: false })).concat(extra.map((x) => ({ ...x, an_id: c.a.id })));
         for (let i = 0; i < rows.length; i += 300) {
