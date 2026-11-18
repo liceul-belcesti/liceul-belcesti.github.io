@@ -948,6 +948,52 @@
     #altfel .alt-chip { padding:1px 8px; border-radius:999px; font-size:.72rem; font-weight:800; border:1.5px solid var(--line); color:var(--muted); }
     #altfel .alt-chip.gata { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
     #altfel .alt-chip.defacut { border-color:var(--err); color:var(--err); }
+      #serviciu .hello { font-size:1.2rem; margin:0 0 2px; }
+    #serviciu .back { min-height:34px; margin:0 0 8px; padding:4px 12px; font-size:.85rem; }
+    #serviciu .an-bara { display:flex; align-items:center; gap:8px; margin:4px 0 8px; }
+    #serviciu .an-et { margin:0; font-size:.8rem; white-space:nowrap; color:var(--muted); }
+    #serviciu .an-bara select { min-height:38px; padding:4px 10px; font-size:.9rem; }
+    #serviciu .who { margin:4px 0; font-size:.78rem; }
+    #serviciu .ang-rand { min-height:34px; padding:6px 10px; margin-bottom:3px; border-radius:8px; font-size:.875rem; }
+    #serviciu .ang-info { font-size:.75rem; }
+    #serviciu .ang-form { padding:10px; margin:6px 0; }
+    #serviciu .ang-form h3 { margin:0 0 4px; font-size:.95rem; }
+    #serviciu .ang-form label { margin:8px 0 3px; font-size:.78rem; }
+    #serviciu .ang-form input, #serviciu .ang-form select { min-height:38px; padding:4px 10px; font-size:.875rem; }
+    #serviciu .ang-form button { min-height:36px; font-size:.82rem; margin-top:8px; }
+    #serviciu .ang-form .ctl button { margin-top:0; }
+    #serviciu .panel-msg { margin:6px 0; padding:8px 10px; font-size:.85rem; }
+    #serviciu .mic.hidden { display:none; }
+    #serviciu .ang-prog { font-size:.78rem; font-weight:700; letter-spacing:.04em; font-variant-numeric:tabular-nums; color:var(--text); }
+    #serviciu .ang-prog.lipsa { font-weight:500; letter-spacing:0; color:var(--err); }
+    #serviciu { font-size:.875rem; }
+    #serviciu .mic { display:inline-flex; align-items:center; width:auto; min-height:32px; margin:0; padding:4px 10px; font:inherit; font-size:.78rem; font-weight:700; text-decoration:none; color:var(--text); background:transparent; border:1.5px solid var(--line); border-radius:10px; cursor:pointer; }
+    #serviciu #serviciu-tab { background:transparent; padding:0; gap:6px; margin:6px 0 10px; }
+    #serviciu #serviciu-tab button { min-height:46px; padding:6px 4px; font-size:.9rem; font-weight:700; color:var(--accent); background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius:8px; }
+    #serviciu #serviciu-tab button[aria-selected="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); box-shadow:0 2px 6px rgba(0,0,0,.25); }
+    #serviciu .ang-rand { border-left:5px solid var(--line); }
+    #serviciu .grup-clasa { margin:14px 0 4px; padding:6px 10px; background:var(--bg); border-radius:8px; }
+    #serviciu textarea { display:block; width:100%; box-sizing:border-box; padding:8px 10px; font:inherit; font-size:.875rem; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
+    #serviciu h3 { margin:12px 0 4px; font-size:.9rem; }
+    #serviciu label.rand-grup { display:flex; align-items:center; gap:10px; margin:0; padding:5px 0; font-size:.88rem; font-weight:600; }
+    #serviciu label.rand-grup input { width:20px; min-height:20px; height:20px; margin:0; padding:0; flex:none; }
+    #serviciu div.rand-grup { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:0 12px; margin:2px 0 6px; }
+    #serviciu details summary { cursor:pointer; margin:4px 0; }
+    #serviciu .alt-prog { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:2px 0 6px; }
+    #serviciu details.alt-zi { margin:6px 0; padding:6px 8px; border:1px solid var(--line); border-radius:10px; }
+    #serviciu details.alt-zi > summary { cursor:pointer; font-weight:700; }
+    #serviciu details.alt-zi strong { display:block; margin:8px 0 2px; font-size:.82rem; }
+    #serviciu .ora-sel { display:flex; align-items:center; gap:6px; }
+    #serviciu .ora-sel select { flex:1 1 0; min-width:0; }
+    #serviciu .ora-sep { font-weight:800; }
+    #serviciu details.alt-ghid { margin:8px 0; padding:8px 10px; border:1.5px solid var(--accent); border-radius:12px; background:var(--card); }
+    #serviciu details.alt-ghid > summary { cursor:pointer; font-weight:800; color:var(--accent); }
+    #serviciu .alt-ghid ol { margin:8px 0 4px; padding-left:20px; }
+    #serviciu .alt-ghid li { margin:0 0 10px; }
+    #serviciu .alt-pas { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+    #serviciu .alt-chip { padding:1px 8px; border-radius:999px; font-size:.72rem; font-weight:800; border:1.5px solid var(--line); color:var(--muted); }
+    #serviciu .alt-chip.gata { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+    #serviciu .alt-chip.defacut { border-color:var(--err); color:var(--err); }
 </style>
 </head>
 <body>
@@ -1208,6 +1254,23 @@
       <div id="altfel-lista"></div>
     </main>
 
+    <main id="serviciu" class="wrap hidden">
+      <button id="inapoi-serviciu" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Serviciu pe școală</h1>
+      <div class="an-bara">
+        <label for="serviciu-an" class="an-et">Anul școlar</label>
+        <select id="serviciu-an"></select>
+      </div>
+      <div class="tabs" role="tablist" id="serviciu-tab">
+        <button type="button" role="tab" data-v="zone" aria-selected="true">🏢 Zone și clase</button>
+        <button type="button" role="tab" data-v="scutiri" aria-selected="false">🚫 Scutiri</button>
+      </div>
+      <div id="serviciu-msg" class="panel-msg" role="status"></div>
+      <div id="serviciu-antet"></div>
+      <div id="serviciu-form"></div>
+      <div id="serviciu-lista"></div>
+    </main>
+
     <main id="anunturi" class="wrap hidden">
       <button id="inapoi-anunturi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Anunțuri</h1>
@@ -1294,14 +1357,15 @@
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul profesorilor și al claselor, tipărire", sub: ["Orarul profesorilor", "Orarul claselor"], activ: true },
       structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
       altfel:   { ico: "🎨", t: "Școala Altfel și Săptămâna Verde", d: "Programul celor două săptămâni", sub: ["Școala Altfel", "Săptămâna Verde"], activ: true },
+      serviciu: { ico: "🛎️", t: "Serviciu pe școală", d: "Zone, clase și scutiri pentru serviciul din pauze", sub: ["Zone și clase", "Scutiri"], activ: true },
       registru: { ico: "📁", t: "Registratură", d: "Documente și numere de înregistrare", sub: ["Documente", "Numere de înregistrare"] },
       catalog:  { ico: "📘", t: "Situație școlară", d: "Note și absențe", sub: ["Note", "Absențe"] }
     };
     // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "registru"],
-      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "registru"],
+      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "registru"],
+      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "serviciu", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
       profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
@@ -1416,6 +1480,7 @@
       $("cereri").classList.add("hidden");
       $("evaluare").classList.add("hidden");
       $("altfel").classList.add("hidden");
+      $("serviciu").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
       if (euId) actualizeazaNotificari();
     }
@@ -1423,9 +1488,10 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare" && cheie !== "altfel") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare" && cheie !== "altfel" && cheie !== "serviciu") return;
       if (cheie === "cereri") return deschideCereri();
       if (cheie === "altfel") return deschideAltfel();
+      if (cheie === "serviciu") return deschideServiciu();
       if (cheie === "evaluare") return deschideEvaluare();
       if (cheie === "azi") return deschideAzi();
       if (cheie === "orar") return deschideOrar();
@@ -6183,9 +6249,294 @@
       box.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
+    // ===== Serviciu pe școală: configurare (zone, clase, scutiri) =====
+    const mesajServ = (text, ok) => { $("serviciu-msg").textContent = text || ""; $("serviciu-msg").className = "panel-msg" + (ok ? " ok" : ""); };
+    let tabServ = "zone";
+    const SEDII_SERV = ["Centru", "Munteni", "Tansa"];
+    const TIP_ZONA = { profesori: "Profesori care au ore la clasele zonei", invatatori: "Învățători, pe zile întregi", fix: "Persoane stabilite (de exemplu sala de sport)" };
+    // Propunere de pornire (se vede în previzualizare și se salvează doar după confirmare).
+    const PROPUNERE_ZONE = [
+      { sediu: "Centru", corp: "Corp A", grupa: "Corp A + Corp B", den: "Parter", tip: "profesori", nr: 2, clase: ["5B", "6A", "6B", "7A", "8B"] },
+      { sediu: "Centru", corp: "Corp A", grupa: "Corp A + Corp B", den: "Etaj 1", tip: "profesori", nr: 1, clase: ["5A", "7B", "8A"] },
+      { sediu: "Centru", corp: "Corp B", grupa: "Corp A + Corp B", den: "Parter", tip: "profesori", nr: 1, clase: ["9C", "10C", "11C"] },
+      { sediu: "Centru", corp: "Corp B", grupa: "Corp A + Corp B", den: "Etaj 2", tip: "profesori", nr: 1, clase: ["9D", "10B", "11B"] },
+      { sediu: "Centru", corp: "Corp Spiru Haret", grupa: "Corp Spiru Haret", den: "Toate etajele", tip: "profesori", nr: 1, clase: ["9A", "10A", "11A", "12A"] },
+      { sediu: "Centru", corp: "Corp ateliere", grupa: "Corp ateliere", den: "Toate încăperile", tip: "profesori", nr: 1, clase: ["10D", "11D"] },
+      { sediu: "Centru", corp: "Sala de sport", grupa: "Sala de sport", den: "Sala de sport", tip: "fix", nr: 1, clase: [] },
+      { sediu: "Centru", corp: "Corp învățători", grupa: "Corp învățători", den: "Toate încăperile", tip: "invatatori", nr: 2, dupa: 1, clase: ["CPBel", "2ABel", "4ABel", "4BBel", "1ABel", "3ABel"] },
+      { sediu: "Munteni", corp: "Corp unic", grupa: "Corp unic", den: "Profesori", tip: "profesori", nr: 1, clase: ["Mun5C", "Mun6C", "Mun8C"] },
+      { sediu: "Munteni", corp: "Corp unic", grupa: "Corp unic", den: "Învățători", tip: "invatatori", nr: 1, dupa: 1, clase: ["MunCP", "Mun2B", "Mun4C"] },
+      { sediu: "Tansa", corp: "Corp unic", grupa: "Corp unic", den: "Învățători și educatoare", tip: "invatatori", nr: 1, dupa: 1, clase: ["CPTan", "2TanC", "Tan2C", "4TanD", "Tan4D"] }
+    ];
+    $("inapoi-serviciu").addEventListener("click", arataPrincipal);
+    $("serviciu-tab").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button[data-v]"); if (!b) return;
+      tabServ = b.dataset.v;
+      $("serviciu-tab").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x === b ? "true" : "false"));
+      mesajServ(""); desenezServiciu();
+    });
+    $("serviciu-an").addEventListener("change", desenezServiciu);
+    async function deschideServiciu() {
+      if (!poateModificaAng()) return;
+      memoreazaVedere("serviciu");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("serviciu").classList.remove("hidden");
+      mesajServ(""); $("serviciu-form").replaceChildren(); $("serviciu-lista").replaceChildren(el("p", "who", "Se încarcă…"));
+      const { data, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false });
+      if (error || !data || !data.length) { $("serviciu-lista").replaceChildren(); return mesajServ("Anii școlari nu au putut fi încărcați."); }
+      const sel = $("serviciu-an"); const vechi = sel.value; sel.replaceChildren(); sel._ani = data;
+      data.forEach((x) => sel.add(new Option(x.denumire + (x.inchis ? " · închis" : ""), x.id)));
+      sel.value = data.some((x) => x.id === vechi) ? vechi : (data.find((x) => x.denumire === anulScolarZilei()) || data[0]).id;
+      desenezServiciu();
+    }
+    async function desenezServiciu() {
+      const sel = $("serviciu-an"); const a = (sel._ani || []).find((x) => x.id === sel.value); if (!a) return;
+      const lista = $("serviciu-lista"), antet = $("serviciu-antet"); $("serviciu-form").replaceChildren();
+      lista.replaceChildren(el("p", "who", "Se încarcă…")); antet.replaceChildren();
+      const tabCurent = tabServ;
+      const [rz, rc, rs, ra, claseA] = await Promise.all([
+        db.from("serviciu_zone").select("id, sediu, corp, grupa_corp, denumire, tip, nr_supraveghetori, nr_dupa_amiaza, ordine").eq("an_id", a.id).order("sediu").order("ordine").order("corp").order("denumire"),
+        db.from("serviciu_zona_clase").select("id, zona_id, clasa").eq("an_id", a.id),
+        db.from("serviciu_scutiti").select("id, angajat_id, motiv").eq("an_id", a.id),
+        db.from("angajati").select("id, nume").eq("an_id", a.id).is("sters_la", null).order("nume"),
+        claseAn(a)
+      ]);
+      if (tabCurent !== tabServ || sel.value !== a.id) return;
+      lista.replaceChildren();
+      if (rz.error || rc.error || rs.error || ra.error) return mesajServ("Datele nu au putut fi încărcate. Încearcă din nou.");
+      const poate = poateModificaAng() && !a.inchis;
+      const ctx = { a, poate, zone: rz.data || [], clase: rc.data || [], scutiti: rs.data || [], angs: ra.data || [], claseA };
+      antet.appendChild(ghidServiciu(ctx));
+      if (a.inchis) antet.appendChild(el("p", "who", "An școlar închis: doar consultare."));
+      if (tabServ === "zone") desenezZone(ctx); else desenezScutiri(ctx);
+    }
+    function ghidServiciu(c) {
+      const det = document.createElement("details"); det.className = "alt-ghid";
+      det.open = !c.zone.length;
+      det.appendChild(el("summary", "who", "📋 Cum se stabilește serviciul pe școală – pași de urmat"));
+      const ol = document.createElement("ol");
+      const pas = (titlu, text, stare) => {
+        const li = document.createElement("li"); const cap = el("div", "alt-pas"); cap.appendChild(el("strong", "", titlu));
+        cap.appendChild(el("span", "alt-chip " + (stare === "gata" ? "gata" : stare === "defacut" ? "defacut" : ""), stare === "gata" ? "✓ făcut" : stare === "defacut" ? "de făcut" : "urmează"));
+        li.append(cap, el("div", "who", text)); ol.appendChild(li);
+      };
+      const faraZona = c.claseA.filter((x) => !c.clase.some((y) => y.clasa === x));
+      pas("Zonele și clasele lor", "La fila „Zone și clase” definești pentru fiecare structură corpurile și zonele (parter, etaj), cine le supraveghează și clasele din fiecare zonă. Corpurile legate între ele primesc aceeași grupă.", c.zone.length ? (faraZona.length ? "defacut" : "gata") : "defacut");
+      pas("Scutirile", "La fila „Scutiri” treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
+      pas("Persoanele stabilite", "Pentru zonele cu persoane fixe (sala de sport, învățătoarea de după-amiază de la Munteni) se trec numele și programul lor.", "urmeaza");
+      pas("Graficul pe pauze", "Platforma propune graficul din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu rotație echitabilă; tu îl modifici.", "urmeaza");
+      pas("Profesorii își văd serviciul", "Fiecare vede în „Orarul meu” când și unde este de serviciu.", "urmeaza");
+      det.appendChild(ol); return det;
+    }
+    function desenezZone(c) {
+      const lista = $("serviciu-lista");
+      const clasePeZona = new Map(); c.clase.forEach((x) => (clasePeZona.get(x.zona_id) || clasePeZona.set(x.zona_id, []).get(x.zona_id)).push(x.clasa));
+      const ord = (p, q) => p.localeCompare(q, "ro", { numeric: true });
+      if (c.poate) {
+        const ctl = el("div", "ctl");
+        const add = el("button", "", "+ Adaugă zonă"); add.type = "button"; add.addEventListener("click", () => formZona(c, null));
+        ctl.appendChild(add);
+        if (!c.zone.length) { const pr = el("button", "secondary", "Propune zonele"); pr.type = "button"; pr.addEventListener("click", () => previzualizeazaZone(c)); ctl.appendChild(pr); }
+        lista.appendChild(ctl);
+      }
+      if (!c.zone.length) lista.appendChild(el("p", "who", "Nu ai introdus încă nicio zonă pentru " + c.a.denumire + "."));
+      SEDII_SERV.forEach((s) => {
+        const zs = c.zone.filter((z) => z.sediu === s); if (!zs.length) return;
+        lista.appendChild(el("h3", "grup-clasa", s));
+        zs.forEach((z) => {
+          const r = el("div", "ang-rand citire"); const st = el("div", "");
+          st.appendChild(el("div", "ang-nume", z.corp + (z.denumire && z.denumire !== z.corp ? " · " + z.denumire : "")));
+          const cl = (clasePeZona.get(z.id) || []).sort(ord);
+          const nr = z.tip === "invatatori" ? z.nr_supraveghetori + " dimineața, " + z.nr_dupa_amiaza + " după-amiaza" : z.nr_supraveghetori + (z.nr_supraveghetori === 1 ? " supraveghetor" : " supraveghetori") + " la fiecare pauză";
+          st.appendChild(el("div", "ang-info", TIP_ZONA[z.tip] + " · " + nr));
+          st.appendChild(el("div", "ang-info", "Clase: " + (cl.length ? cl.join(", ") : "—")));
+          if (z.grupa_corp !== z.corp) st.appendChild(el("div", "ang-info", "Legat cu: " + z.grupa_corp));
+          r.appendChild(st);
+          if (c.poate) {
+            const ac = el("div", "ctl");
+            const m = el("button", "mic secondary", "Modifică"); m.type = "button"; m.addEventListener("click", () => formZona(c, z));
+            const d = el("button", "mic secondary", "Șterge"); d.type = "button"; d.addEventListener("click", async () => {
+              if (!confirm("Ștergi zona „" + z.corp + " · " + z.denumire + "”?")) return;
+              const { error } = await db.from("serviciu_zone").delete().eq("id", z.id);
+              if (error) return mesajServ("Zona nu a putut fi ștearsă."); mesajServ("Zona a fost ștearsă.", true); desenezServiciu();
+            });
+            ac.append(m, d); r.appendChild(ac);
+          }
+          lista.appendChild(r);
+        });
+      });
+      const fara = c.claseA.filter((x) => !c.clase.some((y) => y.clasa === x));
+      if (c.zone.length) lista.appendChild(el("p", "who", fara.length ? "Clase din orar care nu sunt încă în nicio zonă: " + fara.join(", ") + "." : "Toate clasele din orar sunt într-o zonă."));
+    }
+    function formZona(c, z) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", z ? "Modifică zona" : "Adaugă zonă"));
+      const camp = (et, nod) => { box.appendChild(el("label", "", et)); box.appendChild(nod); return nod; };
+      const sSed = document.createElement("select"); SEDII_SERV.forEach((s) => sSed.add(new Option(s, s))); camp("Structura", sSed);
+      const iCorp = document.createElement("input"); iCorp.maxLength = 80; iCorp.placeholder = "De exemplu Corp A"; camp("Corpul de clădire", iCorp);
+      const iGrupa = document.createElement("input"); iGrupa.maxLength = 80; iGrupa.placeholder = "Același text pentru corpurile legate între ele"; camp("Corpuri legate (grupa)", iGrupa);
+      const iDen = document.createElement("input"); iDen.maxLength = 80; iDen.placeholder = "De exemplu Parter"; camp("Zona (etaj sau parte din corp)", iDen);
+      const sTip = document.createElement("select"); Object.keys(TIP_ZONA).forEach((k) => sTip.add(new Option(TIP_ZONA[k], k))); camp("Cine face serviciu", sTip);
+      const iNr = document.createElement("input"); iNr.type = "number"; iNr.min = "0"; iNr.max = "10"; iNr.value = "1";
+      const lNr = el("label", "", "Câți supraveghetori la fiecare pauză"); box.append(lNr, iNr);
+      const iDupa = document.createElement("input"); iDupa.type = "number"; iDupa.min = "0"; iDupa.max = "10"; iDupa.value = "0";
+      const lDupa = el("label", "", "Câți învățători după-amiaza"); box.append(lDupa, iDupa);
+      const potrivesteTip = () => { const inv = sTip.value === "invatatori"; lNr.textContent = inv ? "Câți învățători dimineața" : "Câți supraveghetori la fiecare pauză"; lDupa.classList.toggle("hidden", !inv); iDupa.classList.toggle("hidden", !inv); };
+      sTip.addEventListener("change", potrivesteTip);
+      box.appendChild(el("label", "", "Clasele din această zonă"));
+      const cr = el("div", "rand-grup"); box.appendChild(cr);
+      const luate = new Map(); const zonaDe = new Map(c.zone.map((x) => [x.id, x]));
+      c.clase.forEach((x) => { if (!z || x.zona_id !== z.id) { const zz = zonaDe.get(x.zona_id); luate.set(x.clasa, zz ? zz.corp + " · " + zz.denumire : "altă zonă"); } });
+      const cb = {};
+      const mele = new Set(c.clase.filter((x) => z && x.zona_id === z.id).map((x) => x.clasa));
+      c.claseA.forEach((cl) => {
+        const l = el("label", "rand-grup"); const k = document.createElement("input"); k.type = "checkbox"; k.checked = mele.has(cl); k.disabled = luate.has(cl);
+        l.append(k, document.createTextNode(" " + cl + (luate.has(cl) ? " (în " + luate.get(cl) + ")" : ""))); cr.appendChild(l); cb[cl] = k;
+      });
+      if (z) { sSed.value = z.sediu; iCorp.value = z.corp; iGrupa.value = z.grupa_corp; iDen.value = z.denumire; sTip.value = z.tip; iNr.value = z.nr_supraveghetori; iDupa.value = z.nr_dupa_amiaza; }
+      potrivesteTip();
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Salvează"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      ctl.append(ok, nu); box.appendChild(ctl);
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        const corp = iCorp.value.trim(), den = iDen.value.trim() || corp, grupa = iGrupa.value.trim() || corp;
+        if (!corp) return mesajServ("Scrie corpul de clădire.");
+        const nr = Math.max(0, Math.min(10, parseInt(iNr.value, 10) || 0)), dupa = sTip.value === "invatatori" ? Math.max(0, Math.min(10, parseInt(iDupa.value, 10) || 0)) : 0;
+        ok.disabled = true;
+        const rand = { an_id: c.a.id, sediu: sSed.value, corp, grupa_corp: grupa, denumire: den, tip: sTip.value, nr_supraveghetori: nr, nr_dupa_amiaza: dupa };
+        let id = z && z.id;
+        if (z) { const { error } = await db.from("serviciu_zone").update(rand).eq("id", z.id); if (error) { ok.disabled = false; return mesajServ(error.code === "23505" ? "Există deja o zonă cu aceeași structură, același corp și aceeași denumire." : "Zona nu a putut fi salvată."); } }
+        else { const { data, error } = await db.from("serviciu_zone").insert(rand).select("id").single(); if (error) { ok.disabled = false; return mesajServ(error.code === "23505" ? "Există deja o zonă cu aceeași structură, același corp și aceeași denumire." : "Zona nu a putut fi salvată."); } id = data.id; }
+        const alese = Object.keys(cb).filter((k) => cb[k].checked && !cb[k].disabled);
+        const { error: e1 } = await db.from("serviciu_zona_clase").delete().eq("zona_id", id);
+        if (e1) { ok.disabled = false; return mesajServ("Clasele zonei nu au putut fi actualizate."); }
+        if (alese.length) { const { error: e2 } = await db.from("serviciu_zona_clase").insert(alese.map((k) => ({ an_id: c.a.id, zona_id: id, clasa: k }))); if (e2) { ok.disabled = false; return mesajServ("Clasele zonei nu au putut fi salvate."); } }
+        zona.replaceChildren(); mesajServ("Zona a fost salvată.", true); desenezServiciu();
+      });
+      box.scrollIntoView({ block: "nearest" });
+    }
+    function previzualizeazaZone(c) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", "Propunere de zone"));
+      box.appendChild(el("p", "who", "Verifică lista. Nu se salvează nimic până nu confirmi. Clasele care nu există în orarul anului sunt trecute separat și nu se adaugă."));
+      const existente = new Set(c.claseA);
+      let nrZ = 0, nrC = 0; const lipsa = [];
+      const bune = PROPUNERE_ZONE.map((p) => ({ ...p, clase: p.clase.filter((x) => { if (existente.has(x)) return true; lipsa.push(x); return false; }) }));
+      SEDII_SERV.forEach((s) => {
+        const zs = bune.filter((p) => p.sediu === s); if (!zs.length) return;
+        box.appendChild(el("h3", "grup-clasa", s));
+        zs.forEach((p) => {
+          nrZ++; nrC += p.clase.length;
+          const nr = p.tip === "invatatori" ? p.nr + " dimineața, " + (p.dupa || 0) + " după-amiaza" : p.nr + (p.nr === 1 ? " supraveghetor" : " supraveghetori");
+          box.appendChild(el("div", "who", p.corp + (p.den !== p.corp ? " · " + p.den : "") + " — " + TIP_ZONA[p.tip] + " — " + nr + (p.clase.length ? " — clase: " + p.clase.join(", ") : "")));
+        });
+      });
+      if (lipsa.length) box.appendChild(el("p", "who", "Neexistente în orar (nu se adaugă): " + [...new Set(lipsa)].join(", ") + "."));
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Salvează zonele (" + nrZ + ")"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      ctl.append(ok, nu); box.appendChild(ctl);
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        ok.disabled = true;
+        const rows = bune.map((p, i) => ({ an_id: c.a.id, sediu: p.sediu, corp: p.corp, grupa_corp: p.grupa, denumire: p.den, tip: p.tip, nr_supraveghetori: p.nr, nr_dupa_amiaza: p.dupa || 0, ordine: i }));
+        const { data, error } = await db.from("serviciu_zone").insert(rows).select("id, sediu, corp, denumire");
+        if (error) { ok.disabled = false; return mesajServ("Zonele nu au putut fi salvate."); }
+        const cheie = (x) => x.sediu + "|" + x.corp + "|" + x.denumire; const idDe = new Map(data.map((x) => [cheie(x), x.id]));
+        const cl = []; bune.forEach((p) => p.clase.forEach((k) => cl.push({ an_id: c.a.id, zona_id: idDe.get(cheie({ sediu: p.sediu, corp: p.corp, denumire: p.den })), clasa: k })));
+        if (cl.length) { const { error: e2 } = await db.from("serviciu_zona_clase").insert(cl); if (e2) { ok.disabled = false; return mesajServ("Clasele zonelor nu au putut fi salvate. Verifică lista și încearcă din nou."); } }
+        zona.replaceChildren(); mesajServ("Au fost salvate " + nrZ + " zone, cu " + nrC + " clase.", true); desenezServiciu();
+      });
+    }
+    function desenezScutiri(c) {
+      const lista = $("serviciu-lista");
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      if (c.poate) {
+        const ctl = el("div", "ctl");
+        const add = el("button", "", "+ Adaugă scutire"); add.type = "button"; add.addEventListener("click", () => formScutire(c));
+        const pr = el("button", "secondary", "Propune scutirile"); pr.type = "button"; pr.addEventListener("click", () => previzualizeazaScutiri(c));
+        ctl.append(add, pr); lista.appendChild(ctl);
+      }
+      if (!c.scutiti.length) lista.appendChild(el("p", "who", "Nu ai trecut încă nicio persoană scutită de serviciu."));
+      [...c.scutiti].sort((p, q) => (nume.get(p.angajat_id) || "").localeCompare(nume.get(q.angajat_id) || "", "ro")).forEach((s) => {
+        const r = el("div", "ang-rand citire"); const st = el("div", "");
+        st.appendChild(el("div", "ang-nume", nume.get(s.angajat_id) || "Angajat necunoscut"));
+        if (s.motiv) st.appendChild(el("div", "ang-info", s.motiv));
+        r.appendChild(st);
+        if (c.poate) {
+          const d = el("button", "mic secondary", "Șterge"); d.type = "button";
+          d.addEventListener("click", async () => { const { error } = await db.from("serviciu_scutiti").delete().eq("id", s.id); if (error) return mesajServ("Scutirea nu a putut fi ștearsă."); mesajServ("Scutirea a fost ștearsă.", true); desenezServiciu(); });
+          r.appendChild(el("div", "ctl")).appendChild(d);
+        }
+        lista.appendChild(r);
+      });
+    }
+    function formScutire(c) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", "Adaugă scutire"));
+      const deja = new Set(c.scutiti.map((x) => x.angajat_id));
+      box.appendChild(el("label", "", "Persoana"));
+      const sp = document.createElement("select"); sp.add(new Option("Alege…", ""));
+      c.angs.filter((x) => !deja.has(x.id)).forEach((x) => sp.add(new Option(x.nume, x.id))); box.appendChild(sp);
+      box.appendChild(el("label", "", "Motivul (opțional)"));
+      const im = document.createElement("input"); im.maxLength = 200; im.placeholder = "De exemplu conducerea școlii"; box.appendChild(im);
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Salvează"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      ctl.append(ok, nu); box.appendChild(ctl);
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        if (!sp.value) return mesajServ("Alege persoana.");
+        ok.disabled = true;
+        const { error } = await db.from("serviciu_scutiti").insert({ an_id: c.a.id, angajat_id: sp.value, motiv: im.value.trim() || null });
+        if (error) { ok.disabled = false; return mesajServ("Scutirea nu a putut fi salvată."); }
+        zona.replaceChildren(); mesajServ("Scutirea a fost salvată.", true); desenezServiciu();
+      });
+    }
+    async function previzualizeazaScutiri(c) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", "Propunere de scutiri"));
+      box.appendChild(el("p", "who", "Se propun persoanele cu rol de director și cele cu cel mult 4 ore pe săptămână în orar. Nu se salvează nimic până nu confirmi."));
+      box.appendChild(el("p", "who", "Se calculează…"));
+      const ore = new Map();
+      for (let pg = 0; pg < 20; pg++) {
+        const { data, error } = await db.from("orar_profesori").select("angajat_id").eq("an_id", c.a.id).range(pg * 1000, pg * 1000 + 999);
+        if (error) { box.replaceChildren(el("p", "who", "Orarul nu a putut fi încărcat.")); return; }
+        if (!data || !data.length) break;
+        data.forEach((r) => ore.set(r.angajat_id, (ore.get(r.angajat_id) || 0) + 1));
+        if (data.length < 1000) break;
+      }
+      const dir = new Set();
+      const { data: pf } = await db.from("profiluri").select("angajat_nume, roluri").contains("roluri", ["director"]).is("sters_la", null);
+      (pf || []).forEach((x) => x.angajat_nume && dir.add(x.angajat_nume));
+      const deja = new Set(c.scutiti.map((x) => x.angajat_id));
+      const prop = c.angs.filter((x) => !deja.has(x.id) && (dir.has(x.nume) || (ore.get(x.id) || 0) <= 4 && ore.has(x.id)))
+        .map((x) => ({ ...x, motiv: dir.has(x.nume) ? "Conducerea școlii" : "Foarte puține ore în orar (" + ore.get(x.id) + ")" }));
+      box.replaceChildren(el("h3", "", "Propunere de scutiri"));
+      if (!prop.length) { box.appendChild(el("p", "who", "Nu am găsit persoane de propus.")); return; }
+      prop.forEach((x) => box.appendChild(el("div", "who", x.nume + " — " + x.motiv)));
+      const ctl = el("div", "ctl");
+      const ok = el("button", "", "Salvează scutirile (" + prop.length + ")"); ok.type = "button";
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button";
+      ctl.append(ok, nu); box.appendChild(ctl);
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", async () => {
+        ok.disabled = true;
+        const { error } = await db.from("serviciu_scutiti").insert(prop.map((x) => ({ an_id: c.a.id, angajat_id: x.id, motiv: x.motiv })));
+        if (error) { ok.disabled = false; return mesajServ("Scutirile nu au putut fi salvate."); }
+        zona.replaceChildren(); mesajServ("Au fost salvate " + prop.length + " scutiri.", true); desenezServiciu();
+      });
+    }
+
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi-altfel", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi-altfel", "inapoi-serviciu", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
