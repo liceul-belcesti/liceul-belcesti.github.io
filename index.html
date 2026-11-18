@@ -84,6 +84,13 @@
     .ang-rand.citire { cursor:default; }
     .ang-rand.citire:hover { border-color:var(--line); }
     .ang-nume { font-weight:700; }
+    .ang-rand.dir { display:grid; grid-template-columns:120px minmax(0,380px); justify-content:start; align-items:center; gap:4px 20px; border-left:6px solid var(--line); }
+    .ang-rand.dir.are { border-left-color:var(--accent); }
+    .ang-rand.dir.par { background:color-mix(in srgb, var(--teal-100) 55%, var(--card)); }
+    .ang-rand.dir .ang-nume { font-size:1.15rem; color:var(--accent); }
+    .ang-rand.dir select { width:100%; min-height:42px; padding:6px 10px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:10px; }
+    .ang-rand.dir:hover, .ang-rand.dir:focus-within { border-color:var(--accent); background:var(--teal-100); }
+    .ang-rand.dir.salvat { outline:3px solid var(--accent); }
     .ang-info { font-size:.85rem; color:var(--muted); }
     .ang-filtre { display:grid; gap:10px; margin:14px 0 4px; }
     .ang-filtre select, .ang-form select { width:100%; min-height:48px; padding:10px 12px; font:inherit; color:var(--text); background:var(--card);
@@ -1186,7 +1193,6 @@
       </div>
       <div id="administrare" class="hidden">
       <button id="inapoi-admin" class="back" type="button">← Înapoi</button>
-      <h3 class="sect">Administrare</h3>
       <div id="an-actiuni" class="an-actiuni hidden">
         <button id="an-nou" class="secondary" type="button">+ Anul școlar nou</button>
         <button id="an-inchide" class="secondary" type="button">Închide anul</button>
@@ -3428,32 +3434,39 @@
       if (tabP !== "diriginti" || anCer !== anId) return;
       lista.replaceChildren();
       if (!orar || rd.error || ra.error) return mesajPontaj("Datele nu au putut fi încărcate. Încearcă din nou.");
-      const angs = ra.data || [], dirDe = new Map((rd.data || []).map((x) => [x.clasa, x]));
+      const dirDe = new Map((rd.data || []).map((x) => [x.clasa, x]));
+      // Fiecare persoană apare o singură dată (aceeași persoană poate avea mai multe fișe), în ordine alfabetică.
+      const peNume = new Map();
+      (ra.data || []).forEach((x) => { const k = x.nume.trim().toLowerCase(); if (!peNume.has(k)) peNume.set(k, { nume: x.nume, ids: [] }); peNume.get(k).ids.push(x.id); });
+      const persoane = [...peNume.values()].sort((p, q) => colator.compare(p.nume, q.nume));
+      const persDe = new Map(); persoane.forEach((pe) => pe.ids.forEach((i) => persDe.set(i, pe)));
       const ore = new Map();
       orar.forEach((r) => { const m = ore.get(r.clasa) || ore.set(r.clasa, new Map()).get(r.clasa); m.set(r.angajat_id, (m.get(r.angajat_id) || 0) + 1); });
       const clase = [...ore.keys()].sort((p, q) => p.localeCompare(q, "ro", { numeric: true }));
       if (!clase.length) return lista.appendChild(el("p", "who", "Nu există orar încărcat pentru acest an școlar, deci nu se știe ce clase sunt."));
       const numar = () => { $("ang-numar").textContent = dirDe.size + " din " + clase.length + " clase au diriginte"; };
       numar();
-      lista.appendChild(el("p", "who", "Alege pentru fiecare clasă profesorul diriginte. Primii în listă sunt cei care au ore la clasa respectivă."));
-      clase.forEach((cl) => {
-        const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", cl));
+      lista.appendChild(el("p", "who", "Alege pentru fiecare clasă profesorul diriginte. În listă, mai întâi cei care au ore la clasa respectivă, apoi ceilalți angajați, fiecare grup în ordine alfabetică."));
+      clase.forEach((cl, ix) => {
+        const r = el("div", "ang-rand citire dir" + (ix % 2 ? " par" : "")); r.appendChild(el("div", "ang-nume", "Clasa " + cl));
         const sel = document.createElement("select"); sel.disabled = !poate; sel.setAttribute("aria-label", "Diriginte clasa " + cl);
         sel.add(new Option("— fără diriginte —", ""));
-        const predau = [...ore.get(cl).entries()].sort((p, q) => q[1] - p[1]).map((x) => x[0]);
+        const oreCl = ore.get(cl);
+        const valoare = (pe) => pe.ids.slice().sort((a, b) => (oreCl.get(b) || 0) - (oreCl.get(a) || 0))[0];
         const gr1 = document.createElement("optgroup"); gr1.label = "Au ore la clasă";
-        predau.forEach((id) => { const g = angs.find((x) => x.id === id); if (g) gr1.appendChild(new Option(g.nume, g.id)); });
         const gr2 = document.createElement("optgroup"); gr2.label = "Alți angajați";
-        angs.filter((x) => !predau.includes(x.id)).forEach((x) => gr2.appendChild(new Option(x.nume, x.id)));
+        persoane.forEach((pe) => (pe.ids.some((i) => oreCl.has(i)) ? gr1 : gr2).appendChild(new Option(pe.nume, valoare(pe))));
         if (gr1.children.length) sel.appendChild(gr1); sel.appendChild(gr2);
-        const cur = dirDe.get(cl); sel.value = cur ? cur.angajat_id : "";
+        const setVal = () => { const c = dirDe.get(cl), pc = c && persDe.get(c.angajat_id); sel.value = pc ? valoare(pc) : ""; r.classList.toggle("are", !!pc); };
+        setVal();
         sel.addEventListener("change", async () => {
           sel.disabled = true;
           let eroare = null;
           if (!sel.value) { const x = await db.from("diriginti").delete().eq("an_id", anCer).eq("clasa", cl); eroare = x.error; if (!eroare) dirDe.delete(cl); }
           else { const x = await db.from("diriginti").upsert({ an_id: anCer, clasa: cl, angajat_id: sel.value }, { onConflict: "an_id,clasa" }).select("id, clasa, angajat_id").single(); eroare = x.error; if (!eroare) dirDe.set(cl, x.data || { clasa: cl, angajat_id: sel.value }); }
           sel.disabled = !poate;
-          if (eroare) { const v = dirDe.get(cl); sel.value = v ? v.angajat_id : ""; return mesajPontaj("Nu am putut salva. Încearcă din nou."); }
+          if (eroare) { setVal(); return mesajPontaj("Nu am putut salva. Încearcă din nou."); }
+          setVal(); r.classList.add("salvat"); setTimeout(() => r.classList.remove("salvat"), 1500);
           mesajPontaj("Salvat: clasa " + cl + ".", true); numar();
         });
         r.appendChild(sel); lista.appendChild(r);
