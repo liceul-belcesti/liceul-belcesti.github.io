@@ -353,6 +353,23 @@
     .bar #bar-pontaj.hidden { display:none; }
     .bar #btn-admin { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; background:#fff; color:var(--accent); border:0; font-weight:800; }
     .bar #btn-admin.hidden { display:none; }
+    .bar #btn-ajutor { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); font-weight:800; }
+    .bar #btn-ajutor.hidden { display:none; }
+    #ajutor { position:fixed; right:12px; bottom:12px; z-index:60; width:min(430px, calc(100vw - 24px)); height:min(620px, calc(100vh - 24px)); display:flex; flex-direction:column; background:var(--card); color:var(--text); border:2px solid var(--accent); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; }
+    #ajutor[hidden] { display:none; }
+    #ajutor .aj-cap { display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--accent); color:var(--on-accent); }
+    #ajutor .aj-spatiu { flex:1; }
+    #ajutor .aj-mic { width:auto; min-height:32px; margin:0; padding:2px 10px; font-size:.8rem; font-weight:700; background:rgba(255,255,255,.2); color:inherit; border:1px solid rgba(255,255,255,.6); border-radius:8px; }
+    #ajutor .aj-mesaje { flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+    #ajutor .aj-m { max-width:88%; padding:9px 12px; border-radius:12px; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.4; font-size:.93rem; }
+    #ajutor .aj-m.eu { align-self:flex-end; background:var(--accent); color:var(--on-accent); }
+    #ajutor .aj-m.el { align-self:flex-start; background:var(--teal-100); color:var(--text); }
+    #ajutor .aj-m.err { align-self:flex-start; background:transparent; color:var(--err); border:1.5px solid var(--err); }
+    #ajutor .aj-gol { color:var(--muted); font-size:.9rem; }
+    #ajutor .aj-form { display:flex; gap:8px; padding:8px 12px; border-top:1.5px solid var(--line); align-items:flex-end; }
+    #ajutor .aj-form textarea { flex:1; min-height:48px; max-height:120px; resize:vertical; padding:8px 10px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:10px; margin:0; }
+    #ajutor .aj-form button { width:auto; margin:0; min-height:44px; padding:6px 16px; }
+    #ajutor .aj-nota { margin:0; padding:0 12px 8px; font-size:.72rem; color:var(--muted); }
     .bar #bar-pontaj #btn-pco { background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); font-weight:800; }
     .bar .bar-user { text-align:right; line-height:1.2; font-size:.85rem; font-weight:700; min-width:0; }
     .bar .bar-user small { display:block; font-weight:400; opacity:.85; font-size:.74rem; }
@@ -1099,6 +1116,7 @@
       <div class="name">Spațiul virtual al școlii<small>Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești</small></div>
       <div class="bar-dreapta">
         <button id="clopot" class="clopot hidden" type="button" aria-label="Anunțuri noi">🔔<span id="clopot-nr" class="clopot-nr hidden"></span></button>
+        <button id="btn-ajutor" class="hidden" type="button">💬 Ajutor</button>
         <button id="btn-admin" class="hidden" type="button">⚙ Administrare</button>
         <div id="bar-pontaj" class="hidden">
           <button id="btn-pco" class="secondary" type="button">Plata cu ora</button>
@@ -1107,6 +1125,12 @@
         <button id="iesire" type="button">Ieși din cont</button>
       </div>
     </header>
+    <section id="ajutor" hidden role="dialog" aria-label="Ajutor">
+      <div class="aj-cap"><b>💬 Ajutor</b><span class="aj-spatiu"></span><button id="aj-sterge" type="button" class="aj-mic">Conversație nouă</button><button id="aj-inchide" type="button" class="aj-mic" aria-label="Închide">✕</button></div>
+      <div id="aj-mesaje" class="aj-mesaje" aria-live="polite"></div>
+      <form id="aj-form" class="aj-form"><textarea id="aj-text" rows="2" maxlength="2000" placeholder="Întreabă ceva despre platformă…"></textarea><button id="aj-trimite" type="submit">Trimite</button></form>
+      <p class="aj-nota">Ajutorul explică platforma. Nu vede date despre angajați, elevi sau orar.</p>
+    </section>
     <main class="wrap">
       <h1 class="hello">Bun venit, <span id="prenume"></span>!</h1>
       <p class="who"><span id="cine"></span></p>
@@ -1440,6 +1464,8 @@
       const zona = $("module");
       zona.replaceChildren();
       $("btn-admin").classList.toggle("hidden", !roluri.some((r) => ["administrator", "director", "secretariat", "contabilitate"].includes(r)));
+      $("btn-ajutor").classList.toggle("hidden", !euRoluri.includes("administrator"));
+      if (!euRoluri.includes("administrator")) $("ajutor").hidden = true;
       moduleleMele(roluri).forEach((cheie) => {
         const m = MODULE[cheie];
         const c = document.createElement("div");
@@ -7145,6 +7171,41 @@
     })();
     $("inapoi-pontaj").addEventListener("click", arataPrincipal);
     $("btn-admin").addEventListener("click", deschideAdministrare);
+
+    // ---------- Ajutor: asistent care explică platforma (doar administrator; verificat și pe server) ----------
+    (function () {
+      const conv = []; let ocupat = false;
+      const zona = $("aj-mesaje"), camp = $("aj-text");
+      function bula(cls, text) { const d = el("div", "aj-m " + cls, text); zona.appendChild(d); zona.scrollTop = zona.scrollHeight; return d; }
+      function gol() { zona.replaceChildren(el("p", "aj-gol", "Salut! Întreabă-mă, de exemplu: „cum generez graficul de serviciu?” sau „cum adaug un concediu de creștere a copilului?”.")); }
+      gol();
+      $("btn-ajutor").addEventListener("click", () => { $("ajutor").hidden = !$("ajutor").hidden; if (!$("ajutor").hidden) camp.focus(); });
+      $("aj-inchide").addEventListener("click", () => { $("ajutor").hidden = true; });
+      $("aj-sterge").addEventListener("click", () => { if (ocupat) return; conv.length = 0; gol(); camp.focus(); });
+      camp.addEventListener("keydown", (ev) => { if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); $("aj-form").requestSubmit(); } });
+      $("aj-form").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const t = camp.value.trim();
+        if (!t || ocupat) return;
+        if (!conv.length) zona.replaceChildren();
+        ocupat = true; $("aj-trimite").disabled = true;
+        conv.push({ rol: "user", text: t }); bula("eu", t); camp.value = "";
+        const gand = bula("el", "Se gândește…");
+        let raspuns = "", eroare = "";
+        try {
+          const { data, error } = await db.functions.invoke("ajutor", { body: { mesaje: conv.slice(-12) } });
+          if (error) {
+            eroare = "Nu am putut obține răspunsul. Încearcă din nou.";
+            try { const j = await error.context.json(); if (j && j.eroare) eroare = j.eroare; } catch (e) { /* mesaj general */ }
+          } else if (data && data.raspuns) raspuns = data.raspuns;
+          else eroare = (data && data.eroare) || "Nu am primit un răspuns. Încearcă din nou.";
+        } catch (e) { eroare = "Nu am putut obține răspunsul. Încearcă din nou."; }
+        gand.remove();
+        if (raspuns) { conv.push({ rol: "assistant", text: raspuns }); bula("el", raspuns); }
+        else { conv.pop(); bula("err", eroare); camp.value = t; }
+        ocupat = false; $("aj-trimite").disabled = false; camp.focus();
+      });
+    })();
     $("inapoi-admin").addEventListener("click", () => {
       $("ang-form-loc").replaceChildren();
       mesajPontaj("");
