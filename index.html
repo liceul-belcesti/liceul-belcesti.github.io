@@ -6592,6 +6592,14 @@
       d.zone.forEach((z) => { const s = claseSediu.get(z.sediu) || new Set(); zoneCl.get(z.id).forEach((c) => s.add(c)); claseSediu.set(z.sediu, s); });
       const claseDe = (z) => (z.tip === "fix" ? claseSediu.get(z.sediu) : claseGrup.get(grup(z)));
       const oreGrup = (t, g) => { let n = 0; claseGrup.get(g).forEach((c) => { const v = orePeClasa.get(c) && orePeClasa.get(c).get(t); if (v) n += v.n; }); return n; };
+      // Afinitatea: ce parte din orele unui profesor (în zonele cu profesori) se află în clădirea respectivă.
+      // Serviciul se dă cu prioritate celor care predau în principal acolo (Munteni, Spiru Haret etc.).
+      const afinC = new Map();
+      const afin = (t, g) => {
+        const k = t + "|" + g; if (afinC.has(k)) return afinC.get(k);
+        let tot = 0; claseGrup.forEach((_, gg) => (tot += oreGrup(t, gg)));
+        const v = tot ? oreGrup(t, g) / tot : 0; afinC.set(k, v); return v;
+      };
       // Cât de potrivită este o persoană la o pauză: 0 = are oră înainte și după în zonă, 3 = fereastră între ore în zonă.
       const tier = (t, s) => {
         const cg = claseDe(s.z), cz = zoneCl.get(s.z.id), fix = s.z.tip === "fix";
@@ -6681,7 +6689,7 @@
         let best = null, bs = 1e9;
         s.cand.forEach((tr, t) => {
           if (ocupat(t, s.zi, s.k) || ziL(t, s.zi) >= PLAFON_ZI || incarcare(t) >= MAX_PAUZE) return;
-          const sc = tr * 3 + 10 * incarcare(t) / Math.max(1, tintaDe(t));
+          const sc = tr * 3 + 10 * incarcare(t) / Math.max(1, tintaDe(t)) + 20 * (1 - afin(t, grup(s.z)));
           if (sc < bs || (sc === bs && numeDe(t).localeCompare(numeDe(best), "ro") < 0)) { bs = sc; best = t; }
         });
         if (best) { put(s, best); return true; }
@@ -6701,7 +6709,7 @@
       profSloturi.slice().sort((p, q) => p.cand.size - q.cand.size).forEach((s) => { if (!s.who) umple(s); });
       completeaza();
       // Costul unei persoane: abaterea de la țintă, blocuri scurte, zile multe, potrivire slabă la pauze.
-      const TC = [0, 0.5, 1.5, 3], RUN = [0, 6, 1, 0, 50];
+      const TC = [0, 0.5, 1.5, 3], RUN = [0, 6, 1, 0, 50], AFIN = 18;
       const cost = (t) => {
         const L = mine.get(t), n = L ? L.size : 0, T = tintaDe(t);
         let c = 6 * (n - T) * (n - T);
@@ -6713,7 +6721,7 @@
           arr.sort((a, b) => a.k - b.k);
           let blocuri = 0, len = 0, prev = null;
           arr.forEach((s) => {
-            const tr = s.cand.get(t); c += TC[tr === undefined ? 3 : tr];
+            const tr = s.cand.get(t); c += TC[tr === undefined ? 3 : tr] + AFIN * (1 - afin(t, grup(s.z)));
             if (prev && s.k === prev.k + 1) { len++; if (s.z.id !== prev.z.id) c += grup(s.z) === grup(prev.z) ? 1 : 4; }
             else { if (prev) c += RUN[Math.min(len, 4)]; blocuri++; len = 1; }
             prev = s;
@@ -6782,6 +6790,7 @@
       };
       const sugestii = (s) => {
         const cg = claseDe(s.z), pl = poolZ.get(s.z.id);
+        if (s.z.tip === "fix") return [...pl].filter((t) => classAt.has(t) && !ocupat(t, s.zi, s.k));
         return [...classAt.keys()].filter((t) => !scutiti.has(t) && !invat.has(t) && !ocupat(t, s.zi, s.k) && (s.z.tip === "fix" || !salaPool.has(t)))
           .map((t) => ({ t, dd: dist(t, s.zi, s.k, cg) })).filter((x) => x.dd < Infinity)
           .sort((p, q) => (pl && pl.has(q.t) ? 1 : 0) - (pl && pl.has(p.t) ? 1 : 0) || p.dd - q.dd || incarcare(p.t) - incarcare(q.t) || numeDe(p.t).localeCompare(numeDe(q.t), "ro"))
@@ -6798,7 +6807,7 @@
       const capac = [];
       SEDII_SERV.forEach((sd) => {
         const sl = profSloturi.filter((s) => s.z.sediu === sd); if (!sl.length) return;
-        const ps = new Set(); sl.forEach((s) => s.cand.forEach((tr, t) => ps.add(t)));
+        const ps = new Set(); sl.forEach((s) => s.cand.forEach((tr, t) => { if (afin(t, grup(s.z)) >= 0.5) ps.add(t); }));
         capac.push({ sediu: sd, locuri: sl.length, persoane: ps.size });
       });
       // 4) Zone cu învățători: pe zile întregi, din învățătorii claselor zonei, pe schimburi.
@@ -6954,7 +6963,7 @@
       box.appendChild(el("p", "who", "Previzualizare: " + r.out.length + " rânduri noi" + (r.lipsa.length ? ", " + r.lipsa.length + " locuri rămase neacoperite" : ", toate locurile sunt acoperite") + ". Nu se salvează nimic până nu confirmi."));
       const sedFix = c.zone.filter((z) => z.tip === "fix" && !c.persoane.some((p) => p.zona_id === z.id && p.tip === "pool"));
       sedFix.forEach((z) => box.appendChild(el("p", "who", "⚠️ Pentru " + z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " nu ai adăugat persoanele care pot face serviciu (butonul „Persoane” de la fila „Zone și clase”). Până atunci toate pauzele de acolo rămân de completat.")));
-      (r.sub.length ? r.capac : []).filter((x) => x.persoane && x.locuri / x.persoane < r.minim).forEach((x) => box.appendChild(el("p", "who", "⚠️ " + x.sediu + ": sunt " + x.locuri + " locuri la pauze pentru " + x.persoane + " persoane (în medie " + (Math.round(x.locuri / x.persoane * 10) / 10).toString().replace(".", ",") + " pauze). Pentru " + r.minim + " pauze fiecăruia ar fi nevoie de " + x.persoane * r.minim + " locuri.")));
+      (r.sub.length ? r.capac : []).filter((x) => x.persoane && x.locuri / x.persoane < r.minim).forEach((x) => box.appendChild(el("p", "who", "⚠️ " + x.sediu + ": sunt " + x.locuri + " locuri la pauze pentru " + x.persoane + " persoane care predau în principal acolo (în medie " + (Math.round(x.locuri / x.persoane * 10) / 10).toString().replace(".", ",") + " pauze). Pentru " + r.minim + " pauze fiecăruia ar fi nevoie de " + x.persoane * r.minim + " locuri.")));
       if (r.sub.length) {
         box.appendChild(el("h3", "", "Persoane cu mai puțin de " + r.minim + " pauze (" + r.sub.length + ")"));
         r.sub.forEach((x) => box.appendChild(el("div", "who", (nume.get(x.t) || "?") + " — " + x.n + (x.n === 1 ? " pauză" : " pauze") + (x.posibile < r.minim ? " (orarul lui se potrivește cu doar " + x.posibile + " pauze din zone)" : " (locurile potrivite sunt necesare și altora care au tot puține)"))));
