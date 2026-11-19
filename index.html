@@ -633,6 +633,10 @@
     #orar .orar-bara .comut { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     #orar .orar-bara button[aria-pressed="false"] { background:transparent; color:var(--accent); border:1.5px solid var(--accent); }
     :is(#orarmeu,.orm) .orar-t .ab { display:block; color:var(--accent); font-weight:800; font-size:.88rem; }
+    #orar .orar-sv { margin:14px 0 0; }
+    #orar .orar-sv-t { margin:0 0 4px; font-weight:800; }
+    #orar .orar-sv-sch { margin:4px 0 0; font-size:.9rem; color:var(--muted); }
+    #orar table.orar-g-sv td { min-width:0; font-size:.8rem; }
     .orar-leg { columns:2 240px; column-gap:18px; margin:10px 0 0; font-size:.82rem; color:var(--muted); }
     .orar-leg p { margin:0 0 3px; break-inside:avoid; }
     .orar-leg b { color:var(--text, inherit); }
@@ -659,6 +663,15 @@
       #tipar-orar thead th small { display:block; font-weight:400; font-size:8pt; color:#e3f0fa !important; }
       #tipar-orar tbody th { width:26mm; font-weight:800; text-align:left; padding-left:3mm; background:#e6f1fa !important; color:#12275a !important; }
       #tipar-orar .ab { font-weight:800; font-size:10.5pt; color:#12275a; }
+      #tipar-orar .orar-sv { margin:2mm 0 0; }
+      #tipar-orar .orar-sv-t { margin:0 0 1mm; font-weight:800; font-size:10pt; color:#12275a; text-transform:uppercase; letter-spacing:.03em; }
+      #tipar-orar .orar-g-sv th, #tipar-orar .orar-g-sv td { font-size:8.5pt; padding:.5mm .8mm; line-height:1.15; }
+      #tipar-orar .orar-g-sv thead th small { font-size:7pt; }
+      #tipar-orar .orar-g-sv tbody td { height:5mm; }
+      #tipar-orar .orar-g-sv tbody th { padding-left:2mm; }
+      #tipar-orar .cu-sv > table:not(.orar-g-sv) tbody td { height:9mm; }
+      #tipar-orar .orar-g-sv td.plin { font-weight:700; }
+      #tipar-orar .orar-sv-sch { margin:1mm 0 0; font-size:9pt; color:#111; }
       #tipar-orar .orar-leg { columns:3; column-gap:6mm; margin:4mm 0 0; font-size:8.5pt; color:#111; line-height:1.2; border-top:.5pt solid #8aa9c4; padding-top:1.5mm; }
       #tipar-orar .orar-leg p { margin:0 0 .8mm; break-inside:avoid; }
       #tipar-orar .orar-leg b { color:#12275a; }
@@ -2103,6 +2116,28 @@
       });
       t.appendChild(tb); return t;
     }
+    // Serviciul pe școală, sub orar (și la tipărire): pauzele pe zile, plus schimburile întregi (învățători). sv: { zi, pauza, schimb, zona, sediu, corp, nota, ore_interval }
+    const locServOrar = (x) => [x.sediu && x.sediu !== "Centru" ? x.sediu : "", x.corp && x.corp !== "Corp unic" && x.corp !== x.zona ? x.corp : "", x.zona].filter(Boolean).filter((v, i, a) => v !== a[i - 1]).join(" · ");
+    function blocServiciu(sv) {
+      const pz = (sv || []).filter((x) => x.pauza && x.zi >= 1 && x.zi <= 5), sc = (sv || []).filter((x) => !x.pauza && x.schimb && x.zi >= 1 && x.zi <= 5);
+      if (!pz.length && !sc.length) return null;
+      const d = el("div", "orar-sv"); d.appendChild(el("p", "orar-sv-t", "Serviciu pe școală"));
+      if (pz.length) {
+        const mn = Math.min(...pz.map((x) => x.pauza)), mx = Math.max(...pz.map((x) => x.pauza));
+        const t = el("table", "orar-g orar-g-sv"); const th = el("tr"); th.appendChild(el("th", "", "Pauza"));
+        for (let k = mn; k <= mx; k++) { const c = el("th", "", k + "–" + (k + 1)); c.appendChild(el("small", "", hmOrar(480 + (k - 1) * 60 + 50) + "–" + hmOrar(480 + k * 60))); th.appendChild(c); }
+        t.appendChild(el("thead")).appendChild(th);
+        const tb = el("tbody");
+        ZILE_ORAR.forEach((zn, i) => {
+          const tr = el("tr"); tr.appendChild(el("th", "", zn));
+          for (let k = mn; k <= mx; k++) { const l = [...new Set(pz.filter((x) => x.zi === i + 1 && x.pauza === k).map(locServOrar).filter(Boolean))]; const td = el("td", l.length ? "plin" : "", l.join("; ")); tr.appendChild(td); }
+          tb.appendChild(tr);
+        });
+        t.appendChild(tb); d.appendChild(t);
+      }
+      sc.sort((a, b) => a.zi - b.zi).forEach((x) => d.appendChild(el("p", "orar-sv-sch", ZILE_ORAR[x.zi - 1] + ": " + (x.schimb === "dimineata" ? "dimineața" : x.schimb === "dupa_amiaza" ? "după-amiaza" : x.schimb) + (x.ore_interval ? " (" + x.ore_interval + ")" : "") + (locServOrar(x) ? " · " + locServOrar(x) : "") + (x.nota ? " · " + x.nota : ""))));
+      return d;
+    }
     // Legenda de sub orar: prescurtare – denumire completă (doar materiile din pagina respectivă)
     function legendaOrar(items) {
       const m = new Map(); (items || []).forEach((x) => { if (x && x[0]) m.set(x[0], x[1]); });
@@ -2124,6 +2159,7 @@
         if (p.sub) pg.appendChild(el("p", "po-nume", p.sub));
         pg.appendChild(el("p", "po-sub", an ? "Anul școlar " + an : ""));
         pg.appendChild(grilaOrar(p.celula, p.max, false, p.de));
+        const bsv = blocServiciu(p.sv); if (bsv) { pg.classList.add("cu-sv"); pg.appendChild(bsv); }
         const lg2 = legendaOrar(p.leg); if (lg2) pg.appendChild(lg2);
         cont.appendChild(pg);
       });
@@ -2205,7 +2241,7 @@
       };
       const dsc = (r) => date.dm.get(r.disciplina_id);
       const legDe = (ore) => ore.map((r) => { const d = dsc(r); return d ? [d.scurt, d.complet] : null; }).filter(Boolean);
-      const pagProf = (x) => { const ore = date.pe.get(x.id) || []; return { titlu: "Orarul profesorului", sub: x.nume, ...(({ de, max }) => ({ de, max }))(limiteOrar(ore)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const d = dsc(r); return d ? [d.scurt, r.clasa] : r.clasa; }) }; };
+      const pagProf = (x) => { const ore = date.pe.get(x.id) || []; return { titlu: "Orarul profesorului", sub: x.nume, sv: date.sv.filter((g) => g.angajat_id === x.id), ...(({ de, max }) => ({ de, max }))(limiteOrar(ore)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const d = dsc(r); return d ? [d.scurt, r.clasa] : r.clasa; }) }; };
       const pagClasa = (c) => { const ore = date.rows.filter((r) => r.clasa === c); return { titlu: "Orarul clasei " + c, sub: "", ...(({ de, max }) => ({ de, max }))(limiteOrar(ore)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const n = date.nume.get(r.angajat_id) || "?", d = dsc(r); return d ? [d.scurt, n] : n; }).sort((x, y) => String(Array.isArray(x) ? x[1] : x).localeCompare(String(Array.isArray(y) ? y[1] : y), "ro")) }; };
       function umple() {
         bP.setAttribute("aria-pressed", String(mod === "profesori")); bC.setAttribute("aria-pressed", String(mod === "clase"));
@@ -2225,6 +2261,7 @@
         zona.appendChild(vb);
         if (vedere === "grila") {
           const sc = el("div", "orar-g-scroll"); sc.appendChild(grilaOrar(p.celula, p.max, true, p.de)); zona.appendChild(sc);
+          const bsvz = blocServiciu(p.sv); if (bsvz) zona.appendChild(bsvz);
           const lgz = legendaOrar(p.leg); if (lgz) zona.appendChild(lgz);
         } else {
           const rez = el("div", "orm"); zona.appendChild(rez);
@@ -2470,7 +2507,7 @@
         zona.appendChild(rc);
         const { de: deO, max } = limiteOrar(ore);
         const tp = el("button", "oz-tipar", "🖨 Tipărește orarul"); tp.type = "button";
-        tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], max, de: deO, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], an.den));
+        tp.addEventListener("click", () => tiparesteOrar([{ titlu: "Orarul profesorului", sub: numeProf || ($("cine").textContent || "").split(" · ")[0], sv: sv || [], max, de: deO, leg: ore.filter((r) => r.scurt).map((r) => [r.scurt, r.complet]), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => (r.scurt ? [r.scurt, r.clasa] : r.clasa)) }], an.den));
         if (tipar) zona.appendChild(tp);
         zona.appendChild(el("p", "oz-mic2", "Ore de 50 de minute, cu pauze de 10 minute, începând cu 8:00."));
         // aliniere: toate casetele de clasă au aceeași lățime, ca numele disciplinelor să înceapă din același loc
