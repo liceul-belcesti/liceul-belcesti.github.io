@@ -7594,7 +7594,7 @@
       const azi = bannerAzi(c, nume); if (azi) lista.appendChild(azi);
       // Filtre: sediul și căutarea unei persoane (evidențiază toate căsuțele ei)
       const bara = el("div", "filtre");
-      const sedii = SEDII_SERV.filter((s) => c.zone.some((z) => z.sediu === s && c.grafic.some((g) => g.zona_id === z.id)));
+      const sedii = SEDII_SERV.filter((s) => c.zone.some((z) => z.sediu === s));
       [["", "Toate"]].concat(sedii.map((s) => [s, s])).forEach(([v, et]) => {
         const b = el("button", "chip", et); b.type = "button"; b.setAttribute("aria-pressed", filtruSediuServ === v ? "true" : "false");
         b.addEventListener("click", () => { filtruSediuServ = v; bara.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); lista.querySelectorAll("[data-sediu]").forEach((n) => { n.hidden = !!v && n.dataset.sediu !== v; }); });
@@ -7605,7 +7605,7 @@
       bara.appendChild(cauta); lista.appendChild(bara);
       lista.appendChild(el("p", "who", c.poate ? "Apasă pe un nume ca să vezi serviciul persoanei sau pe restul căsuței ca să o schimbi. Apasă pe numele unui corp ca să-i tipărești orarul complet." : "Apasă pe un nume ca să vezi serviciul persoanei sau pe numele unui corp ca să-i tipărești orarul complet."));
       SEDII_SERV.forEach((s) => {
-        const zs = c.zone.filter((z) => z.sediu === s && c.grafic.some((g) => g.zona_id === z.id)); if (!zs.length) return;
+        const zs = c.zone.filter((z) => z.sediu === s); if (!zs.length) return;
         const corpuri = []; zs.forEach((z) => { let g = corpuri.find((x) => x.corp === z.corp); if (!g) { g = { corp: z.corp, zone: [] }; corpuri.push(g); } g.zone.push(z); });
         const sec = el("section", "sediu"); sec.dataset.sediu = s; sec.hidden = !!filtruSediuServ && filtruSediuServ !== s;
         const faraTitluSediu = corpuri.length === 1 && corpuri[0].corp === s;
