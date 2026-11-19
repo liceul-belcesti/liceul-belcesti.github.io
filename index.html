@@ -1050,6 +1050,9 @@
     #serviciu .gr-t thead th, #serviciu .gr-t tbody th { background:var(--bg); font-weight:700; }
     #serviciu .gr-t td.gol { background:color-mix(in srgb, var(--err) 12%, var(--card)); }
     #serviciu .gr-t td.click { cursor:pointer; }
+    #serviciu .gr-t th.clk { cursor:pointer; }
+    #serviciu .gr-t th.clk:hover { text-decoration:underline; background:color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+    #serviciu .gr-t th.clk:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
     #serviciu .gr-t.pf { min-width:780px; }
     #serviciu .gr-t.pf td { text-align:left; font-size:.7rem; vertical-align:top; }
     #serviciu .gr-t.pf tbody th { text-align:left; position:sticky; left:0; z-index:1; min-width:120px; white-space:normal; }
@@ -1132,6 +1135,10 @@
     #tipar-serviciu-fond .gr-t thead th small { display:block; font-weight:400; font-size:.7rem; color:#e3f0fa; }
     #tipar-serviciu-fond .gr-t tbody th { background:#e6f1fa; color:#12275a; text-align:left; font-weight:800; width:90px; }
     #tipar-serviciu-fond .gr-t td .cs + .cs { border-top:1px dashed #8aa9c4; margin-top:2px; padding-top:2px; }
+    #tipar-serviciu-fond .gr-t.sc tbody th { width:150px; }
+    #tipar-serviciu-fond .gr-t.sc th, #tipar-serviciu-fond .gr-t.sc td { padding:3px 5px; font-size:.8rem; vertical-align:middle; }
+    #tipar-serviciu-fond .gr-t.sc tr.sd th { width:auto; background:#dfe9f2; color:#12275a; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; }
+    #tipar-serviciu-fond .gr-t.sc td.nu { background:#eee; }
     #tipar-serviciu-fond .pers { display:block; padding:2px 4px; font-weight:600; background:none; border:0; color:#111; }
     #tipar-serviciu-fond .pers-t td.are { background:#eaf3fb; font-weight:700; font-size:.8rem; }
     #tipar-serviciu-fond .ts-sumar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
@@ -1148,6 +1155,10 @@
       body.tipar-serv #tipar-serviciu-fond .po-logo { height:16mm; }
       body.tipar-serv #tipar-serviciu-fond .gr-t { font-size:10pt; }
       body.tipar-serv #tipar-serviciu-fond .gr-t th, body.tipar-serv #tipar-serviciu-fond .gr-t td { padding:3mm 2mm; }
+      body.tipar-serv #tipar-serviciu-fond .gr-t.sc { font-size:8.5pt; }
+      body.tipar-serv #tipar-serviciu-fond .gr-t.sc th, body.tipar-serv #tipar-serviciu-fond .gr-t.sc td { padding:.8mm 1.5mm; }
+      body.tipar-serv #tipar-serviciu-fond .gr-t.sc tr { break-inside:avoid; }
+      body.tipar-serv #tipar-serviciu-fond .gr-t.sc td.nu { background:#eee !important; }
     }
     #serviciu .rap-sumar { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin:6px 0 10px; }
     #serviciu .rap-sumar div { border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--card); }
@@ -7540,11 +7551,15 @@
         : Array.from({ length: nrK }, (_, i) => i + 1).map((k) => ["Pauza " + PAUZE_ET[k], textPauza(k), k, null]);
       const ur = interactiv ? pauzaUrmatoare() : null, azi = new Date().getDay();
       const thead = document.createElement("thead"); const tr0 = document.createElement("tr"); tr0.appendChild(document.createElement("th"));
-      cap.forEach((x) => { const th = document.createElement("th"); th.appendChild(document.createTextNode(x[0])); th.appendChild(el("small", "", x[1])); tr0.appendChild(th); });
+      cap.forEach((x) => {
+        const th = document.createElement("th"); th.appendChild(document.createTextNode(x[0])); th.appendChild(el("small", "", x[1])); tr0.appendChild(th);
+        if (interactiv && x[2]) { th.classList.add("clk"); th.tabIndex = 0; th.title = "Apasă ca să vezi toată școala la pauza " + PAUZE_ET[x[2]]; th.addEventListener("click", () => arataPauzaScoala(c, x[2])); th.addEventListener("keydown", (ev) => { if (ev.key === "Enter") arataPauzaScoala(c, x[2]); }); }
+      });
       thead.appendChild(tr0); t.appendChild(thead);
       const tb = document.createElement("tbody");
       for (let zi = 1; zi <= 5; zi++) {
         const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = ZILE_SC[zi];
+        if (interactiv) { th.classList.add("clk"); th.tabIndex = 0; th.title = "Apasă ca să vezi toată școala în ziua de " + ZILE_SC[zi].toLowerCase(); th.addEventListener("click", () => arataZiScoala(c, zi)); th.addEventListener("keydown", (ev) => { if (ev.key === "Enter") arataZiScoala(c, zi); }); }
         if (interactiv && zi === azi) { tr.classList.add("azi"); th.appendChild(el("small", "", "azi")); }
         tr.appendChild(th);
         const lastPos = new Map();
@@ -7605,6 +7620,73 @@
       const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
       const noduri = unitatiCorp(c.zone, zone).map((u) => { const s = el("div", "ts-zona"); if (u.z.denumire !== u.z.corp) s.appendChild(el("p", "ts-zet", u.z.denumire)); s.appendChild(tabelZona(c, u.z, nume, false, u.inv)); return s; });
       deschideTiparServ(c, corp.toUpperCase(), sediu !== corp ? sediu : "", noduri);
+    }
+    // Toată școala într-o zi (zone × pauze) sau la o pauză (zone × zile); se deschid din titlurile de rând și de coloană ale tabelelor.
+    const etZonaServ = (z) => [z.corp && z.corp !== "Corp unic" ? z.corp : "", z.denumire].filter(Boolean).filter((v, i, a) => v !== a[i - 1]).join(" · ");
+    const zoneOrdServ = (c) => SEDII_SERV.map((sd) => ({ sd, zone: c.zone.filter((z) => z.sediu === sd) })).filter((g) => g.zone.length);
+    // Începutul serviciului învățătorilor de după-amiază, ca pauză: 5 (ora 12:50) sau 6 (13:50) în tabelul comun de la Munteni.
+    const inceputDupaServ = (c, z) => (perecheCorp(c.zone, z) ? PAUZA_INV_DUPA : PAUZA_12 + 1);
+    // Rândurile din grafic ale zonei z, în ziua zi, la pauza k (învățătorii: schimbul care acoperă pauza)
+    function persoaneLaServ(c, z, zi, k) {
+      if (k > pauzeZona(z)) return null;
+      if (z.tip === "invatatori") {
+        const schimb = k <= PAUZA_12 ? "dimineata" : (k >= inceputDupaServ(c, z) ? "dupa_amiaza" : null);
+        return schimb ? c.grafic.filter((g) => g.zona_id === z.id && g.zi === zi && !g.pauza && g.schimb === schimb) : [];
+      }
+      return c.grafic.filter((g) => g.zona_id === z.id && g.zi === zi && g.pauza === k);
+    }
+    function celulaScoala(c, rows, nume, td) {
+      if (rows === null) { td.classList.add("nu"); return td; }
+      ordCelula(rows, new Map(), nume).forEach((r) => td.appendChild(chipPersoana(c, r, nume, false)));
+      return td;
+    }
+    function arataZiScoala(c, zi) {
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      const N = Math.max(5, ...c.zone.map((z) => pauzeZona(z)));
+      const w = el("div", "gr-w"); const t = el("table", "gr-t sc"); w.appendChild(t);
+      const tr0 = el("tr"); tr0.appendChild(el("th", "", "Zona"));
+      for (let k = 1; k <= N; k++) { const th = el("th", "", "Pauza " + PAUZE_ET[k]); th.appendChild(el("small", "", textPauza(k))); tr0.appendChild(th); }
+      t.appendChild(el("thead")).appendChild(tr0);
+      const tb = el("tbody");
+      zoneOrdServ(c).forEach((g) => {
+        const sr = el("tr", "sd"); const sh = el("th", "", g.sd); sh.colSpan = N + 1; sr.appendChild(sh); tb.appendChild(sr);
+        g.zone.forEach((z) => {
+          const tr = el("tr"); tr.appendChild(el("th", "", etZonaServ(z)));
+          if (z.tip === "invatatori") {
+            const mx = Math.min(pauzeZona(z), N), ini = inceputDupaServ(c, z);
+            const gruparea = (de, pana, schimb) => { if (de > pana) return; const td = el("td", ""); td.colSpan = pana - de + 1; celulaScoala(c, c.grafic.filter((x) => x.zona_id === z.id && x.zi === zi && !x.pauza && x.schimb === schimb), nume, td); tr.appendChild(td); };
+            gruparea(1, Math.min(PAUZA_12, mx), "dimineata");
+            for (let k = PAUZA_12 + 1; k < Math.min(ini, N + 1); k++) tr.appendChild(el("td", "nu"));
+            gruparea(Math.max(ini, PAUZA_12 + 1), mx, "dupa_amiaza");
+            for (let k = Math.max(mx + 1, 1); k <= N; k++) tr.appendChild(el("td", "nu"));
+          } else {
+            for (let k = 1; k <= N; k++) tr.appendChild(celulaScoala(c, persoaneLaServ(c, z, zi, k), nume, el("td", "")));
+          }
+          tb.appendChild(tr);
+        });
+      });
+      t.appendChild(tb);
+      const nod = el("div", "ts-zona"); nod.appendChild(w);
+      deschideTiparServ(c, ZILE_SC[zi].toUpperCase(), "toată școala · toate pauzele", [nod]);
+    }
+    function arataPauzaScoala(c, k) {
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      const w = el("div", "gr-w"); const t = el("table", "gr-t sc"); w.appendChild(t);
+      const tr0 = el("tr"); tr0.appendChild(el("th", "", "Zona"));
+      for (let zi = 1; zi <= 5; zi++) tr0.appendChild(el("th", "", ZILE_SC[zi]));
+      t.appendChild(el("thead")).appendChild(tr0);
+      const tb = el("tbody");
+      zoneOrdServ(c).forEach((g) => {
+        const sr = el("tr", "sd"); const sh = el("th", "", g.sd); sh.colSpan = 6; sr.appendChild(sh); tb.appendChild(sr);
+        g.zone.forEach((z) => {
+          const tr = el("tr"); tr.appendChild(el("th", "", etZonaServ(z)));
+          for (let zi = 1; zi <= 5; zi++) tr.appendChild(celulaScoala(c, persoaneLaServ(c, z, zi, k), nume, el("td", "")));
+          tb.appendChild(tr);
+        });
+      });
+      t.appendChild(tb);
+      const nod = el("div", "ts-zona"); nod.appendChild(w);
+      deschideTiparServ(c, "PAUZA " + PAUZE_ET[k], textPauza(k) + " · toată școala · toate zilele", [nod]);
     }
     // Serviciul unei persoane, pe zile și pe pauze.
     function arataPersoana(c, id) {
@@ -7683,7 +7765,7 @@
       const cauta = document.createElement("input"); cauta.type = "search"; cauta.className = "cauta-pers"; cauta.placeholder = "Caută o persoană în grafic"; cauta.setAttribute("aria-label", "Caută o persoană în grafic"); cauta.value = cautaServ;
       cauta.addEventListener("input", () => { cautaServ = cauta.value; reaplicaCautare(); });
       bara.appendChild(cauta); lista.appendChild(bara);
-      lista.appendChild(el("p", "who", c.poate ? "Apasă pe un nume ca să vezi serviciul persoanei sau pe restul căsuței ca să o schimbi. Apasă pe numele unui corp ca să-i tipărești orarul complet." : "Apasă pe un nume ca să vezi serviciul persoanei sau pe numele unui corp ca să-i tipărești orarul complet."));
+      lista.appendChild(el("p", "who", c.poate ? "Apasă pe un nume ca să vezi serviciul persoanei sau pe restul căsuței ca să o schimbi. Apasă pe numele unui corp ca să-i tipărești orarul complet, iar pe o zi sau pe o pauză ca să vezi toată școala." : "Apasă pe un nume ca să vezi serviciul persoanei sau pe numele unui corp ca să-i tipărești orarul complet, iar pe o zi sau pe o pauză ca să vezi toată școala."));
       SEDII_SERV.forEach((s) => {
         const zs = c.zone.filter((z) => z.sediu === s); if (!zs.length) return;
         const corpuri = []; zs.forEach((z) => { let g = corpuri.find((x) => x.corp === z.corp); if (!g) { g = { corp: z.corp, zone: [] }; corpuri.push(g); } g.zone.push(z); });
