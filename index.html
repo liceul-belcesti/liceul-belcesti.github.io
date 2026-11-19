@@ -1024,6 +1024,11 @@
     #serviciu .gr-t td.gol { background:color-mix(in srgb, var(--err) 12%, var(--card)); }
     #serviciu .gr-t td.man { box-shadow:inset 0 0 0 2px var(--accent); }
     #serviciu .gr-t td.click { cursor:pointer; }
+    #serviciu .gr-t.pf { min-width:780px; }
+    #serviciu .gr-t.pf td { text-align:left; font-size:.7rem; vertical-align:top; }
+    #serviciu .gr-t.pf tbody th { text-align:left; position:sticky; left:0; z-index:1; min-width:120px; white-space:normal; }
+    #serviciu .gr-t.pf td.tot { font-weight:700; text-align:center; }
+    #serviciu .pf-cauta { width:100%; margin:4px 0 8px; }
     #serviciu details.alt-ghid { margin:8px 0; padding:8px 10px; border:1.5px solid var(--accent); border-radius:12px; background:var(--card); }
     #serviciu details.alt-ghid > summary { cursor:pointer; font-weight:800; color:var(--accent); }
     #serviciu .alt-ghid ol { margin:8px 0 4px; padding-left:20px; }
@@ -1306,11 +1311,13 @@
         <label for="serviciu-an" class="an-et">Anul școlar</label>
         <select id="serviciu-an"></select>
       </div>
-      <div class="tabs t3" role="tablist" id="serviciu-tab">
-        <button type="button" role="tab" data-v="zone" aria-selected="true">🏢 Zone și clase</button>
-        <button type="button" role="tab" data-v="scutiri" aria-selected="false">🚫 Scutiri</button>
-        <button type="button" role="tab" data-v="grafic" aria-selected="false">🗓️ Grafic</button>
+      <div class="tabs" role="tablist" id="serviciu-tab">
+        <button type="button" role="tab" data-v="grafic" aria-selected="true">🗓️ Grafic pe zone</button>
+        <button type="button" role="tab" data-v="profesori" aria-selected="false">👤 Grafic pe profesori</button>
+        <button type="button" role="tab" data-v="zone" aria-selected="false" class="hidden">🏢 Zone și clase</button>
+        <button type="button" role="tab" data-v="scutiri" aria-selected="false" class="hidden">🚫 Scutiri</button>
       </div>
+      <div class="ctl"><button id="serviciu-admin" class="secondary" type="button">⚙ Administrare serviciu pe școală</button></div>
       <div id="serviciu-msg" class="panel-msg" role="status"></div>
       <div id="serviciu-antet"></div>
       <div id="serviciu-form"></div>
@@ -6397,7 +6404,16 @@
 
     // ===== Serviciu pe școală: configurare (zone, clase, scutiri) =====
     const mesajServ = (text, ok) => { $("serviciu-msg").textContent = text || ""; $("serviciu-msg").className = "panel-msg" + (ok ? " ok" : ""); };
-    let tabServ = "zone";
+    let tabServ = "grafic", adminServ = false;
+    // Graficul (pe zone și pe profesori) se vede implicit; zonele și scutirile sunt la „Administrare serviciu pe școală”.
+    function potrivesteModServ() {
+      $("serviciu-tab").querySelectorAll("button").forEach((b) => {
+        const adm = b.dataset.v === "zone" || b.dataset.v === "scutiri";
+        b.classList.toggle("hidden", adm !== adminServ);
+        b.setAttribute("aria-selected", b.dataset.v === tabServ ? "true" : "false");
+      });
+      $("serviciu-admin").textContent = adminServ ? "← Înapoi la graficul de serviciu" : "⚙ Administrare serviciu pe școală";
+    }
     const SEDII_SERV = ["Centru", "Munteni", "Tansa"];
     const TIP_ZONA = { profesori: "Profesori care au ore la clasele zonei", invatatori: "Învățători, pe zile întregi", mixt: "Pe zile: învățător până la 12 (luni–joi) și profesori până la 14", fix: "Persoane stabilite (de exemplu sala de sport)" };
     const textNr = (tip, nr, dupa) => tip === "invatatori" ? nr + " dimineața, " + (dupa || 0) + " după-amiaza" : tip === "mixt" ? nr + (nr === 1 ? " învățător" : " învățători") + " pe zi (luni–joi), " + (dupa || 0) + (dupa === 1 ? " profesor" : " profesori") + " pe zi" : nr + (nr === 1 ? " supraveghetor" : " supraveghetori") + " la fiecare pauză";
@@ -6422,11 +6438,13 @@
       mesajServ(""); desenezServiciu();
     });
     $("serviciu-an").addEventListener("change", desenezServiciu);
+    $("serviciu-admin").addEventListener("click", () => { adminServ = !adminServ; tabServ = adminServ ? "zone" : "grafic"; potrivesteModServ(); mesajServ(""); desenezServiciu(); });
     async function deschideServiciu() {
       if (!poateModificaAng()) return;
       memoreazaVedere("serviciu");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("serviciu").classList.remove("hidden");
+      adminServ = false; tabServ = "grafic"; potrivesteModServ();
       mesajServ(""); $("serviciu-form").replaceChildren(); $("serviciu-lista").replaceChildren(el("p", "who", "Se încarcă…"));
       const { data, error } = await db.from("ani_scolari").select("id, denumire, inchis").order("denumire", { ascending: false });
       if (error || !data || !data.length) { $("serviciu-lista").replaceChildren(); return mesajServ("Anii școlari nu au putut fi încărcați."); }
@@ -6457,7 +6475,7 @@
       const ctx = { a, poate, zone: rz.data || [], clase: rc.data || [], scutiti: rs.data || [], angs: ra.data || [], claseA, persoane: rp.data || [], grafic: rg.data || [], diriginti: rdir.data || [] };
       antet.appendChild(ghidServiciu(ctx));
       if (a.inchis) antet.appendChild(el("p", "who", "An școlar închis: doar consultare."));
-      if (tabServ === "zone") desenezZone(ctx); else if (tabServ === "scutiri") desenezScutiri(ctx); else desenezGrafic(ctx);
+      if (tabServ === "zone") desenezZone(ctx); else if (tabServ === "scutiri") desenezScutiri(ctx); else if (tabServ === "profesori") desenezPeProfesori(ctx); else desenezGrafic(ctx);
     }
     function ghidServiciu(c) {
       const det = document.createElement("details"); det.className = "alt-ghid";
@@ -6470,11 +6488,11 @@
         li.append(cap, el("div", "who", text)); ol.appendChild(li);
       };
       const faraZona = c.claseA.filter((x) => !c.clase.some((y) => y.clasa === x));
-      pas("Zonele și clasele lor", "La fila „Zone și clase” definești pentru fiecare structură corpurile și zonele (parter, etaj), cine le supraveghează și clasele din fiecare zonă. Corpurile legate între ele primesc aceeași grupă.", c.zone.length ? (faraZona.length ? "defacut" : "gata") : "defacut");
-      pas("Scutirile", "La fila „Scutiri” treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
+      pas("Zonele și clasele lor", "La „Administrare serviciu pe școală”, fila „Zone și clase”, definești pentru fiecare structură corpurile și zonele (parter, etaj), cine le supraveghează și clasele din fiecare zonă. Corpurile legate între ele primesc aceeași grupă.", c.zone.length ? (faraZona.length ? "defacut" : "gata") : "defacut");
+      pas("Scutirile", "La „Administrare serviciu pe școală”, fila „Scutiri”, treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
       const arePers = c.zone.some((z) => z.tip === "fix") ? c.persoane.some((p) => p.tip === "pool") : true;
-      pas("Persoanele stabilite", "La fila „Zone și clase”, la zona sălii de sport apasă „Persoane” și adaugă profesorii care pot face serviciu acolo; la zonele cu profesori poți adăuga persoane cu prioritate (de exemplu cei de la ateliere); la zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
-      pas("Graficul pe pauze", "La fila „Grafic” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Dirigintele clasei (trecut la Administrare → Diriginți) are prioritate la zona clasei lui. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
+      pas("Persoanele stabilite", "La „Administrare serviciu pe școală”, fila „Zone și clase”, la zona sălii de sport apasă „Persoane” și adaugă profesorii care pot face serviciu acolo; la zonele cu profesori poți adăuga persoane cu prioritate (de exemplu cei de la ateliere); la zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
+      pas("Graficul pe pauze", "La fila „Grafic pe zone” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Dirigintele clasei (trecut la Administrare → Diriginți) are prioritate la zona clasei lui. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
       pas("Profesorii își văd serviciul", "Fiecare va vedea în „Orarul meu” când și unde este de serviciu.", "urmeaza");
       det.appendChild(ol); return det;
     }
@@ -7220,7 +7238,7 @@
         const g = el("button", "", c.grafic.length ? "Generează din nou" : "Generează graficul"); g.type = "button"; g.addEventListener("click", () => previzualizeazaGrafic(c));
         ctl.appendChild(g); lista.appendChild(ctl);
       }
-      if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, la fila „Zone și clase”."));
+      if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, la „Administrare serviciu pe școală”, fila „Zone și clase”."));
       if (!c.grafic.length) return lista.appendChild(el("p", "who", "Graficul nu a fost încă generat pentru " + c.a.denumire + "."));
       lista.appendChild(el("p", "who", "Apasă pe o căsuță ca să schimbi persoana. Modificările făcute de tine se păstrează."));
       SEDII_SERV.forEach((s) => {
@@ -7247,6 +7265,44 @@
           t.appendChild(tb); w.appendChild(t); lista.appendChild(w);
         });
       });
+    }
+    // Graficul pe profesori: o linie pe persoană, cu serviciul ei pe zile (doar consultare; se modifică din graficul pe zone).
+    function desenezPeProfesori(c) {
+      const lista = $("serviciu-lista");
+      if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, la „Administrare serviciu pe școală”, fila „Zone și clase”."));
+      if (!c.grafic.length) return lista.appendChild(el("p", "who", "Graficul nu a fost încă generat pentru " + c.a.denumire + "."));
+      const zonaDe = new Map(c.zone.map((z) => [z.id, z])), nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      const etZona = (z) => [z.sediu !== "Centru" ? z.sediu : "", z.corp !== "Corp unic" ? z.corp : "", z.denumire].filter(Boolean).filter((v, i, a) => v !== a[i - 1]).join(" · ");
+      const per = new Map();
+      c.grafic.forEach((g) => { if (!zonaDe.has(g.zona_id)) return; (per.get(g.angajat_id) || per.set(g.angajat_id, []).get(g.angajat_id)).push(g); });
+      const persoane = [...per.keys()].sort((p, q) => (nume.get(p) || "?").localeCompare(nume.get(q) || "?", "ro"));
+      lista.appendChild(el("p", "who", persoane.length + " persoane au serviciu. Aici doar consulți graficul; îl modifici din „Grafic pe zone”."));
+      const cauta = document.createElement("input"); cauta.type = "search"; cauta.className = "pf-cauta"; cauta.placeholder = "Caută profesor"; cauta.setAttribute("aria-label", "Caută profesor"); lista.appendChild(cauta);
+      const w = el("div", "gr-w"); const t = document.createElement("table"); t.className = "gr-t pf";
+      const thead = document.createElement("thead"); const tr0 = document.createElement("tr");
+      ["Profesor", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Total"].forEach((x) => { const th = document.createElement("th"); th.textContent = x; tr0.appendChild(th); });
+      thead.appendChild(tr0); t.appendChild(thead);
+      const tb = document.createElement("tbody"); const randuri = [];
+      persoane.forEach((id) => {
+        const rows = per.get(id); const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = nume.get(id) || "Angajat necunoscut"; tr.appendChild(th);
+        for (let zi = 1; zi <= 5; zi++) {
+          const td = document.createElement("td"); const grupe = new Map();
+          rows.filter((g) => g.zi === zi).forEach((g) => { const gr = grupe.get(g.zona_id) || grupe.set(g.zona_id, { pauze: [], sch: [], note: [] }).get(g.zona_id); if (g.pauza) gr.pauze.push(g.pauza); if (g.schimb) gr.sch.push(g.schimb); if (g.nota) gr.note.push(g.nota); });
+          td.textContent = [...grupe.entries()].map(([zid, gr]) => {
+            const p = [...new Set(gr.pauze)].sort((a, b) => a - b).map((n) => PAUZE_ET[n]);
+            const parti = []; if (p.length) parti.push((p.length === 1 ? "pauza " : "pauzele ") + p.join(", "));
+            [...new Set(gr.sch)].forEach((sc) => parti.push(sc === "dimineata" ? "dimineața" : "după-amiaza"));
+            return etZona(zonaDe.get(zid)) + ": " + parti.join(", ") + (gr.note.length ? " (" + [...new Set(gr.note)].join("; ") + ")" : "");
+          }).join("\n");
+          tr.appendChild(td);
+        }
+        const np = rows.filter((g) => g.pauza).length, nz = new Set(rows.filter((g) => !g.pauza).map((g) => g.zi)).size;
+        const tot = document.createElement("td"); tot.className = "tot"; tot.textContent = [np ? np + (np === 1 ? " pauză" : " pauze") : "", nz ? nz + (nz === 1 ? " zi" : " zile") : ""].filter(Boolean).join("\n"); tr.appendChild(tot);
+        tb.appendChild(tr); randuri.push([tr, (nume.get(id) || "").toLowerCase()]);
+      });
+      t.appendChild(tb); w.appendChild(t); lista.appendChild(w);
+      const norm = (x) => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      cauta.addEventListener("input", () => { const q = norm(cauta.value.trim()); randuri.forEach(([tr, n]) => { tr.style.display = !q || norm(n).includes(q) ? "" : "none"; }); });
     }
     function formCelula(c, z, zi, pauza, schimb) {
       const zona = $("serviciu-form"); zona.replaceChildren();
@@ -7289,7 +7345,7 @@
       if (r.sub.length) {
         box.appendChild(el("h3", "", "Persoane cu mai puțin de " + r.minim + " pauze (" + r.sub.length + ")"));
         r.sub.forEach((x) => box.appendChild(el("div", "who", (nume.get(x.t) || "?") + " — " + x.n + (x.n === 1 ? " pauză" : " pauze") + (x.posibile < r.minim ? " (orarul lui se potrivește cu doar " + x.posibile + " pauze din zone)" : " (locurile potrivite sunt necesare și altora care au tot puține)"))));
-        box.appendChild(el("p", "who", "Cum poți rezolva: (1) crești numărul de supraveghetori la o zonă din clădirea respectivă, la fila „Zone și clase”; (2) treci persoana la „Scutiri”, dacă nu trebuie să facă serviciu; (3) după salvare, completezi manual din căsuțele graficului."));
+        box.appendChild(el("p", "who", "Cum poți rezolva: (1) crești numărul de supraveghetori la o zonă din clădirea respectivă, la „Administrare serviciu pe școală”, fila „Zone și clase”; (2) treci persoana la „Scutiri”, dacă nu trebuie să facă serviciu; (3) după salvare, completezi manual din căsuțele graficului."));
       }
       if (r.deasupra.length) {
         box.appendChild(el("h3", "", "Persoane cu mai mult de " + r.maxim + " pauze (" + r.deasupra.length + ")"));
