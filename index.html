@@ -1034,7 +1034,7 @@
     #serviciu #serviciu-tab button { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:44px; padding:6px 8px; border-radius:12px; transition:transform .15s, box-shadow .15s, background .15s; }
     #serviciu #serviciu-tab button:hover { transform:translateY(-1px); }
     @media (max-width:520px) { #serviciu #serviciu-tab button { font-size:.74rem; padding:6px 2px; } }
-    #serviciu .azi-bara { margin:8px 0 10px; padding:10px 12px; border-radius:14px; border:1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-left:6px solid var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--card)); animation:serv-apare .4s ease both; }
+    #serviciu .azi-bara { margin:8px 0 10px; padding:10px 12px; border-radius:14px; border:1px solid var(--line); border-left:4px solid var(--accent); background:var(--card); animation:serv-apare .4s ease both; }
     #serviciu .azi-titlu { font-weight:800; font-size:.9rem; margin-bottom:4px; }
     #serviciu .azi-linie { display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin:3px 0; }
     #serviciu .azi-zona { font-size:.72rem; color:var(--muted); min-width:110px; }
@@ -1047,24 +1047,35 @@
     #serviciu .corp { margin:14px 0 6px; animation:serv-apare .45s ease both; animation-delay:calc(var(--i, 0) * 60ms); }
     #serviciu .corp-cap { display:flex; align-items:center; gap:6px; margin:0 0 4px; }
     #serviciu .corp-tg { flex:0 0 34px; width:34px; min-width:34px; min-height:34px; margin:0; padding:0; border-radius:10px; background:var(--bg); color:var(--text); border:1px solid var(--line); font-size:.9rem; }
-    #serviciu .corp-titlu { flex:1; display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:38px; margin:0; padding:6px 14px; text-align:left; font-size:1rem; font-weight:800; color:var(--text); background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 16%, var(--card)), var(--card)); border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius:12px; transition:box-shadow .15s, transform .15s; }
-    #serviciu .corp-titlu:hover { box-shadow:0 3px 10px rgba(0,0,0,.14); transform:translateY(-1px); }
+    #serviciu .corp-titlu { flex:1; display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:38px; margin:0; padding:6px 14px; text-align:left; font-size:1rem; font-weight:800; color:var(--text); background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:12px; transition:box-shadow .15s, transform .15s; }
+    #serviciu .corp-titlu:hover { background:color-mix(in srgb, var(--accent) 6%, var(--card)); }
     #serviciu .corp-print { font-size:.72rem; font-weight:700; color:var(--accent); opacity:.85; white-space:nowrap; }
     #serviciu .zona-et { margin:8px 2px 0; font-size:.82rem; font-weight:700; color:var(--muted); }
-    #serviciu .gr-w { border-radius:14px; box-shadow:0 1px 6px rgba(0,0,0,.08); background:var(--card); }
+    #serviciu .gr-w { border-radius:12px; background:var(--card); }
     #serviciu .gr-t th small { display:block; font-weight:500; font-size:.66rem; color:var(--muted); margin-top:1px; }
     #serviciu .gr-t tbody th { position:sticky; left:0; z-index:1; min-width:78px; text-align:left; padding-left:10px; }
-    #serviciu .gr-t tr.azi th { background:color-mix(in srgb, var(--accent) 18%, var(--bg)); }
+    #serviciu .gr-t tr.azi th { background:color-mix(in srgb, var(--accent) 10%, var(--bg)); }
     #serviciu .gr-t tr.azi th small { display:inline-block; margin:0 0 0 6px; padding:0 6px; border-radius:8px; background:var(--accent); color:var(--on-accent); font-weight:700; }
     #serviciu .gr-t td { min-width:96px; padding:4px; transition:background .15s; }
     #serviciu .gr-t td.click:hover { background:color-mix(in srgb, var(--accent) 9%, var(--card)); }
     #serviciu .gr-t td.gol.click::after { content:"＋"; color:var(--muted); font-size:1rem; }
-    #serviciu .gr-t td.acum { box-shadow:inset 0 0 0 2px var(--accent); animation:serv-puls 2s ease-in-out infinite; }
-    #serviciu .pers { display:block; margin:2px 0; padding:3px 7px; border-radius:8px; text-align:left; font-size:.74rem; font-weight:600; line-height:1.25; white-space:normal; color:var(--text); background:color-mix(in srgb, hsl(var(--h) 70% 50%) 17%, var(--card)); border-left:4px solid hsl(var(--h) 62% 46%); cursor:pointer; transition:transform .12s, box-shadow .12s, opacity .15s; }
+    #serviciu .gr-t td.acum { box-shadow:inset 0 0 0 2px var(--accent); }
+    #serviciu .gr-t td.mx { padding:3px; }
+    #serviciu .gr-t td .cs { border-radius:6px; padding:1px 0; min-height:22px; }
+    #serviciu .gr-t td .cs + .cs { border-top:1px dashed var(--line); margin-top:3px; padding-top:3px; }
+    #serviciu .gr-t td .cs.click { cursor:pointer; transition:background .15s; }
+    #serviciu .gr-t td .cs.click:hover { background:color-mix(in srgb, var(--accent) 9%, var(--card)); }
+    #serviciu .gr-t td .cs.gol { background:color-mix(in srgb, var(--err) 12%, var(--card)); }
+    #serviciu .gr-t td .cs.gol.click::after { content:"＋"; color:var(--muted); font-size:1rem; }
+    #serviciu .gr-t td .cs.man { box-shadow:inset 0 0 0 2px var(--accent); }
+    #serviciu .gr-t td .cs.inv:not(.gol)::before { content:"învățător"; display:block; font-size:.62rem; font-weight:600; color:var(--muted); text-align:left; padding-left:7px; }
+    #tipar-serviciu-fond .gr-t td .cs.inv:not(.gol)::before { content:"învățător"; display:block; font-size:.62rem; font-weight:600; color:#456; text-align:center; }
+    #serviciu .pers.inv { border-left-style:dashed; }
+    #serviciu .pers { display:block; margin:2px 0; padding:3px 7px; border-radius:8px; text-align:left; font-size:.74rem; font-weight:600; line-height:1.25; white-space:normal; color:var(--text); background:transparent; border-left:3px solid color-mix(in srgb, var(--accent) 35%, var(--line)); cursor:pointer; transition:transform .12s, box-shadow .12s, opacity .15s; }
     #serviciu .azi-linie .pers { display:inline-block; margin:0; }
-    #serviciu .pers:hover, #serviciu .pers:focus-visible { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,.2); outline:none; }
+    #serviciu .pers:hover, #serviciu .pers:focus-visible { background:color-mix(in srgb, var(--accent) 10%, var(--card)); outline:none; }
     #serviciu.gr-dim .pers, #serviciu .gr-dim .pers { opacity:.28; }
-    #serviciu .gr-dim .pers.ev { opacity:1; box-shadow:0 0 0 2px hsl(var(--h) 70% 45%); }
+    #serviciu .gr-dim .pers.ev { opacity:1; background:color-mix(in srgb, var(--accent) 20%, var(--card)); border-left-color:var(--accent); font-weight:800; }
     #serviciu .lnk-pers { cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
     #serviciu .lnk-pers:hover { color:var(--accent); }
     @keyframes serv-apare { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
@@ -1093,6 +1104,7 @@
     #tipar-serviciu-fond .gr-t thead th { background:#1c7fc4; color:#fff; font-weight:800; }
     #tipar-serviciu-fond .gr-t thead th small { display:block; font-weight:400; font-size:.7rem; color:#e3f0fa; }
     #tipar-serviciu-fond .gr-t tbody th { background:#e6f1fa; color:#12275a; text-align:left; font-weight:800; width:90px; }
+    #tipar-serviciu-fond .gr-t td .cs + .cs { border-top:1px dashed #8aa9c4; margin-top:2px; padding-top:2px; }
     #tipar-serviciu-fond .pers { display:block; padding:2px 4px; font-weight:600; background:none; border:0; color:#111; }
     #tipar-serviciu-fond .pers-t td.are { background:#eaf3fb; font-weight:700; font-size:.8rem; }
     #tipar-serviciu-fond .ts-sumar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
@@ -6525,7 +6537,8 @@
       { sediu: "Centru", corp: "Corp ateliere", grupa: "Corp ateliere", den: "Corp ateliere", tip: "profesori", nr: 1, clase: ["10D", "11D"] },
       { sediu: "Centru", corp: "Sala de sport", grupa: "Sala de sport", den: "Sala de sport", tip: "fix", nr: 1, clase: [] },
       { sediu: "Centru", corp: "Corp învățători", grupa: "Corp învățători", den: "Corp învățători", tip: "invatatori", nr: 2, dupa: 1, clase: ["CPBel", "2ABel", "4ABel", "4BBel", "1ABel", "3ABel"] },
-      { sediu: "Munteni", corp: "Munteni", grupa: "Munteni", den: "Munteni", tip: "profesori", nr: 1, dupa: 2, pauzeMax: 8, clase: ["MunCP", "Mun2B", "Mun4C", "Mun5C", "Mun6C", "Mun8C"] },
+      { sediu: "Munteni", corp: "Munteni", grupa: "Munteni", den: "Munteni", tip: "profesori", nr: 1, dupa: 2, pauzeMax: 5, clase: ["Mun5C", "Mun6C", "Mun8C"] },
+      { sediu: "Munteni", corp: "Munteni", grupa: "Munteni", den: "Învățători", tip: "invatatori", nr: 1, dupa: 1, pauzeMax: 8, clase: ["MunCP", "Mun2B", "Mun4C"] },
       { sediu: "Tansa", corp: "Tansa", grupa: "Tansa", den: "Tansa", tip: "invatatori", nr: 1, dupa: 1, clase: ["CPTan", "2TanC", "Tan2C", "4TanD", "Tan4D"] }
     ];
     $("inapoi-serviciu").addEventListener("click", arataPrincipal);
@@ -6655,11 +6668,11 @@
       const lNr = el("label", "", "Câți supraveghetori la fiecare pauză"); box.append(lNr, iNr);
       const iDupa = document.createElement("input"); iDupa.type = "number"; iDupa.min = "0"; iDupa.max = "10"; iDupa.value = "0";
       const lDupa = el("label", "", "Câți învățători după-amiaza"); box.append(lDupa, iDupa);
-      const potrivesteTip = () => { const inv = sTip.value === "invatatori", prof = sTip.value === "profesori"; lNr.textContent = inv ? "Câți învățători dimineața" : "Câți supraveghetori la fiecare pauză"; lDupa.textContent = inv ? "Câți învățători după-amiaza" : "Câți supraveghetori între 12:00 și 14:00 (zero = la fel ca la celelalte pauze)"; lDupa.classList.toggle("hidden", !(inv || prof)); iDupa.classList.toggle("hidden", !(inv || prof)); zileBox.classList.toggle("hidden", !inv); pauzeBox.classList.toggle("hidden", !prof); };
+      const potrivesteTip = () => { const inv = sTip.value === "invatatori", prof = sTip.value === "profesori"; lNr.textContent = inv ? "Câți învățători dimineața" : "Câți supraveghetori la fiecare pauză"; lDupa.textContent = inv ? "Câți învățători după-amiaza" : "Câți supraveghetori între 12:00 și 14:00 (zero = la fel ca la celelalte pauze)"; lDupa.classList.toggle("hidden", !(inv || prof)); iDupa.classList.toggle("hidden", !(inv || prof)); zileBox.classList.toggle("hidden", !inv); pauzeBox.classList.toggle("hidden", !(prof || inv)); lPauze.textContent = inv ? "Învățătorul de după-amiază face serviciu până la pauza (în tabelul comun cu profesorii din același corp, de la ora 13:50)" : "Până la ce pauză se face serviciu în fiecare zi"; };
       sTip.addEventListener("change", potrivesteTip);
-      const pauzeBox = el("div", ""); box.appendChild(pauzeBox); pauzeBox.appendChild(el("label", "", "Până la ce pauză se face serviciu în fiecare zi"));
+      const pauzeBox = el("div", ""); box.appendChild(pauzeBox); const lPauze = el("label", "", "Până la ce pauză se face serviciu în fiecare zi"); pauzeBox.appendChild(lPauze);
       const sPauze = document.createElement("select"); for (let k = 5; k <= 8; k++) sPauze.add(new Option("Pauza " + PAUZE_ET[k] + (k === 5 ? " (până pe la ora 13:00)" : k === 8 ? " (până la ora 16:00)" : ""), String(k))); pauzeBox.appendChild(sPauze);
-      const zileBox = el("div", ""); box.appendChild(zileBox); zileBox.appendChild(el("label", "", "Zilele în care fac serviciu învățătorii"));
+      const zileBox = el("div", ""); box.appendChild(zileBox); zileBox.appendChild(el("label", "", "Zilele în care fac serviciu învățătorii de dimineață (cel de după-amiază face serviciu în toate zilele)"));
       const zileCb = el("div", "rand-grup"); zileBox.appendChild(zileCb); const zk = {};
       const zileCur = z && z.zile ? new Set(String(z.zile).split(",").map(Number)) : new Set([1, 2, 3, 4, 5]);
       for (let zi = 1; zi <= 5; zi++) { const l = el("label", "rand-grup"); const k = document.createElement("input"); k.type = "checkbox"; k.checked = zileCur.has(zi); l.append(k, document.createTextNode(" " + ZILE_SC[zi])); zileCb.appendChild(l); zk[zi] = k; }
@@ -6685,7 +6698,7 @@
         if (!corp) return mesajServ("Scrie corpul de clădire.");
         const nr = Math.max(0, Math.min(10, parseInt(iNr.value, 10) || 0)), dupa = (sTip.value === "invatatori" || sTip.value === "profesori") ? Math.max(0, Math.min(10, parseInt(iDupa.value, 10) || 0)) : 0;
         ok.disabled = true;
-        const rand = { an_id: c.a.id, sediu: sSed.value, corp, grupa_corp: grupa, denumire: den, tip: sTip.value, nr_supraveghetori: nr, nr_dupa_amiaza: dupa, zile: null, pauza_max: sTip.value === "profesori" ? parseInt(sPauze.value, 10) || 5 : 5 };
+        const rand = { an_id: c.a.id, sediu: sSed.value, corp, grupa_corp: grupa, denumire: den, tip: sTip.value, nr_supraveghetori: nr, nr_dupa_amiaza: dupa, zile: null, pauza_max: (sTip.value === "profesori" || sTip.value === "invatatori") ? parseInt(sPauze.value, 10) || 5 : 5 };
         if (sTip.value === "invatatori") { const zl = [1, 2, 3, 4, 5].filter((zi) => zk[zi].checked); if (!zl.length) { ok.disabled = false; return mesajServ("Alege cel puțin o zi."); } rand.zile = zl.length === 5 ? null : zl.join(","); }
         let id = z && z.id;
         if (z) { const { error } = await db.from("serviciu_zone").update(rand).eq("id", z.id); if (error) { ok.disabled = false; return mesajServ(error.code === "23505" ? "Există deja o zonă cu aceeași structură, același corp și aceeași denumire." : "Zona nu a putut fi salvată."); } }
@@ -6827,15 +6840,26 @@
       }
       return orar;
     }
-    // Pauza 4–5 se termină la ora 12:00. Între 12:00 și 14:00 (pauzele 5–6 și 6–7) zona poate avea mai mulți supraveghetori („nr_dupa_amiaza”).
-    const PAUZA_12 = 4, PAUZA_14 = 6;
+    // Pauza 4–5 se termină la ora 12:00. După aceasta (pauza 5–6, ora 12:50) zona cu profesori poate avea mai mulți supraveghetori („nr_dupa_amiaza”).
+    // Învățătorul de după-amiază dintr-un corp cu profesori și învățători (Munteni) intră de la pauza 6–7, adică de la ora 13:50, și face serviciu singur.
+    const PAUZA_12 = 4, PAUZA_INV_DUPA = 6;
     const zileZona = (z) => (z.zile ? new Set(String(z.zile).split(",").map(Number)) : new Set([1, 2, 3, 4, 5]));
     // Câte pauze pe zi are zona (5 = până la 5–6; la Munteni 8 = până la 8–9, adică ora 16:00).
     const pauzeZona = (z) => z.pauza_max || 5;
+    // Zona de învățători din același corp (aceeași structură, același corp) cu o zonă de profesori.
+    const zonaInvDe = (zone, z) => zone.find((x) => x.tip === "invatatori" && x.sediu === z.sediu && x.corp === z.corp);
+    // Când într-un corp sunt exact o zonă cu profesori și exact una cu învățători, se afișează într-un singur tabel.
+    const perecheCorp = (zone, z) => {
+      const grup = zone.filter((x) => x.sediu === z.sediu && x.corp === z.corp), p = grup.filter((x) => x.tip === "profesori"), i = grup.filter((x) => x.tip === "invatatori");
+      return p.length === 1 && i.length === 1 ? { prof: p[0], inv: i[0] } : null;
+    };
+    // Ultima pauză a învățătorului de după-amiază din tabelul comun (la Munteni 8–9, adică ora 16:00).
+    const finInvDupa = (z) => Math.max(pauzeZona(z), PAUZA_INV_DUPA);
     const nrLaZona = (zone, z, zi, k) => {
       if (k > pauzeZona(z)) return 0;
       let n = z.nr_supraveghetori;
-      if (z.tip === "profesori" && z.nr_dupa_amiaza > n && k > PAUZA_12 && k <= PAUZA_14) n = z.nr_dupa_amiaza;
+      // După ora 12:00, și în zilele fără învățători în clădire, zona are „nr_dupa_amiaza” supraveghetori.
+      if (z.tip === "profesori" && z.nr_dupa_amiaza > n) { const lz = zonaInvDe(zone, z); if (k > PAUZA_12 || (lz && !zileZona(lz).has(zi))) n = z.nr_dupa_amiaza; }
       return n;
     };
     const orarMem = new Map();
@@ -7197,6 +7221,32 @@
         muta(dorit);
       }
       completeaza();
+      // Echilibrare finală: cine are mai puține pauze decât ținta ia pauze de la cei care au mult peste țintă, doar unde îi poate înlocui
+      // (are ore potrivite la acea pauză, nu are alt serviciu atunci, nu depășește limita lui). Se alege schimbul cel mai ieftin.
+      {
+        const dev = (t) => incarcare(t) - tintaDe(t);
+        for (let it = 0; it < 400; it++) {
+          const jos = elig.filter((t) => incarcare(t) < maxDe(t) && dev(t) < -0.4).sort((p, q) => dev(p) - dev(q));
+          if (!jos.length) break;
+          let best = null;
+          jos.forEach((pe) => {
+            profSloturi.forEach((sl) => {
+              const q = sl.who; if (!q || q === pe || sl.locked || !sl.cand.has(pe)) return;
+              if (incarcare(q) <= MIN_PAUZE) return;
+              if (!(dev(q) >= 0.4 && dev(q) - dev(pe) >= 1.5) && incarcare(q) - incarcare(pe) < 3) return;
+              if (ocupat(pe, sl.zi, sl.k) || ziL(pe, sl.zi) >= PLAFON_ZI) return;
+              const inainte = cost(pe) + cost(q);
+              take(sl); put(sl, pe);
+              const delta = cost(pe) + cost(q) - inainte;
+              take(sl); put(sl, q);
+              const scor = delta - 25 * (dev(q) - dev(pe)) - 10 * (incarcare(q) - incarcare(pe));
+              if (!best || scor < best.scor) best = { sl, pe, q, delta, scor };
+            });
+          });
+          if (!best || best.delta > 70) break;
+          take(best.sl); put(best.sl, best.pe);
+        }
+      }
       // 3) Rezultatul pe pauze și locurile rămase goale (doar pe pauza respectivă).
       const out = [], lipsa = [];
       const dist = (t, zi, k, cg) => {
@@ -7245,7 +7295,8 @@
           const perechi = new Map(); const pk = (a, b) => (a < b ? a + "|" + b : b + "|" + a);
           const zileOk = zileZona(z);
           for (let zi = 1; zi <= 5; zi++) {
-            if (!zileOk.has(zi)) continue;
+            // Zilele alese se referă la învățătorii de dimineață; cel de după-amiază face serviciu în toate zilele.
+            if (schimb === "dimineata" && !zileOk.has(zi)) continue;
             const manual = fixe.filter((r) => r.zona_id === z.id && r.zi === zi && r.schimb === schimb);
             manual.forEach((r) => { if (cnt.has(r.angajat_id)) { cnt.set(r.angajat_id, cnt.get(r.angajat_id) + 1); ultima.set(r.angajat_id, zi); } inc(zileInv, r.angajat_id); });
             const luati = new Set(manual.map((r) => r.angajat_id));
@@ -7265,7 +7316,7 @@
           }
         });
       });
-      return { out, lipsa, load, zileInv, nume, sub, deasupra, capac, minim: MIN_PAUZE, maxim: MAX_PAUZE };
+      return { out, lipsa, load, zileInv, nume, sub, deasupra, capac, tinta, minim: MIN_PAUZE, maxim: MAX_PAUZE };
     }
     function formPersoane(c, z) {
       const zona = $("serviciu-form"); zona.replaceChildren();
@@ -7384,12 +7435,30 @@
       }
       return s;
     }
-    // Tabelul unei zone: zile pe rânduri, pauze (cu intervalul orar) sau diminața/după-amiaza pe coloane.
-    function tabelZona(c, z, nume, interactiv) {
+    // Intervalul unui schimb de învățători. În tabelul comun cu profesorii (Munteni) învățătorul de după-amiază stă de la pauza 6–7 (13:50) până la sfârșitul programului.
+    function intervalSchimbZ(zone, z, schimb) {
+      const pr = z.tip === "invatatori" ? perecheCorp(zone, z) : null;
+      if (pr && schimb === "dupa_amiaza") return hhmm(intervalPauza(PAUZA_INV_DUPA)[0]) + "–" + hhmm(intervalPauza(finInvDupa(z))[1]);
+      return INTERVAL_SCHIMB[schimb || "dimineata"];
+    }
+    // Unitățile de afișare ale unui corp: zonele, cu profesorii și învățătorii din același corp puși împreună.
+    function unitatiCorp(toate, zone) {
+      const u = [];
+      zone.forEach((z) => {
+        const pr = perecheCorp(toate, z);
+        if (z.tip === "invatatori" && pr && zone.includes(pr.prof)) return;
+        u.push({ z, inv: z.tip === "profesori" && pr && zone.includes(pr.inv) ? pr.inv : null });
+      });
+      return u;
+    }
+    // Tabelul unei zone: zile pe rânduri, pauze (cu intervalul orar) sau dimineața/după-amiaza pe coloane.
+    // Cu „inv” (zona de învățători din același corp) tabelul este comun: învățătorul de dimineață la pauzele 1–4 (până la 12:00), cel de după-amiază de la 13:50.
+    function tabelZona(c, z, nume, interactiv, inv) {
       const w = el("div", "gr-w"); const t = document.createElement("table"); t.className = "gr-t"; w.appendChild(t);
+      const nrK = inv ? Math.max(pauzeZona(z), finInvDupa(inv)) : pauzeZona(z);
       const cap = z.tip === "invatatori"
         ? [["Dimineața", INTERVAL_SCHIMB.dimineata, null, "dimineata"], ["După-amiaza", INTERVAL_SCHIMB.dupa_amiaza, null, "dupa_amiaza"]]
-        : Array.from({ length: pauzeZona(z) }, (_, i) => i + 1).map((k) => ["Pauza " + PAUZE_ET[k], textPauza(k), k, null]);
+        : Array.from({ length: nrK }, (_, i) => i + 1).map((k) => ["Pauza " + PAUZE_ET[k], textPauza(k), k, null]);
       const ur = interactiv ? pauzaUrmatoare() : null, azi = new Date().getDay();
       const thead = document.createElement("thead"); const tr0 = document.createElement("tr"); tr0.appendChild(document.createElement("th"));
       cap.forEach((x) => { const th = document.createElement("th"); th.appendChild(document.createTextNode(x[0])); th.appendChild(el("small", "", x[1])); tr0.appendChild(th); });
@@ -7401,11 +7470,28 @@
         tr.appendChild(th);
         const lastPos = new Map();
         cap.forEach((x) => {
-          const td = document.createElement("td"); const { rows } = celulaGrafic(c, z, zi, x[2], x[3]);
-          ordCelula(rows, lastPos, nume).forEach((r) => td.appendChild(chipPersoana(c, r, nume, interactiv)));
-          if (!rows.length) td.classList.add("gol"); if (rows.some((r) => r.manual)) td.classList.add("man");
+          const td = document.createElement("td");
           if (ur && ur.zi === zi && x[2] === ur.k) td.classList.add("acum");
-          if (interactiv && c.poate) { td.classList.add("click"); td.title = "Apasă pe căsuță ca să schimbi persoana"; td.addEventListener("click", () => formCelula(c, z, zi, x[2], x[3])); }
+          if (!inv) {
+            const { rows } = celulaGrafic(c, z, zi, x[2], x[3]);
+            ordCelula(rows, lastPos, nume).forEach((r) => td.appendChild(chipPersoana(c, r, nume, interactiv)));
+            if (!rows.length) td.classList.add("gol"); if (rows.some((r) => r.manual)) td.classList.add("man");
+            if (interactiv && c.poate) { td.classList.add("click"); td.title = "Apasă pe căsuță ca să schimbi persoana"; td.addEventListener("click", () => formCelula(c, z, zi, x[2], x[3])); }
+          } else {
+            // Tabel comun: profesorii la pauzele zonei lor, învățătorul de dimineață până la 12:00, cel de după-amiază de la 13:50.
+            const k = x[2], parti = [];
+            if (k <= pauzeZona(z)) parti.push({ zz: z, p: k, s: null, i: false });
+            if (k <= PAUZA_12) parti.push({ zz: inv, p: null, s: "dimineata", i: true });
+            else if (k >= PAUZA_INV_DUPA && k <= finInvDupa(inv)) parti.push({ zz: inv, p: null, s: "dupa_amiaza", i: true });
+            td.classList.add("mx");
+            parti.forEach((pt) => {
+              const cs = el("div", "cs" + (pt.i ? " inv" : "")); const { rows } = celulaGrafic(c, pt.zz, zi, pt.p, pt.s);
+              ordCelula(rows, lastPos, nume).forEach((r) => { const ch = chipPersoana(c, r, nume, interactiv); if (pt.i) { ch.classList.add("inv"); ch.title = (interactiv ? "Învățător · apasă ca să vezi serviciul acestei persoane" : "Învățător"); } cs.appendChild(ch); });
+              if (!rows.length) cs.classList.add("gol"); if (rows.some((r) => r.manual)) cs.classList.add("man");
+              if (interactiv && c.poate) { cs.classList.add("click"); cs.title = pt.i ? "Apasă pe căsuță ca să schimbi învățătorul" : "Apasă pe căsuță ca să schimbi persoana"; cs.addEventListener("click", () => formCelula(c, pt.zz, zi, pt.p, pt.s)); }
+              td.appendChild(cs);
+            });
+          }
           tr.appendChild(td);
         });
         tb.appendChild(tr);
@@ -7437,7 +7523,7 @@
     }
     function tiparesteCorp(c, sediu, corp, zone) {
       const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
-      const noduri = zone.map((z) => { const s = el("div", "ts-zona"); if (z.denumire !== z.corp) s.appendChild(el("p", "ts-zet", z.denumire)); s.appendChild(tabelZona(c, z, nume, false)); return s; });
+      const noduri = unitatiCorp(c.zone, zone).map((u) => { const s = el("div", "ts-zona"); if (u.z.denumire !== u.z.corp) s.appendChild(el("p", "ts-zet", u.z.denumire)); s.appendChild(tabelZona(c, u.z, nume, false, u.inv)); return s; });
       deschideTiparServ(c, corp.toUpperCase(), sediu !== corp ? sediu : "", noduri);
     }
     // Serviciul unei persoane, pe zile și pe pauze.
@@ -7463,12 +7549,12 @@
         const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = ZILE_SC[zi]; tr.appendChild(th);
         for (let k = 1; k <= maxK; k++) {
           const td = document.createElement("td"); const g = pz.filter((x) => x.zi === zi && x.pauza === k);
-          if (g.length) { td.classList.add("are"); td.style.setProperty("--h", String(hueDe(g[0].zona_id))); td.textContent = g.map((x) => etZonaScurt(zonaDe.get(x.zona_id)) + (x.nota ? " (" + x.nota + ")" : "")).join("\n"); } else td.classList.add("gol-p");
+          if (g.length) { td.classList.add("are"); td.textContent = g.map((x) => etZonaScurt(zonaDe.get(x.zona_id)) + (x.nota ? " (" + x.nota + ")" : "")).join("\n"); } else td.classList.add("gol-p");
           tr.appendChild(td);
         }
         if (sch.length) {
           const td = document.createElement("td"); const g = sch.filter((x) => x.zi === zi);
-          if (g.length) { td.classList.add("are"); td.textContent = g.map((x) => (x.schimb === "dimineata" ? "Dimineața " : "După-amiaza ") + INTERVAL_SCHIMB[x.schimb || "dimineata"] + "\n" + etZonaScurt(zonaDe.get(x.zona_id)) + (x.nota ? " (" + x.nota + ")" : "")).join("\n"); } else td.classList.add("gol-p");
+          if (g.length) { td.classList.add("are"); td.textContent = g.map((x) => (x.schimb === "dimineata" ? "Dimineața " : "După-amiaza ") + intervalSchimbZ(c.zone, zonaDe.get(x.zona_id), x.schimb || "dimineata") + "\n" + etZonaScurt(zonaDe.get(x.zona_id)) + (x.nota ? " (" + x.nota + ")" : "")).join("\n"); } else td.classList.add("gol-p");
           tr.appendChild(td);
         }
         tb.appendChild(tr);
@@ -7483,7 +7569,12 @@
       const linii = [];
       zonaPauza.forEach((z) => { const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === ur.zi && g.pauza === ur.k); if (rows.length) linii.push([etZonaScurt(z), ordCelula(rows, new Map(), nume)]); });
       const dim = new Date().getHours() < 12 ? "dimineata" : "dupa_amiaza";
-      c.zone.filter((z) => z.tip === "invatatori").forEach((z) => { const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === ur.zi && g.schimb === dim); if (rows.length) linii.push([etZonaScurt(z) + " · " + INTERVAL_SCHIMB[dim], ordCelula(rows, new Map(), nume)]); });
+      c.zone.filter((z) => z.tip === "invatatori").forEach((z) => {
+        let sch = dim;
+        if (perecheCorp(c.zone, z)) sch = ur.k <= PAUZA_12 ? "dimineata" : ur.k >= PAUZA_INV_DUPA && ur.k <= finInvDupa(z) ? "dupa_amiaza" : null;
+        if (!sch) return;
+        const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === ur.zi && g.schimb === sch); if (rows.length) linii.push([etZonaScurt(z) + " · " + intervalSchimbZ(c.zone, z, sch), ordCelula(rows, new Map(), nume)]);
+      });
       if (!linii.length) return null;
       const b = el("div", "azi-bara");
       b.appendChild(el("div", "azi-titlu", "📍 Azi, " + ZILE_SC[ur.zi] + " · " + (ur.acum ? "pauza în curs " : "următoarea pauză ") + PAUZE_ET[ur.k] + " (" + textPauza(ur.k) + ")"));
@@ -7528,7 +7619,7 @@
           ti.addEventListener("click", () => tiparesteCorp(c, s, g.corp, g.zone));
           cap.append(tg, ti); cs.appendChild(cap);
           const corp = el("div", "corp-corp"); corp.hidden = inchis;
-          g.zone.forEach((z) => { if (z.denumire !== z.corp) corp.appendChild(el("div", "zona-et", z.denumire)); corp.appendChild(tabelZona(c, z, nume, true)); });
+          unitatiCorp(c.zone, g.zone).forEach((u) => { if (u.z.denumire !== u.z.corp) corp.appendChild(el("div", "zona-et", u.z.denumire)); corp.appendChild(tabelZona(c, u.z, nume, true, u.inv)); });
           cs.appendChild(corp);
           tg.addEventListener("click", () => { const h = !corp.hidden; corp.hidden = h; tg.textContent = h ? "▸" : "▾"; tg.setAttribute("aria-expanded", h ? "false" : "true"); if (h) corpInchise.add(cheie); else corpInchise.delete(cheie); });
           sec.appendChild(cs);
@@ -7605,7 +7696,7 @@
         // Acoperirea zonelor
         const zoneRap = c.zone.map((z) => {
           let total = 0; const zg = rows.filter((g) => g.zona_id === z.id);
-          if (z.tip === "invatatori") { total = [...zileZona(z)].length * (z.nr_supraveghetori + z.nr_dupa_amiaza); }
+          if (z.tip === "invatatori") { total = [...zileZona(z)].length * z.nr_supraveghetori + 5 * z.nr_dupa_amiaza; }
           else for (let zi = 1; zi <= 5; zi++) for (let k = 1; k <= pauzeZona(z); k++) total += nrLaZona(c.zone, z, zi, k);
           const umplute = Math.min(total, zg.length);
           return { z, total, umplute, gol: Math.max(0, total - zg.length), persoane: new Set(zg.map((g) => g.angajat_id)).size };
@@ -7664,7 +7755,7 @@
     function formCelula(c, z, zi, pauza, schimb) {
       const zona = $("serviciu-form"); zona.replaceChildren();
       const box = el("div", "ang-form"); zona.appendChild(box);
-      box.appendChild(el("h3", "", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " · " + ZILE_SC[zi] + " · " + (pauza ? "pauza " + PAUZE_ET[pauza] + " (" + textPauza(pauza) + ")" : schimb === "dimineata" ? "dimineața (" + INTERVAL_SCHIMB.dimineata + ")" : "după-amiaza (" + INTERVAL_SCHIMB.dupa_amiaza + ")")));
+      box.appendChild(el("h3", "", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " · " + ZILE_SC[zi] + " · " + (pauza ? "pauza " + PAUZE_ET[pauza] + " (" + textPauza(pauza) + ")" : schimb === "dimineata" ? "dimineața (" + intervalSchimbZ(c.zone, z, "dimineata") + ")" : "după-amiaza (" + intervalSchimbZ(c.zone, z, "dupa_amiaza") + ")")));
       const { rows, nume } = celulaGrafic(c, z, zi, pauza, schimb);
       if (!rows.length) box.appendChild(el("p", "who", "Nimeni de serviciu."));
       rows.forEach((r) => {
