@@ -1502,6 +1502,7 @@
         <button type="button" role="tab" data-v="raport" aria-selected="false">📊 Raport</button>
         <button type="button" role="tab" data-v="zone" aria-selected="false" class="hidden">🏢 Zone și clase</button>
         <button type="button" role="tab" data-v="scutiri" aria-selected="false" class="hidden">🚫 Scutiri</button>
+        <button type="button" role="tab" data-v="generare" aria-selected="false" class="hidden">⚙️ Generare grafic</button>
       </div>
       <div class="ctl"><button id="serviciu-admin" class="secondary" type="button">⚙ Administrare serviciu pe școală</button></div>
       <div id="serviciu-msg" class="panel-msg" role="status"></div>
@@ -6885,7 +6886,7 @@
     // Graficul (pe zone și pe profesori) se vede implicit; zonele și scutirile sunt la „Administrare serviciu pe școală”.
     function potrivesteModServ() {
       $("serviciu-tab").querySelectorAll("button").forEach((b) => {
-        const adm = b.dataset.v === "zone" || b.dataset.v === "scutiri";
+        const adm = b.dataset.v === "zone" || b.dataset.v === "scutiri" || b.dataset.v === "generare";
         b.classList.toggle("hidden", adm !== adminServ);
         b.setAttribute("aria-selected", b.dataset.v === tabServ ? "true" : "false");
       });
@@ -6953,7 +6954,7 @@
       const ctx = { a, poate, zone: rz.data || [], clase: rc.data || [], scutiti: rs.data || [], angs: ra.data || [], claseA, persoane: rp.data || [], grafic: rg.data || [], diriginti: rdir.data || [] };
       antet.appendChild(ghidServiciu(ctx));
       if (a.inchis) antet.appendChild(el("p", "who", "An școlar închis: doar consultare."));
-      if (tabServ === "zone") desenezZone(ctx); else if (tabServ === "scutiri") desenezScutiri(ctx); else if (tabServ === "profesori") desenezPeProfesori(ctx); else if (tabServ === "raport") desenezRaport(ctx, tabCurent); else desenezGrafic(ctx);
+      if (tabServ === "zone") desenezZone(ctx); else if (tabServ === "scutiri") desenezScutiri(ctx); else if (tabServ === "generare") desenezGenerare(ctx); else if (tabServ === "profesori") desenezPeProfesori(ctx); else if (tabServ === "raport") desenezRaport(ctx, tabCurent); else desenezGrafic(ctx);
     }
     function ghidServiciu(c) {
       const det = document.createElement("details"); det.className = "alt-ghid";
@@ -6970,7 +6971,7 @@
       pas("Scutirile", "La „Administrare serviciu pe școală”, fila „Scutiri”, treci persoanele care nu fac serviciu (de exemplu conducerea sau cadrele cu foarte puține ore).", c.scutiti.length ? "gata" : "defacut");
       const arePers = c.zone.some((z) => z.tip === "fix") ? c.persoane.some((p) => p.tip === "pool") : true;
       pas("Persoanele stabilite", "La „Administrare serviciu pe școală”, fila „Zone și clase”, la zona sălii de sport apasă „Persoane” și adaugă profesorii care pot face serviciu acolo; la zonele cu profesori poți adăuga persoane cu prioritate (de exemplu cei de la ateliere); la zonele cu învățători poți adăuga în rotația de dimineață alte persoane (de exemplu educatoarea, cu ora până la care stă).", arePers ? "gata" : "defacut");
-      pas("Graficul pe pauze", "La fila „Grafic pe zone” apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Dirigintele clasei (trecut la Administrare → Diriginți) are prioritate la zona clasei lui. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
+      pas("Graficul pe pauze", "La „Administrare serviciu pe școală”, fila „Generare grafic”, apeși „Generează graficul”: platforma îl propune din orar, pe pauzele 1–2, 2–3, 3–4, 4–5, 5–6, cu serviciul împărțit echitabil: fiecare profesor primește între 4 și 8 pauze, proporțional cu orele din orar, de preferat 2–3 pauze la rând în aceeași zonă. Sala de sport are o persoană pe zi sau pe intervalele 8–11 și 11–14. Verifici previzualizarea, completezi locurile rămase goale (doar pe pauza respectivă) și salvezi. Dirigintele clasei (trecut la Administrare → Diriginți) are prioritate la zona clasei lui. Căsuțele schimbate de tine se păstrează la o nouă generare.", c.grafic.length ? "gata" : "defacut");
       pas("Profesorii își văd serviciul", "Fiecare va vedea în „Orarul meu” când și unde este de serviciu.", "urmeaza");
       det.appendChild(ol); return det;
     }
@@ -8020,19 +8021,28 @@
       linii.forEach(([et, rows]) => { const l = el("div", "azi-linie"); l.appendChild(el("span", "azi-zona", et)); rows.forEach((r) => l.appendChild(chipPersoana(c, r, nume, true))); b.appendChild(l); });
       return b;
     }
+    // Generarea graficului, copiile de siguranță și restaurarea: la Administrare, ca să nu se apese din greșeală în graficul zilnic.
+    function desenezGenerare(c) {
+      const lista = $("serviciu-lista");
+      if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, în fila „Zone și clase”."));
+      const nrManual = c.grafic.filter((g) => g.manual).length;
+      lista.appendChild(el("h3", "", "Graficul pe pauze"));
+      lista.appendChild(el("p", "who", c.grafic.length
+        ? "Graficul pentru " + c.a.denumire + " este generat: " + c.grafic.length + " de rânduri" + (nrManual ? ", din care " + nrManual + " completate sau modificate manual (se păstrează la o nouă generare)" : "") + ". Colegii îl văd în „Orarul meu” și primesc notificări după el."
+        : "Graficul nu a fost încă generat pentru " + c.a.denumire + "."));
+      if (!c.poate) return lista.appendChild(el("p", "who", "Aici doar consulți: anul școlar este închis."));
+      const ctl = el("div", "ctl");
+      // Cu un grafic existent, regenerarea este o acțiune rară și grea: cere confirmare, iar înainte de înlocuire se face o copie de siguranță.
+      const g = el("button", c.grafic.length ? "secondary" : "", c.grafic.length ? "Generează din nou…" : "Generează graficul"); g.type = "button";
+      g.addEventListener("click", () => (c.grafic.length ? confirmaGenerareServ(c) : previzualizeazaGrafic(c)));
+      const v = el("button", "secondary", "Versiuni anterioare"); v.type = "button"; v.addEventListener("click", () => arataVersiuniServ(c));
+      ctl.append(g, v); lista.appendChild(ctl);
+    }
     function desenezGrafic(c) {
       const lista = $("serviciu-lista");
       const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
-      if (c.poate) {
-        const ctl = el("div", "ctl");
-        // Cu un grafic existent, regenerarea este o acțiune rară și grea: cere confirmare, iar înainte de înlocuire se face o copie de siguranță.
-        const g = el("button", c.grafic.length ? "secondary" : "", c.grafic.length ? "Generează din nou…" : "Generează graficul"); g.type = "button";
-        g.addEventListener("click", () => (c.grafic.length ? confirmaGenerareServ(c) : previzualizeazaGrafic(c)));
-        const v = el("button", "secondary", "Versiuni anterioare"); v.type = "button"; v.addEventListener("click", () => arataVersiuniServ(c));
-        ctl.append(g, v); lista.appendChild(ctl);
-      }
       if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, la „Administrare serviciu pe școală”, fila „Zone și clase”."));
-      if (!c.grafic.length) return lista.appendChild(el("p", "who", "Graficul nu a fost încă generat pentru " + c.a.denumire + "."));
+      if (!c.grafic.length) return lista.appendChild(el("p", "who", "Graficul nu a fost încă generat pentru " + c.a.denumire + (c.poate ? ". Se generează din „Administrare serviciu pe școală”, fila „Generare grafic”." : ".")));
       const azi = bannerAzi(c, nume); if (azi) lista.appendChild(azi);
       // Filtre: sediul și căutarea unei persoane (evidențiază toate căsuțele ei)
       const bara = el("div", "filtre");
