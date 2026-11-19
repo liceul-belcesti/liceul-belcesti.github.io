@@ -1097,6 +1097,8 @@
     #serviciu .gr-t td .cs.man { box-shadow:inset 0 0 0 2px var(--accent); }
     #serviciu .gr-t td .cs.inv:not(.gol)::before { content:"învățător"; display:block; font-size:.62rem; font-weight:600; color:var(--muted); text-align:left; padding-left:7px; }
     #tipar-serviciu-fond .gr-t td .cs.inv:not(.gol)::before { content:"învățător"; display:block; font-size:.62rem; font-weight:600; color:#456; text-align:center; }
+    #serviciu .gr-t td .cs.inv.edu:not(.gol)::before { content:"educatoare"; }
+    #tipar-serviciu-fond .gr-t td .cs.inv.edu:not(.gol)::before { content:"educatoare"; }
     #serviciu .pers.inv { border-left-style:dashed; }
     #serviciu .pers { display:block; margin:2px 0; padding:3px 7px; border-radius:8px; text-align:left; font-size:.74rem; font-weight:600; line-height:1.25; white-space:normal; color:var(--text); background:transparent; border-left:3px solid color-mix(in srgb, var(--accent) 35%, var(--line)); cursor:pointer; transition:transform .12s, box-shadow .12s, opacity .15s; }
     #serviciu .azi-linie .pers { display:inline-block; margin:0; }
@@ -6652,7 +6654,7 @@
         db.from("serviciu_zone").select("id, sediu, corp, grupa_corp, denumire, tip, nr_supraveghetori, nr_dupa_amiaza, ordine, zile, pauza_max").eq("an_id", a.id).order("sediu").order("ordine").order("corp").order("denumire"),
         db.from("serviciu_zona_clase").select("id, zona_id, clasa").eq("an_id", a.id),
         db.from("serviciu_scutiti").select("id, angajat_id, motiv").eq("an_id", a.id),
-        db.from("angajati").select("id, nume").eq("an_id", a.id).is("sters_la", null).order("nume"),
+        db.from("angajati").select("id, nume, functie").eq("an_id", a.id).is("sters_la", null).order("nume"),
         claseAn(a),
         db.from("serviciu_persoane").select("id, zona_id, angajat_id, tip, zi, pana_la").eq("an_id", a.id),
         db.from("serviciu_grafic").select("id, zona_id, zi, pauza, schimb, angajat_id, manual, nota").eq("an_id", a.id),
@@ -7563,9 +7565,11 @@
             if (k <= PAUZA_12) parti.push({ zz: inv, p: null, s: "dimineata", i: true });
             else if (k >= PAUZA_INV_DUPA && k <= finInvDupa(inv)) parti.push({ zz: inv, p: null, s: "dupa_amiaza", i: true });
             td.classList.add("mx");
+            const eEdu = (id) => (c.angs.find((x) => x.id === id) || {}).functie === "educatoare";
             parti.forEach((pt) => {
               const cs = el("div", "cs" + (pt.i ? " inv" : "")); const { rows } = celulaGrafic(c, pt.zz, zi, pt.p, pt.s);
-              ordCelula(rows, lastPos, nume).forEach((r) => { const ch = chipPersoana(c, r, nume, interactiv); if (pt.i) { ch.classList.add("inv"); ch.title = (interactiv ? "Învățător · apasă ca să vezi serviciul acestei persoane" : "Învățător"); } cs.appendChild(ch); });
+              ordCelula(rows, lastPos, nume).forEach((r) => { const ch = chipPersoana(c, r, nume, interactiv); if (pt.i) { const ed = eEdu(r.angajat_id); ch.classList.add("inv"); ch.title = (ed ? "Educatoare" : "Învățător") + (interactiv ? " · apasă ca să vezi serviciul acestei persoane" : ""); } cs.appendChild(ch); });
+              if (pt.i && rows.length && rows.every((r) => eEdu(r.angajat_id))) cs.classList.add("edu");
               if (!rows.length) cs.classList.add("gol"); if (rows.some((r) => r.manual)) cs.classList.add("man");
               if (interactiv && c.poate) { cs.classList.add("click"); cs.title = pt.i ? "Apasă pe căsuță ca să schimbi învățătorul" : "Apasă pe căsuță ca să schimbi persoana"; cs.addEventListener("click", () => formCelula(c, pt.zz, zi, pt.p, pt.s)); }
               td.appendChild(cs);
