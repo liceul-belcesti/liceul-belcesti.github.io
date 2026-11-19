@@ -123,6 +123,8 @@
     .notif-tel.hidden { display:none; }
     .notif-tel .nt-text { flex:1 1 240px; display:flex; flex-direction:column; gap:2px; }
     .notif-tel .nt-text span { font-size:.9rem; color:var(--muted); }
+    .notif-tel .nt-email { flex:1 1 100%; order:3; display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted); cursor:pointer; }
+    .notif-tel .nt-email input { width:18px; height:18px; min-height:0; padding:0; margin:0; flex:none; accent-color:var(--accent); }
     .notif-tel .nt-butoane { display:flex; flex-wrap:wrap; gap:8px; }
     .notif-tel .nt-butoane button { width:auto; margin:0; min-height:40px; padding:6px 14px; }
     #anunturi textarea { display:block; width:100%; box-sizing:border-box; padding:10px 12px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
@@ -1312,6 +1314,7 @@
 
       <section id="notif-tel" class="notif-tel hidden" aria-live="polite">
         <div class="nt-text"><b>📱 Serviciul pe școală, pe telefon</b><span id="nt-stare"></span></div>
+        <label class="nt-email"><input type="checkbox" id="nt-email"> <span>Trimite-mi serviciul zilei pe e-mail, când nu am notificările active pe telefon</span></label>
         <div class="nt-butoane">
           <button id="nt-activeaza" type="button">Activează notificările</button>
           <button id="nt-proba" class="secondary hidden" type="button">Trimite o probă</button>
@@ -1632,7 +1635,10 @@
     async function abonareCurenta() { try { const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch (e) { return null; } }
     async function pregatesteNotifTelefon(areAngajat) {
       const box = $("notif-tel"); if (!box) return;
-      const stare = $("nt-stare"), bA = $("nt-activeaza"), bP = $("nt-proba"), bO = $("nt-opreste");
+      const stare = $("nt-stare"), bA = $("nt-activeaza"), bP = $("nt-proba"), bO = $("nt-opreste"), cE = $("nt-email");
+      let emailActiv = true;
+      const faraTel = () => emailActiv ? "Până atunci primești serviciul pe e-mail." : "Până atunci nu primești nicio notificare.";
+      const ios = "Pe iPhone: apasă Partajează, apoi „Adaugă pe ecranul principal”, deschide aplicația de pe ecran și activează notificările de acolo. ";
       if (!areAngajat) { box.classList.add("hidden"); return; }
       box.classList.remove("hidden");
       const arata = async (mesaj) => {
@@ -1640,14 +1646,23 @@
         const refuzat = supt && Notification.permission === "denied";
         bA.classList.toggle("hidden", !supt || !!ab || refuzat || (eIos() && !eInstalata())); bP.classList.toggle("hidden", !ab); bO.classList.toggle("hidden", !ab);
         if (mesaj) stare.textContent = mesaj;
-        else if (!supt) stare.textContent = eIos() && !eInstalata() ? "Pe iPhone: apasă Partajează, apoi „Adaugă pe ecranul principal”, deschide aplicația de pe ecran și activează notificările de acolo. Până atunci primești serviciul pe e-mail." : "Acest browser nu permite notificări. Primești serviciul zilei pe e-mail.";
-        else if (eIos() && !eInstalata()) stare.textContent = "Pe iPhone: apasă Partajează, apoi „Adaugă pe ecranul principal”, deschide aplicația de pe ecran și activează notificările de acolo. Până atunci primești serviciul pe e-mail.";
-        else if (refuzat) stare.textContent = "Notificările sunt blocate în setările browserului pentru acest site. Primești serviciul pe e-mail.";
+        else if (!supt) stare.textContent = eIos() && !eInstalata() ? ios + faraTel() : "Acest browser nu permite notificări. " + (emailActiv ? "Primești serviciul zilei pe e-mail." : "Nu primești nicio notificare.");
+        else if (eIos() && !eInstalata()) stare.textContent = ios + faraTel();
+        else if (refuzat) stare.textContent = "Notificările sunt blocate în setările browserului pentru acest site. " + (emailActiv ? "Primești serviciul pe e-mail." : "Nu primești nicio notificare.");
         else if (ab) stare.textContent = "Active pe acest telefon: în zilele cu serviciu primești dimineața, la 7:00, pauzele și locul.";
-        else stare.textContent = "Primești dimineața, la 7:00, în zilele cu serviciu, pauzele și locul. Acum primești mesajul pe e-mail.";
+        else stare.textContent = "Primești dimineața, la 7:00, în zilele cu serviciu, pauzele și locul. " + (emailActiv ? "Acum primești mesajul pe e-mail." : "Acum nu primești nicio notificare: activează-le pe telefon.");
       };
       if ("serviceWorker" in navigator) { try { await navigator.serviceWorker.register("sw.js"); } catch (e) { /* fără notificări */ } }
+      try { const { data: ea } = await db.rpc("setare_serviciu_email"); if (typeof ea === "boolean") emailActiv = ea; } catch (e) { /* rămâne pornit */ }
+      cE.checked = emailActiv;
       await arata();
+      cE.onchange = async () => {
+        const dorit = cE.checked; cE.disabled = true;
+        const { data: ea, error } = await db.rpc("setare_serviciu_email", { p_activ: dorit });
+        cE.disabled = false;
+        if (error || typeof ea !== "boolean") { cE.checked = emailActiv; return arata("Setarea nu a putut fi salvată. Încearcă din nou."); }
+        emailActiv = ea; cE.checked = ea; await arata();
+      };
       bA.onclick = async () => {
         bA.disabled = true;
         try {
@@ -1675,7 +1690,7 @@
       bO.onclick = async () => {
         bO.disabled = true;
         try { const sub = await abonareCurenta(); if (sub) { const ep = sub.endpoint; await sub.unsubscribe(); await db.from("push_abonari").delete().eq("endpoint", ep); } } catch (e) { /* oprit oricum pe telefon */ }
-        bO.disabled = false; arata("Notificările au fost dezactivate pe acest telefon. Primești serviciul zilei pe e-mail.");
+        bO.disabled = false; arata("Notificările au fost dezactivate pe acest telefon. " + (emailActiv ? "Primești serviciul zilei pe e-mail." : "Nu primești nicio notificare."));
       };
     }
     function pregatesteComutator() {
