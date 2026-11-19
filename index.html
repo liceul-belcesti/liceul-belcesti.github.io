@@ -7378,7 +7378,7 @@
           if (!best || scutiti.has(best.t)) return;
           (best.v.min <= 3 ? poolD : poolA).set(best.t, null);
         });
-        d.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata" && !scutiti.has(p.angajat_id)).forEach((p) => poolD.set(p.angajat_id, p.pana_la ? "până la " + p.pana_la : null));
+        d.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata" && !scutiti.has(p.angajat_id)).forEach((p) => poolD.set(p.angajat_id, null));
         const ziFixa = d.persoane.filter((p) => p.zona_id === z.id && p.tip === "zi_fixa" && p.zi && !scutiti.has(p.angajat_id));
         [["dimineata", poolD, z.nr_supraveghetori], ["dupa_amiaza", poolA, z.nr_dupa_amiaza]].forEach(([schimb, pool, nr]) => {
           const ids = [...pool.keys()]; const cnt = new Map(ids.map((t) => [t, 0])), ultima = new Map(ids.map((t) => [t, 0]));
