@@ -6501,8 +6501,11 @@
           st.appendChild(el("div", "ang-info", TIP_ZONA[z.tip] + " · " + nr));
           st.appendChild(el("div", "ang-info", "Clase: " + (cl.length ? cl.join(", ") : "—")));
           if (z.grupa_corp !== z.corp) st.appendChild(el("div", "ang-info", "Legat cu: " + z.grupa_corp));
-          const pz = c.persoane.filter((p) => p.zona_id === z.id && (p.tip === "pool" || p.tip === "rotatie_dimineata" || p.tip === "prioritar"));
-          if (pz.length) st.appendChild(el("div", "ang-info", (z.tip === "profesori" ? "Cu prioritate: " : "Persoane: ") + pz.map((p) => ((c.angs.find((x) => x.id === p.angajat_id) || {}).nume || "?") + (p.pana_la ? " (până la " + p.pana_la + ")" : "")).join(", ")));
+          const pz = c.persoane.filter((p) => p.zona_id === z.id && (p.tip === "pool" || p.tip === "rotatie_dimineata" || p.tip === "prioritar" || p.tip === "doar_aici" || p.tip === "exclus"));
+          const numeP = (p) => ((c.angs.find((x) => x.id === p.angajat_id) || {}).nume || "?");
+          if (z.tip === "profesori") {
+            [["prioritar", "Cu prioritate"], ["doar_aici", "Doar aici"], ["exclus", "Nu face aici"]].forEach(([tp, et]) => { const l = pz.filter((p) => p.tip === tp); if (l.length) st.appendChild(el("div", "ang-info", et + ": " + l.map(numeP).join(", "))); });
+          } else if (pz.length) st.appendChild(el("div", "ang-info", "Persoane: " + pz.map((p) => numeP(p) + (p.pana_la ? " (până la " + p.pana_la + ")" : "")).join(", ")));
           else if (z.tip === "fix") st.appendChild(el("div", "ang-info", "Persoane: niciuna încă – apasă „Persoane”"));
           r.appendChild(st);
           if (c.poate) {
@@ -6715,7 +6718,12 @@
       const dirDe = new Map((d.diriginti || []).map((x) => [x.clasa, x.angajat_id]));
       // Persoane cu prioritate la o zonă (de exemplu cei de la ateliere): ora lor contează oriunde în sediu.
       const prioZ = new Map();
-      d.persoane.filter((p) => p.tip === "prioritar" && !scutiti.has(p.angajat_id)).forEach((p) => (prioZ.get(p.zona_id) || prioZ.set(p.zona_id, new Set()).get(p.zona_id)).add(p.angajat_id));
+      d.persoane.filter((p) => (p.tip === "prioritar" || p.tip === "doar_aici") && !scutiti.has(p.angajat_id)).forEach((p) => (prioZ.get(p.zona_id) || prioZ.set(p.zona_id, new Set()).get(p.zona_id)).add(p.angajat_id));
+      // „Doar aici”: persoana face serviciu numai în zona respectivă (cu prioritate). „Nu face aici”: persoana nu intră în zona respectivă.
+      const doarAici = new Map(), exclusZ = new Map();
+      d.persoane.filter((p) => p.tip === "doar_aici").forEach((p) => (doarAici.get(p.angajat_id) || doarAici.set(p.angajat_id, new Set()).get(p.angajat_id)).add(p.zona_id));
+      d.persoane.filter((p) => p.tip === "exclus").forEach((p) => (exclusZ.get(p.zona_id) || exclusZ.set(p.zona_id, new Set()).get(p.zona_id)).add(p.angajat_id));
+      const permis = (t, z) => !(exclusZ.get(z.id) && exclusZ.get(z.id).has(t)) && !(doarAici.has(t) && !doarAici.get(t).has(z.id));
       const zoneCl = new Map(d.zone.map((z) => [z.id, new Set()]));
       d.clase.forEach((x) => zoneCl.has(x.zona_id) && zoneCl.get(x.zona_id).add(x.clasa));
       const grup = (z) => z.sediu + "|" + z.grupa_corp;
@@ -6750,7 +6758,7 @@
       const pot = (t, z, wa, wz) => {
         const pr = prioZ.get(z.id);
         if (pr && pr.has(t)) return -25;
-        return wa * (1 - afin(t, grup(z))) + wz * faraZona(t, z) + (pr && pr.size ? 14 : 0);
+        return wa * (1 - afin(t, grup(z))) + wz * faraZona(t, z) + (pr && pr.size ? 14 * Math.min(1, pr.size * MAX_PAUZE / (25 * z.nr_supraveghetori)) : 0);
       };
       // Dirigintele unei clase din zonă are prioritate la zona clasei lui.
       const dirZona = (t, z) => { let da = 0; zoneCl.get(z.id).forEach((c) => { if (dirDe.get(c) === t) da = 1; }); return da; };
@@ -6780,7 +6788,7 @@
       const sloturi = [];
       d.zone.filter((z) => z.tip === "profesori" || z.tip === "fix").forEach((z) => { for (let zi = 1; zi <= 5; zi++) for (let k = 1; k <= 5; k++) for (let i = 0; i < z.nr_supraveghetori; i++) sloturi.push({ z, zi, k, lay: i, cand: new Map(), who: null, locked: false }); });
       sloturi.forEach((s) => {
-        const ids = s.z.tip === "fix" ? [...poolZ.get(s.z.id)].filter((t) => classAt.has(t)) : [...new Set([...classAt.keys()].filter((t) => !scutiti.has(t) && !salaPool.has(t) && oreGrup(t, grup(s.z)) > 0).concat([...(prioZ.get(s.z.id) || [])].filter((t) => classAt.has(t) && !salaPool.has(t))))];
+        const ids = s.z.tip === "fix" ? [...poolZ.get(s.z.id)].filter((t) => classAt.has(t)) : [...new Set([...classAt.keys()].filter((t) => !scutiti.has(t) && !salaPool.has(t) && oreGrup(t, grup(s.z)) > 0).concat([...(prioZ.get(s.z.id) || [])].filter((t) => classAt.has(t) && !salaPool.has(t))))].filter((t) => permis(t, s.z));
         ids.forEach((t) => { const tr = tier(t, s); if (tr >= 0) s.cand.set(t, tr); });
         s.candArr = [...s.cand.keys()];
       });
@@ -6845,7 +6853,13 @@
       const tinta = new Map();
       {
         const w = (t) => Math.max(1, ore.get(t) || 1);
-        let libere = elig.slice(), ramas = profSloturi.length;
+        // Mai multe persoane „doar aici” în aceeași zonă își împart zona în mod egal (cel mult MAX_PAUZE fiecare).
+        const egale = new Map();
+        d.zone.filter((z) => z.tip === "profesori").forEach((z) => {
+          const g = elig.filter((t) => doarAici.has(t) && doarAici.get(t).has(z.id)); if (g.length < 2) return;
+          const v = Math.min(MAX_PAUZE, 5 * 5 * z.nr_supraveghetori / g.length); g.forEach((t) => egale.set(t, v));
+        });
+        let libere = elig.filter((t) => !egale.has(t)), ramas = profSloturi.length - [...egale.values()].reduce((a, v) => a + v, 0);
         while (libere.length) {
           const sw = libere.reduce((a, t) => a + w(t), 0), v = new Map(libere.map((t) => [t, ramas * w(t) / sw]));
           const jos = libere.filter((t) => v.get(t) < MIN_PAUZE), sus = libere.filter((t) => v.get(t) > MAX_PAUZE);
@@ -6854,6 +6868,7 @@
           fixT.forEach((t) => { tinta.set(t, val); ramas -= val; });
           libere = libere.filter((t) => !fixT.includes(t));
         }
+        egale.forEach((v, t) => tinta.set(t, v));
         elig.forEach((t) => { const pos = new Set(slotsOf.get(t).map((s) => s.zi + "|" + s.k)).size; if (tinta.get(t) > pos) tinta.set(t, pos); });
       }
       const tintaDe = (t) => tinta.has(t) ? tinta.get(t) : MIN_PAUZE + 1;
@@ -7027,20 +7042,30 @@
         const tipP = z.tip === "fix" ? "pool" : "prioritar";
         box.appendChild(el("p", "who", z.tip === "fix"
           ? "Adaugă persoanele care pot face serviciu aici (de exemplu profesorii de educație fizică). Platforma le pune pe pauze, în funcție de orarul lor: la fiecare pauză este de serviciu cineva care are oră în acel moment."
-          : "Adaugă persoanele care fac serviciu aici cu prioritate, chiar dacă orarul nu le arată la clasele zonei (de exemplu cei de la ateliere). Platforma le pune primii, pe pauzele din apropierea orelor lor; ceilalți profesori sunt folosiți doar când este nevoie."));
-        const existente = c.persoane.filter((p) => p.zona_id === z.id && p.tip === tipP);
+          : "Adaugă persoanele care fac serviciu aici cu prioritate, chiar dacă orarul nu le arată la clasele zonei (de exemplu cei de la ateliere). Platforma le pune primii, pe pauzele din apropierea orelor lor; ceilalți profesori sunt folosiți doar când este nevoie. Poți alege și „Doar în această zonă” (persoana nu face serviciu în altă parte, iar mai multe astfel de persoane își împart zona egal) sau „Nu face serviciu în această zonă”."));
+        const ETICHETE = { prioritar: "Cu prioritate", doar_aici: "Doar aici", exclus: "Nu face aici" };
+        const existente = c.persoane.filter((p) => p.zona_id === z.id && (z.tip === "fix" ? p.tip === tipP : p.tip in ETICHETE));
         if (!existente.length) box.appendChild(el("p", "who", "Nu ai adăugat încă nicio persoană."));
         existente.forEach((p) => {
-          const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", nume.get(p.angajat_id) || "Angajat necunoscut"));
+          const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", (nume.get(p.angajat_id) || "Angajat necunoscut") + (z.tip === "profesori" ? " · " + ETICHETE[p.tip] : "")));
           const d = el("button", "mic secondary", "Scoate"); d.type = "button";
           d.addEventListener("click", async () => { const { error } = await db.from("serviciu_persoane").delete().eq("id", p.id); if (error) return mesajServ("Nu am putut scoate."); mesajServ("Persoana a fost scoasă.", true); desenezServiciu(); });
           r.appendChild(el("div", "ctl")).appendChild(d); box.appendChild(r);
         });
         box.appendChild(el("label", "", "Adaugă persoana"));
         const s = document.createElement("select"); optiuni(s, "Alege…"); box.appendChild(s);
+        let selTip = null;
+        if (z.tip === "profesori") {
+          box.appendChild(el("label", "", "Cum face serviciu aici"));
+          selTip = document.createElement("select");
+          selTip.add(new Option("Cu prioritate la această zonă (poate face și în altă parte)", "prioritar"));
+          selTip.add(new Option("Doar în această zonă (cu prioritate; mai multe persoane își împart zona egal)", "doar_aici"));
+          selTip.add(new Option("Nu face serviciu în această zonă", "exclus"));
+          box.appendChild(selTip);
+        }
         const ctl = el("div", "ctl"); const ok = el("button", "", "Adaugă"); ok.type = "button"; const nu = el("button", "secondary", "Închide"); nu.type = "button";
         ctl.append(ok, nu); box.appendChild(ctl); nu.addEventListener("click", () => zona.replaceChildren());
-        ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: tipP }], "Persoana a fost adăugată."); });
+        ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: selTip ? selTip.value : tipP }], "Persoana a fost adăugată."); });
       } else {
         box.appendChild(el("p", "who", "Învățătorii claselor zonei intră automat în rotație, pe schimbul lor. Aici adaugi alte persoane care fac serviciu în rotația de dimineață (de exemplu educatoarea), cu ora până la care stau."));
         const existente = c.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata");
