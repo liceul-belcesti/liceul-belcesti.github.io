@@ -2008,7 +2008,7 @@
       if (!rows || !rows.length) return null;
       const ZILE = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const azi = (new Date().getDay() + 6) % 7 + 1;
-      const loc = (x) => [x.sediu && x.sediu !== "Centru" ? x.sediu : "", x.corp && x.corp !== "Corp unic" && x.corp !== x.zona ? x.corp : "", x.zona].filter(Boolean).join(" · ");
+      const loc = (x) => [x.sediu && x.sediu !== "Centru" ? x.sediu : "", x.corp && x.corp !== "Corp unic" && x.corp !== x.zona ? x.corp : "", x.zona].filter(Boolean).filter((v, i, a) => v !== a[i - 1]).join(" · ");
       const card = el("section", "sv-card"); card.appendChild(el("h3", "", "🛎️ " + titlu));
       for (let zi = 1; zi <= 5; zi++) {
         const dz = rows.filter((r) => r.zi === zi); if (!dz.length) continue;
@@ -6399,7 +6399,8 @@
     const mesajServ = (text, ok) => { $("serviciu-msg").textContent = text || ""; $("serviciu-msg").className = "panel-msg" + (ok ? " ok" : ""); };
     let tabServ = "zone";
     const SEDII_SERV = ["Centru", "Munteni", "Tansa"];
-    const TIP_ZONA = { profesori: "Profesori care au ore la clasele zonei", invatatori: "Învățători, pe zile întregi", fix: "Persoane stabilite (de exemplu sala de sport)" };
+    const TIP_ZONA = { profesori: "Profesori care au ore la clasele zonei", invatatori: "Învățători, pe zile întregi", mixt: "Pe zile: învățător până la 12 (luni–joi) și profesori până la 14", fix: "Persoane stabilite (de exemplu sala de sport)" };
+    const textNr = (tip, nr, dupa) => tip === "invatatori" ? nr + " dimineața, " + (dupa || 0) + " după-amiaza" : tip === "mixt" ? nr + (nr === 1 ? " învățător" : " învățători") + " pe zi (luni–joi), " + (dupa || 0) + (dupa === 1 ? " profesor" : " profesori") + " pe zi" : nr + (nr === 1 ? " supraveghetor" : " supraveghetori") + " la fiecare pauză";
     // Propunere de pornire (se vede în previzualizare și se salvează doar după confirmare).
     const PROPUNERE_ZONE = [
       { sediu: "Centru", corp: "Corp A", grupa: "Corp A + Corp B", den: "Parter", tip: "profesori", nr: 2, clase: ["5B", "6A", "6B", "7A", "8B"] },
@@ -6410,8 +6411,7 @@
       { sediu: "Centru", corp: "Corp ateliere", grupa: "Corp ateliere", den: "Toate încăperile", tip: "profesori", nr: 1, clase: ["10D", "11D"] },
       { sediu: "Centru", corp: "Sala de sport", grupa: "Sala de sport", den: "Sala de sport", tip: "fix", nr: 1, clase: [] },
       { sediu: "Centru", corp: "Corp învățători", grupa: "Corp învățători", den: "Toate încăperile", tip: "invatatori", nr: 2, dupa: 1, clase: ["CPBel", "2ABel", "4ABel", "4BBel", "1ABel", "3ABel"] },
-      { sediu: "Munteni", corp: "Corp unic", grupa: "Corp unic", den: "Profesori", tip: "profesori", nr: 1, clase: ["Mun5C", "Mun6C", "Mun8C"] },
-      { sediu: "Munteni", corp: "Corp unic", grupa: "Corp unic", den: "Învățători", tip: "invatatori", nr: 1, dupa: 1, clase: ["MunCP", "Mun2B", "Mun4C"] },
+      { sediu: "Munteni", corp: "Munteni", grupa: "Munteni", den: "Munteni", tip: "mixt", nr: 1, dupa: 2, clase: ["MunCP", "Mun2B", "Mun4C", "Mun5C", "Mun6C", "Mun8C"] },
       { sediu: "Tansa", corp: "Corp unic", grupa: "Corp unic", den: "Învățători și educatoare", tip: "invatatori", nr: 1, dupa: 1, clase: ["CPTan", "2TanC", "Tan2C", "4TanD", "Tan4D"] }
     ];
     $("inapoi-serviciu").addEventListener("click", arataPrincipal);
@@ -6497,15 +6497,15 @@
           const r = el("div", "ang-rand citire"); const st = el("div", "");
           st.appendChild(el("div", "ang-nume", z.corp + (z.denumire && z.denumire !== z.corp ? " · " + z.denumire : "")));
           const cl = (clasePeZona.get(z.id) || []).sort(ord);
-          const nr = z.tip === "invatatori" ? z.nr_supraveghetori + " dimineața, " + z.nr_dupa_amiaza + " după-amiaza" : z.nr_supraveghetori + (z.nr_supraveghetori === 1 ? " supraveghetor" : " supraveghetori") + " la fiecare pauză";
+          const nr = textNr(z.tip, z.nr_supraveghetori, z.nr_dupa_amiaza);
           st.appendChild(el("div", "ang-info", TIP_ZONA[z.tip] + " · " + nr));
           st.appendChild(el("div", "ang-info", "Clase: " + (cl.length ? cl.join(", ") : "—")));
           if (z.grupa_corp !== z.corp) st.appendChild(el("div", "ang-info", "Legat cu: " + z.grupa_corp));
-          const pz = c.persoane.filter((p) => p.zona_id === z.id && (p.tip === "pool" || p.tip === "rotatie_dimineata" || p.tip === "prioritar" || p.tip === "doar_aici" || p.tip === "exclus" || p.tip === "cu_insotitor" || p.tip === "insotitor"));
+          const pz = c.persoane.filter((p) => p.zona_id === z.id && (p.tip === "pool" || p.tip === "rotatie_dimineata" || p.tip === "zi_fixa" || p.tip === "prioritar" || p.tip === "doar_aici" || p.tip === "exclus" || p.tip === "cu_insotitor" || p.tip === "insotitor" || p.tip === "peste_maxim"));
           const numeP = (p) => ((c.angs.find((x) => x.id === p.angajat_id) || {}).nume || "?");
-          if (z.tip === "profesori") {
-            [["prioritar", "Cu prioritate"], ["cu_insotitor", "Cu prioritate, cu încă un profesor alături"], ["insotitor", "Cu prioritate, profesor în plus alături de ceilalți"], ["doar_aici", "Doar aici"], ["exclus", "Nu face aici"]].forEach(([tp, et]) => { const l = pz.filter((p) => p.tip === tp); if (l.length) st.appendChild(el("div", "ang-info", et + ": " + l.map(numeP).join(", "))); });
-          } else if (pz.length) st.appendChild(el("div", "ang-info", "Persoane: " + pz.map((p) => numeP(p) + (p.pana_la ? " (până la " + p.pana_la + ")" : "")).join(", ")));
+          if (z.tip === "profesori" || z.tip === "mixt") {
+            [["prioritar", "Cu prioritate"], ["cu_insotitor", "Cu prioritate, cu încă un profesor alături"], ["insotitor", "Cu prioritate, profesor în plus alături de ceilalți"], ["peste_maxim", "Poate depăși 8 pauze"], ["doar_aici", "Doar aici"], ["exclus", "Nu face aici"]].forEach(([tp, et]) => { const l = pz.filter((p) => p.tip === tp); if (l.length) st.appendChild(el("div", "ang-info", et + ": " + l.map(numeP).join(", "))); });
+          } else if (pz.length) st.appendChild(el("div", "ang-info", "Persoane: " + pz.map((p) => numeP(p) + (p.zi ? " (" + ZILE_SC[p.zi].toLowerCase() + (p.pana_la ? ", până la " + p.pana_la : "") + ")" : p.pana_la ? " (până la " + p.pana_la + ")" : "")).join(", ")));
           else if (z.tip === "fix") st.appendChild(el("div", "ang-info", "Persoane: niciuna încă – apasă „Persoane”"));
           r.appendChild(st);
           if (c.poate) {
@@ -6539,7 +6539,7 @@
       const lNr = el("label", "", "Câți supraveghetori la fiecare pauză"); box.append(lNr, iNr);
       const iDupa = document.createElement("input"); iDupa.type = "number"; iDupa.min = "0"; iDupa.max = "10"; iDupa.value = "0";
       const lDupa = el("label", "", "Câți învățători după-amiaza"); box.append(lDupa, iDupa);
-      const potrivesteTip = () => { const inv = sTip.value === "invatatori"; lNr.textContent = inv ? "Câți învățători dimineața" : "Câți supraveghetori la fiecare pauză"; lDupa.classList.toggle("hidden", !inv); iDupa.classList.toggle("hidden", !inv); };
+      const potrivesteTip = () => { const inv = sTip.value === "invatatori", mx = sTip.value === "mixt"; lNr.textContent = mx ? "Câți învățători pe zi (luni–joi)" : inv ? "Câți învățători dimineața" : "Câți supraveghetori la fiecare pauză"; lDupa.textContent = mx ? "Câți profesori pe zi (vineri doar profesori)" : "Câți învățători după-amiaza"; lDupa.classList.toggle("hidden", !(inv || mx)); iDupa.classList.toggle("hidden", !(inv || mx)); };
       sTip.addEventListener("change", potrivesteTip);
       box.appendChild(el("label", "", "Clasele din această zonă"));
       const cr = el("div", "rand-grup"); box.appendChild(cr);
@@ -6561,7 +6561,7 @@
       ok.addEventListener("click", async () => {
         const corp = iCorp.value.trim(), den = iDen.value.trim() || corp, grupa = iGrupa.value.trim() || corp;
         if (!corp) return mesajServ("Scrie corpul de clădire.");
-        const nr = Math.max(0, Math.min(10, parseInt(iNr.value, 10) || 0)), dupa = sTip.value === "invatatori" ? Math.max(0, Math.min(10, parseInt(iDupa.value, 10) || 0)) : 0;
+        const nr = Math.max(0, Math.min(10, parseInt(iNr.value, 10) || 0)), dupa = (sTip.value === "invatatori" || sTip.value === "mixt") ? Math.max(0, Math.min(10, parseInt(iDupa.value, 10) || 0)) : 0;
         ok.disabled = true;
         const rand = { an_id: c.a.id, sediu: sSed.value, corp, grupa_corp: grupa, denumire: den, tip: sTip.value, nr_supraveghetori: nr, nr_dupa_amiaza: dupa };
         let id = z && z.id;
@@ -6588,7 +6588,7 @@
         box.appendChild(el("h3", "grup-clasa", s));
         zs.forEach((p) => {
           nrZ++; nrC += p.clase.length;
-          const nr = p.tip === "invatatori" ? p.nr + " dimineața, " + (p.dupa || 0) + " după-amiaza" : p.nr + (p.nr === 1 ? " supraveghetor" : " supraveghetori");
+          const nr = textNr(p.tip, p.nr, p.dupa);
           box.appendChild(el("div", "who", p.corp + (p.den !== p.corp ? " · " + p.den : "") + " — " + TIP_ZONA[p.tip] + " — " + nr + (p.clase.length ? " — clase: " + p.clase.join(", ") : "")));
         });
       });
@@ -6755,6 +6755,9 @@
       const doarAici = new Map(), exclusZ = new Map();
       d.persoane.filter((p) => p.tip === "doar_aici").forEach((p) => (doarAici.get(p.angajat_id) || doarAici.set(p.angajat_id, new Set()).get(p.angajat_id)).add(p.zona_id));
       d.persoane.filter((p) => p.tip === "exclus").forEach((p) => (exclusZ.get(p.zona_id) || exclusZ.set(p.zona_id, new Set()).get(p.zona_id)).add(p.angajat_id));
+      // „Poate depăși 8 pauze”: persoana nu are limita superioară (de exemplu cei de la ateliere).
+      const peste = new Set(d.persoane.filter((p) => p.tip === "peste_maxim").map((p) => p.angajat_id));
+      const maxDe = (t) => (peste.has(t) ? 99 : MAX_PAUZE);
       const permis = (t, z) => !(exclusZ.get(z.id) && exclusZ.get(z.id).has(t)) && !(doarAici.has(t) && !doarAici.get(t).has(z.id));
       const zoneCl = new Map(d.zone.map((z) => [z.id, new Set()]));
       d.clase.forEach((x) => zoneCl.has(x.zona_id) && zoneCl.get(x.zona_id).add(x.clasa));
@@ -6851,6 +6854,51 @@
         const s = sloturi.find((x) => x.z.id === r.zona_id && x.zi === r.zi && x.k === r.pauza && !x.who);
         if (s) { s.locked = true; s.auto = true; put(s, r.angajat_id); }
       });
+      // Zone „mixte” (de exemplu Munteni): în fiecare zi un învățător până la 12:00 (luni–joi) și profesori până la 14:00;
+      // vineri doar profesori. Între 12:00 și 14:00 sunt tot doi profesori. Cei cu prioritate la zonă sunt aleși primii; cine are serviciu aici într-o zi nu are pauze în altă parte în ziua respectivă.
+      const primara = (c) => /CP/i.test(c) || (() => { const m = c.match(/\d+/); return !!m && +m[0] <= 4; })();
+      const mixtOut = [], mixtLipsa = [];
+      d.zone.filter((z) => z.tip === "mixt").forEach((z) => {
+        const clz = zoneCl.get(z.id), clP = new Set([...clz].filter(primara));
+        const titL = new Set(), poolL = new Set();
+        clP.forEach((c) => {
+          const m = orePeClasa.get(c); if (!m) return; let best = null; m.forEach((v, t) => { if (!best || v.n > best.v.n) best = { t, v }; });
+          if (best) { titL.add(best.t); if (best.v.min <= 3 && !scutiti.has(best.t) && permis(best.t, z)) poolL.add(best.t); }
+        });
+        const oreZi = (t, zi, cs) => { const m = classAt.get(t) && classAt.get(t)[zi]; const r = []; if (m) m.forEach((c, o) => { if (cs.has(c)) r.push(o); }); return r.sort((a, b) => a - b); };
+        const poolP = [...classAt.keys()].filter((t) => !scutiti.has(t) && !titL.has(t) && !salaPool.has(t) && permis(t, z) && [...clz].some((c) => { const v = orePeClasa.get(c); return v && v.has(t); }));
+        const prio = prioZ.get(z.id) || new Set();
+        const nrI = z.nr_supraveghetori, nrP = z.nr_dupa_amiaza;
+        const cL = new Map(), uL = new Map(), cP = new Map(), uP = new Map();
+        const luna = (t, zi) => { for (let k = 1; k <= 5; k++) blk.add(key(t, zi, k)); };
+        for (let zi = 1; zi <= 5; zi++) {
+          const manD = fixe.filter((r) => r.zona_id === z.id && r.zi === zi && r.schimb === "dimineata"), manA = fixe.filter((r) => r.zona_id === z.id && r.zi === zi && r.schimb === "dupa_amiaza");
+          const luati = new Set([...manD, ...manA].map((r) => r.angajat_id));
+          luati.forEach((t) => luna(t, zi));
+          manD.concat(manA).forEach((r) => { if (titL.has(r.angajat_id)) { cL.set(r.angajat_id, (cL.get(r.angajat_id) || 0) + 1); uL.set(r.angajat_id, zi); } else { cP.set(r.angajat_id, (cP.get(r.angajat_id) || 0) + 1); uP.set(r.angajat_id, zi); } });
+          const manL = manD.filter((r) => titL.has(r.angajat_id)).length, manPD = manD.length - manL, manPA = manA.length;
+          const needL = zi <= 4 ? Math.max(0, nrI - manL) : 0;
+          const needFull = zi <= 4 ? Math.max(0, Math.min(1, nrP) - manPD) : Math.max(0, nrP - manPD);
+          const needPm = zi <= 4 ? Math.max(0, nrP - 1 - manPA) : 0;
+          // învățători: rotație egală între cei care predau dimineața; preferați cei cu oră în ziua respectivă
+          const lp = [...poolL].filter((t) => !luati.has(t)).sort((p, q) => (oreZi(q, zi, clP).length ? 1 : 0) - (oreZi(p, zi, clP).length ? 1 : 0) || (cL.get(p) || 0) - (cL.get(q) || 0) || (uL.get(p) || 0) - (uL.get(q) || 0) || numeDe(p).localeCompare(numeDe(q), "ro"));
+          for (let i = 0; i < needL; i++) {
+            const t = lp[i];
+            if (!t) { mixtLipsa.push({ z, zi, k: null, schimb: "dimineata", sugestii: [] }); continue; }
+            mixtOut.push({ zona_id: z.id, zi, pauza: null, schimb: "dimineata", angajat_id: t, nota: "până la 12:00" }); luati.add(t); luna(t, zi); cL.set(t, (cL.get(t) || 0) + 1); uL.set(t, zi);
+          }
+          // profesori: doar cei cu oră la clasele zonei în ziua respectivă; întâi cei cu prioritate, apoi cei cu cele mai puține zile
+          const pp = poolP.filter((t) => !luati.has(t) && oreZi(t, zi, clz).length).sort((p, q) => (prio.has(q) ? 1 : 0) - (prio.has(p) ? 1 : 0) || (cP.get(p) || 0) - (cP.get(q) || 0) || (uP.get(p) || 0) - (uP.get(q) || 0) || numeDe(p).localeCompare(numeDe(q), "ro"));
+          const total = needFull + needPm, alesi = pp.slice(0, total);
+          for (let i = alesi.length; i < total; i++) mixtLipsa.push({ z, zi, k: null, schimb: i < needFull ? "dimineata" : "dupa_amiaza", sugestii: [] });
+          alesi.sort((p, q) => oreZi(p, zi, clz)[0] - oreZi(q, zi, clz)[0] || numeDe(p).localeCompare(numeDe(q), "ro"));
+          alesi.forEach((t, i) => {
+            const plin = i < needFull;
+            mixtOut.push({ zona_id: z.id, zi, pauza: null, schimb: plin ? "dimineata" : "dupa_amiaza", angajat_id: t, nota: plin ? "până la 14:00" : "între 12:00 și 14:00" });
+            luna(t, zi); cP.set(t, (cP.get(t) || 0) + 1); uP.set(t, zi);
+          });
+        }
+      });
       // 1) Sala de sport (zone fixe): zi întreagă cu o persoană, altfel pe intervalele 8–11 și 11–14, altfel pe pauze.
       const ultimaZi = new Map();
       d.zone.filter((z) => z.tip === "fix").forEach((z) => {
@@ -6901,10 +6949,21 @@
           const g = elig.filter((t) => doarAici.has(t) && doarAici.get(t).size === 1 && doarAici.get(t).has(z.id)); if (g.length < 2) return;
           const v = Math.min(MAX_PAUZE, 5 * 5 * z.nr_supraveghetori / g.length); g.forEach((t) => egale.set(t, v));
         });
+        // Persoanele cu prioritate la o zonă care pot depăși 8 pauze acoperă zona împreună: locurile rămase se împart egal între ele
+        // (cele cu loc însoțit deja stabilit își păstrează locurile).
+        d.zone.filter((z) => z.tip === "profesori").forEach((z) => {
+          const pr = prioZ.get(z.id); if (!pr) return;
+          const g = elig.filter((t) => peste.has(t) && pr.has(t) && !egale.has(t));
+          const fixate = g.filter((t) => opt.fara && opt.fara.has(t)), mobile = g.filter((t) => !fixate.includes(t));
+          if (mobile.length < 2) return;
+          fixate.forEach((t) => egale.set(t, incarcare(t)));
+          const libereZ = profSloturi.filter((s) => s.z.id === z.id && !s.locked).length;
+          mobile.forEach((t) => egale.set(t, libereZ / mobile.length));
+        });
         let libere = elig.filter((t) => !egale.has(t)), ramas = profSloturi.length - [...egale.values()].reduce((a, v) => a + v, 0);
         while (libere.length) {
           const sw = libere.reduce((a, t) => a + w(t), 0), v = new Map(libere.map((t) => [t, ramas * w(t) / sw]));
-          const jos = libere.filter((t) => v.get(t) < MIN_PAUZE), sus = libere.filter((t) => v.get(t) > MAX_PAUZE);
+          const jos = libere.filter((t) => v.get(t) < MIN_PAUZE), sus = libere.filter((t) => v.get(t) > maxDe(t));
           if (!jos.length && !sus.length) { libere.forEach((t) => tinta.set(t, v.get(t))); break; }
           const fixT = jos.length ? jos : sus, val = jos.length ? MIN_PAUZE : MAX_PAUZE;
           fixT.forEach((t) => { tinta.set(t, val); ramas -= val; });
@@ -6918,7 +6977,7 @@
       const umple = (s) => {
         let best = null, bs = 1e9;
         s.cand.forEach((tr, t) => {
-          if (ocupat(t, s.zi, s.k) || ziL(t, s.zi) >= PLAFON_ZI || incarcare(t) >= MAX_PAUZE) return;
+          if (ocupat(t, s.zi, s.k) || ziL(t, s.zi) >= PLAFON_ZI || incarcare(t) >= maxDe(t)) return;
           const sc = tr * 3 + 10 * incarcare(t) / Math.max(1, tintaDe(t)) + pot(t, s.z, 20, 14) - 10 * dirZona(t, s.z) + (s.extra && s.pref && !s.pref.has(t) ? PREF_INS : 0);
           if (sc < bs || (sc === bs && numeDe(t).localeCompare(numeDe(best), "ro") < 0)) { bs = sc; best = t; }
         });
@@ -6929,7 +6988,7 @@
         for (const x of s.candArr) {
           const s2 = at.get(key(x, s.zi, s.k)); if (!s2 || s2.locked || s2.z.tip !== "profesori") continue;
           for (const y of s2.candArr) {
-            if (y === x || ocupat(y, s.zi, s.k) || ziL(y, s.zi) >= PLAFON_ZI || incarcare(y) >= MAX_PAUZE) continue;
+            if (y === x || ocupat(y, s.zi, s.k) || ziL(y, s.zi) >= PLAFON_ZI || incarcare(y) >= maxDe(y)) continue;
             take(s2); put(s, x); put(s2, y); return true;
           }
         }
@@ -6944,7 +7003,7 @@
         const L = mine.get(t), n = L ? L.size : 0, T = tintaDe(t);
         let c = 6 * (n - T) * (n - T);
         if (n < MIN_PAUZE) c += 150 * (MIN_PAUZE - n);
-        if (n > MAX_PAUZE) c += 1000 * (n - MAX_PAUZE);
+        if (n > maxDe(t)) c += 1000 * (n - maxDe(t));
         if (!n) return c;
         const zile = new Map(); L.forEach((s) => (zile.get(s.zi) || zile.set(s.zi, []).get(s.zi)).push(s));
         zile.forEach((arr) => {
@@ -6978,7 +7037,7 @@
         if (r < 0.7) {
           const s2 = at.get(key(x, s.zi, s.k));
           if (!s2) {
-            if (blk.has(key(x, s.zi, s.k)) || incarcare(x) >= MAX_PAUZE || ziL(x, s.zi) >= PLAFON_ZI) continue;
+            if (blk.has(key(x, s.zi, s.k)) || incarcare(x) >= maxDe(x) || ziL(x, s.zi) >= PLAFON_ZI) continue;
             lista = [[s, x]]; rev = [[s, p]]; afectati = p ? [p, x] : [x];
           } else {
             if (s2.locked || s2.z.tip !== "profesori" || !p || !s2.cand.has(p)) continue;
@@ -7033,7 +7092,7 @@
       });
       const sub = elig.filter((t) => incarcare(t) < MIN_PAUZE).map((t) => ({ t, n: incarcare(t), posibile: new Set(slotsOf.get(t).map((s) => s.zi + "|" + s.k)).size }))
         .sort((p, q) => p.n - q.n || numeDe(p.t).localeCompare(numeDe(q.t), "ro"));
-      const deasupra = elig.filter((t) => incarcare(t) > MAX_PAUZE).map((t) => ({ t, n: incarcare(t) })).sort((p, q) => q.n - p.n);
+      const deasupra = elig.filter((t) => incarcare(t) > maxDe(t)).map((t) => ({ t, n: incarcare(t) })).sort((p, q) => q.n - p.n);
       const capac = [];
       SEDII_SERV.forEach((sd) => {
         const sl = profSloturi.filter((s) => s.z.sediu === sd); if (!sl.length) return;
@@ -7042,6 +7101,9 @@
       });
       // 4) Zone cu învățători: pe zile întregi, din învățătorii claselor zonei, pe schimburi.
       const zileInv = new Map();
+      mixtOut.forEach((r) => { out.push(r); inc(zileInv, r.angajat_id); });
+      fixe.filter((r) => !r.pauza && d.zone.some((z) => z.id === r.zona_id && z.tip === "mixt")).forEach((r) => inc(zileInv, r.angajat_id));
+      mixtLipsa.forEach((l) => lipsa.push(l));
       d.zone.filter((z) => z.tip === "invatatori").forEach((z) => {
         const poolD = new Map(), poolA = new Map();
         zoneCl.get(z.id).forEach((c) => {
@@ -7051,17 +7113,25 @@
           (best.v.min <= 3 ? poolD : poolA).set(best.t, null);
         });
         d.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata" && !scutiti.has(p.angajat_id)).forEach((p) => poolD.set(p.angajat_id, p.pana_la ? "până la " + p.pana_la : null));
+        const ziFixa = d.persoane.filter((p) => p.zona_id === z.id && p.tip === "zi_fixa" && p.zi && !scutiti.has(p.angajat_id));
         [["dimineata", poolD, z.nr_supraveghetori], ["dupa_amiaza", poolA, z.nr_dupa_amiaza]].forEach(([schimb, pool, nr]) => {
           const ids = [...pool.keys()]; const cnt = new Map(ids.map((t) => [t, 0])), ultima = new Map(ids.map((t) => [t, 0]));
+          const perechi = new Map(); const pk = (a, b) => (a < b ? a + "|" + b : b + "|" + a);
           for (let zi = 1; zi <= 5; zi++) {
             const manual = fixe.filter((r) => r.zona_id === z.id && r.zi === zi && r.schimb === schimb);
             manual.forEach((r) => { if (cnt.has(r.angajat_id)) { cnt.set(r.angajat_id, cnt.get(r.angajat_id) + 1); ultima.set(r.angajat_id, zi); } inc(zileInv, r.angajat_id); });
             const luati = new Set(manual.map((r) => r.angajat_id));
-            const ordine = ids.filter((t) => !luati.has(t)).sort((p, q) => cnt.get(p) - cnt.get(q) || ultima.get(p) - ultima.get(q) || numeDe(p).localeCompare(numeDe(q), "ro"));
-            for (let i = 0; i < nr - manual.length; i++) {
-              const t = ordine[i];
+            // Persoane stabilite pe o anumită zi (de exemplu educatoarea vinerea): iau un loc în ziua respectivă, dimineața.
+            const zf = schimb === "dimineata" ? ziFixa.filter((p) => p.zi === zi && !luati.has(p.angajat_id)) : [];
+            zf.forEach((p) => { out.push({ zona_id: z.id, zi, pauza: null, schimb, angajat_id: p.angajat_id, nota: p.pana_la ? "până la " + p.pana_la : null }); luati.add(p.angajat_id); inc(zileInv, p.angajat_id); if (cnt.has(p.angajat_id)) { cnt.set(p.angajat_id, cnt.get(p.angajat_id) + 1); ultima.set(p.angajat_id, zi); } });
+            const alesi = [...luati];
+            // Rotație egală: întâi cei cu cele mai puține zile, apoi cei care au stat de mult; perechile se schimbă de la o zi la alta.
+            for (let i = 0; i < nr - manual.length - zf.length; i++) {
+              const t = ids.filter((x) => !luati.has(x)).sort((p, q) => cnt.get(p) - cnt.get(q) || alesi.reduce((a, b) => a + (perechi.get(pk(p, b)) || 0), 0) - alesi.reduce((a, b) => a + (perechi.get(pk(q, b)) || 0), 0) || ultima.get(p) - ultima.get(q) || numeDe(p).localeCompare(numeDe(q), "ro"))[0];
               if (!t) { lipsa.push({ z, zi, k: null, schimb, sugestii: [] }); continue; }
               out.push({ zona_id: z.id, zi, pauza: null, schimb, angajat_id: t, nota: pool.get(t) });
+              alesi.forEach((b) => perechi.set(pk(t, b), (perechi.get(pk(t, b)) || 0) + 1));
+              alesi.push(t); luati.add(t);
               cnt.set(t, cnt.get(t) + 1); ultima.set(t, zi); inc(zileInv, t);
             }
           }
@@ -7080,16 +7150,17 @@
         if (error) return mesajServ(error.code === "23505" ? "Persoana este deja trecută." : "Nu am putut salva.");
         mesajServ(mesaj, true); desenezServiciu();
       };
-      if (z.tip === "fix" || z.tip === "profesori") {
+      if (z.tip === "fix" || z.tip === "profesori" || z.tip === "mixt") {
         const tipP = z.tip === "fix" ? "pool" : "prioritar";
         box.appendChild(el("p", "who", z.tip === "fix"
           ? "Adaugă persoanele care pot face serviciu aici (de exemplu profesorii de educație fizică). Platforma le pune pe pauze, în funcție de orarul lor: la fiecare pauză este de serviciu cineva care are oră în acel moment."
+          : z.tip === "mixt" ? "Aici serviciul se face pe zile: luni–joi un învățător până la 12 și profesori până la 14, vineri doar profesori; între 12 și 14 sunt doi profesori. Platforma alege profesorii care au ore în ziua respectivă. Adaugă persoanele cu prioritate (sunt alese primele), persoanele care fac serviciu doar aici sau persoanele care nu fac aici. Clasele pregătitoare și I–IV sunt considerate clase de învățători."
           : "Adaugă persoanele care fac serviciu aici cu prioritate, chiar dacă orarul nu le arată la clasele zonei (de exemplu cei de la ateliere). Platforma le pune primii, pe pauzele din apropierea orelor lor; ceilalți profesori sunt folosiți doar când este nevoie. Poți alege și „Doar în această zonă” (persoana nu face serviciu în altă parte, iar mai multe astfel de persoane își împart zona egal) sau „Nu face serviciu în această zonă”."));
-        const ETICHETE = { prioritar: "Cu prioritate", cu_insotitor: "Cu prioritate, cu încă un profesor alături", insotitor: "Cu prioritate, profesor în plus alături de ceilalți", doar_aici: "Doar aici", exclus: "Nu face aici" };
+        const ETICHETE = { peste_maxim: "Poate depăși 8 pauze", prioritar: "Cu prioritate", cu_insotitor: "Cu prioritate, cu încă un profesor alături", insotitor: "Cu prioritate, profesor în plus alături de ceilalți", doar_aici: "Doar aici", exclus: "Nu face aici" };
         const existente = c.persoane.filter((p) => p.zona_id === z.id && (z.tip === "fix" ? p.tip === tipP : p.tip in ETICHETE));
         if (!existente.length) box.appendChild(el("p", "who", "Nu ai adăugat încă nicio persoană."));
         existente.forEach((p) => {
-          const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", (nume.get(p.angajat_id) || "Angajat necunoscut") + (z.tip === "profesori" ? " · " + ETICHETE[p.tip] : "")));
+          const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", (nume.get(p.angajat_id) || "Angajat necunoscut") + (z.tip !== "fix" ? " · " + ETICHETE[p.tip] : "")));
           const d = el("button", "mic secondary", "Scoate"); d.type = "button";
           d.addEventListener("click", async () => { const { error } = await db.from("serviciu_persoane").delete().eq("id", p.id); if (error) return mesajServ("Nu am putut scoate."); mesajServ("Persoana a fost scoasă.", true); desenezServiciu(); });
           r.appendChild(el("div", "ctl")).appendChild(d); box.appendChild(r);
@@ -7097,12 +7168,15 @@
         box.appendChild(el("label", "", "Adaugă persoana"));
         const s = document.createElement("select"); optiuni(s, "Alege…"); box.appendChild(s);
         let selTip = null;
-        if (z.tip === "profesori") {
+        if (z.tip === "profesori" || z.tip === "mixt") {
           box.appendChild(el("label", "", "Cum face serviciu aici"));
           selTip = document.createElement("select");
           selTip.add(new Option("Cu prioritate la această zonă (poate face și în altă parte)", "prioritar"));
-          selTip.add(new Option("Cu prioritate; la pauzele lui mai vine încă un profesor alături", "cu_insotitor"));
-          selTip.add(new Option("Cu prioritate; vine ca profesor în plus alături de cei cu „încă un profesor alături”", "insotitor"));
+          if (z.tip === "profesori") {
+            selTip.add(new Option("Cu prioritate; la pauzele lui mai vine încă un profesor alături", "cu_insotitor"));
+            selTip.add(new Option("Cu prioritate; vine ca profesor în plus alături de cei cu „încă un profesor alături”", "insotitor"));
+            selTip.add(new Option("Poate depăși 8 pauze (nu are limita de 8 pauze pe săptămână)", "peste_maxim"));
+          }
           selTip.add(new Option("Doar în această zonă (cu prioritate; mai multe persoane trecute doar în această zonă își împart zona egal)", "doar_aici"));
           selTip.add(new Option("Nu face serviciu în această zonă", "exclus"));
           box.appendChild(selTip);
@@ -7111,22 +7185,25 @@
         ctl.append(ok, nu); box.appendChild(ctl); nu.addEventListener("click", () => zona.replaceChildren());
         ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: selTip ? selTip.value : tipP }], "Persoana a fost adăugată."); });
       } else {
-        box.appendChild(el("p", "who", "Învățătorii claselor zonei intră automat în rotație, pe schimbul lor. Aici adaugi alte persoane care fac serviciu în rotația de dimineață (de exemplu educatoarea), cu ora până la care stau."));
-        const existente = c.persoane.filter((p) => p.zona_id === z.id && p.tip === "rotatie_dimineata");
+        box.appendChild(el("p", "who", "Învățătorii claselor zonei intră automat în rotație, pe schimbul lor. Aici adaugi alte persoane care fac serviciu dimineața (de exemplu educatoarea): în rotație sau într-o anumită zi a săptămânii, cu ora până la care stau."));
+        const existente = c.persoane.filter((p) => p.zona_id === z.id && (p.tip === "rotatie_dimineata" || p.tip === "zi_fixa"));
         existente.forEach((p) => {
-          const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", (nume.get(p.angajat_id) || "Angajat necunoscut") + (p.pana_la ? " · până la " + p.pana_la : "")));
+          const r = el("div", "ang-rand citire"); r.appendChild(el("div", "ang-nume", (nume.get(p.angajat_id) || "Angajat necunoscut") + (p.zi ? " · " + ZILE_SC[p.zi].toLowerCase() : " · în rotație") + (p.pana_la ? " · până la " + p.pana_la : "")));
           const d = el("button", "mic secondary", "Scoate"); d.type = "button";
           d.addEventListener("click", async () => { const { error } = await db.from("serviciu_persoane").delete().eq("id", p.id); if (error) return mesajServ("Nu am putut scoate."); mesajServ("Persoana a fost scoasă.", true); desenezServiciu(); });
           r.appendChild(el("div", "ctl")).appendChild(d); box.appendChild(r);
         });
         box.appendChild(el("label", "", "Adaugă persoana"));
         const s = document.createElement("select"); optiuni(s, "Alege…"); box.appendChild(s);
+        box.appendChild(el("label", "", "În ce zi"));
+        const selZi = document.createElement("select"); selZi.add(new Option("În rotație, în toate zilele", ""));
+        [1, 2, 3, 4, 5].forEach((n) => selZi.add(new Option("Doar " + ZILE_SC[n].toLowerCase(), String(n)))); box.appendChild(selZi);
         box.appendChild(el("label", "", "Stă de serviciu până la ora (opțional)"));
         const ora = document.createElement("select"); ora.add(new Option("Toată dimineața", ""));
         ["09:00", "10:00", "11:00", "12:00", "13:00"].forEach((h) => ora.add(new Option(h, h))); box.appendChild(ora);
         const ctl = el("div", "ctl"); const ok = el("button", "", "Adaugă"); ok.type = "button"; const nu = el("button", "secondary", "Închide"); nu.type = "button";
         ctl.append(ok, nu); box.appendChild(ctl); nu.addEventListener("click", () => zona.replaceChildren());
-        ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: "rotatie_dimineata", pana_la: ora.value || null }], "Persoana a fost adăugată."); });
+        ok.addEventListener("click", () => { if (!s.value) return mesajServ("Alege persoana."); ok.disabled = true; salveaza([{ an_id: c.a.id, zona_id: z.id, angajat_id: s.value, tip: selZi.value ? "zi_fixa" : "rotatie_dimineata", zi: selZi.value ? parseInt(selZi.value, 10) : null, pana_la: ora.value || null }], "Persoana a fost adăugată."); });
       }
       box.scrollIntoView({ block: "nearest" });
     }
@@ -7150,9 +7227,9 @@
         const zs = c.zone.filter((z) => z.sediu === s && c.grafic.some((g) => g.zona_id === z.id)); if (!zs.length) return;
         lista.appendChild(el("h3", "grup-clasa", s));
         zs.forEach((z) => {
-          lista.appendChild(el("div", "ang-nume", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "")));
+          if (!(z.corp === s && z.denumire === z.corp)) lista.appendChild(el("div", "ang-nume", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "")));
           const w = el("div", "gr-w"); const t = document.createElement("table"); t.className = "gr-t";
-          const cap = z.tip === "invatatori" ? [["Dimineața", null, "dimineata"], ["După-amiaza", null, "dupa_amiaza"]] : [1, 2, 3, 4, 5].map((k) => ["Pauza " + PAUZE_ET[k], k, null]);
+          const cap = (z.tip === "invatatori" || z.tip === "mixt") ? [["Dimineața", null, "dimineata"], ["După-amiaza", null, "dupa_amiaza"]] : [1, 2, 3, 4, 5].map((k) => ["Pauza " + PAUZE_ET[k], k, null]);
           const thead = document.createElement("thead"); const tr0 = document.createElement("tr"); tr0.appendChild(document.createElement("th"));
           cap.forEach((x) => { const th = document.createElement("th"); th.textContent = x[0]; tr0.appendChild(th); }); thead.appendChild(tr0); t.appendChild(thead);
           const tb = document.createElement("tbody");
