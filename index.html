@@ -6895,10 +6895,10 @@
       const tinta = new Map();
       {
         const w = (t) => Math.max(1, ore.get(t) || 1);
-        // Mai multe persoane „doar aici” în aceeași zonă își împart zona în mod egal (cel mult MAX_PAUZE fiecare).
+        // Mai multe persoane „doar aici” într-o singură zonă își împart zona în mod egal (cel mult MAX_PAUZE fiecare); cele trecute în mai multe zone (de exemplu Corp A și Corp B) sunt doar limitate la ele, cu încărcare proporțională cu orele.
         const egale = new Map();
         d.zone.filter((z) => z.tip === "profesori").forEach((z) => {
-          const g = elig.filter((t) => doarAici.has(t) && doarAici.get(t).has(z.id)); if (g.length < 2) return;
+          const g = elig.filter((t) => doarAici.has(t) && doarAici.get(t).size === 1 && doarAici.get(t).has(z.id)); if (g.length < 2) return;
           const v = Math.min(MAX_PAUZE, 5 * 5 * z.nr_supraveghetori / g.length); g.forEach((t) => egale.set(t, v));
         });
         let libere = elig.filter((t) => !egale.has(t)), ramas = profSloturi.length - [...egale.values()].reduce((a, v) => a + v, 0);
@@ -7103,7 +7103,7 @@
           selTip.add(new Option("Cu prioritate la această zonă (poate face și în altă parte)", "prioritar"));
           selTip.add(new Option("Cu prioritate; la pauzele lui mai vine încă un profesor alături", "cu_insotitor"));
           selTip.add(new Option("Cu prioritate; vine ca profesor în plus alături de cei cu „încă un profesor alături”", "insotitor"));
-          selTip.add(new Option("Doar în această zonă (cu prioritate; mai multe persoane își împart zona egal)", "doar_aici"));
+          selTip.add(new Option("Doar în această zonă (cu prioritate; mai multe persoane trecute doar în această zonă își împart zona egal)", "doar_aici"));
           selTip.add(new Option("Nu face serviciu în această zonă", "exclus"));
           box.appendChild(selTip);
         }
