@@ -605,7 +605,13 @@
     .orm .az-stat span { font-size:.8rem; font-weight:700; color:var(--muted); }
     .orm .az-stat.bun b { color:var(--accent); }
     .orm .az-stat.att { border-color:#f0a31a; }
+    .orm button.az-stat { width:100%; min-height:0; margin:0; padding:12px 14px; text-align:left; font:inherit; color:var(--text); background:var(--card); cursor:pointer; border-radius:18px; }
+    .orm button.az-stat span { display:block; font-weight:700; }
+    .orm .oz-cl.clk { cursor:pointer; }
+    .orm .az-det:empty { display:none; }
+    .orm .az-det { margin:10px 0 0; }
     .orm .az-stat.rau { border-color:#dc2626; } .orm .az-stat.rau b { color:#b91c1c; }
+    .orm .az-stat.sel, .orm .oz-cl.sel { box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent); }
     .orm .az-h { margin:20px 0 8px; font-size:1.05rem; font-weight:800; }
     .orm .az-card { background:var(--card); border-radius:18px; padding:12px 14px; margin:0 0 10px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     .orm .az-card.az-rau { border:2px solid #dc2626; }
@@ -2741,9 +2747,11 @@
         const lipsesc = new Set(rez.map((r) => r.id));
         const svLipsa = svRanduri.filter((g) => lipsesc.has(g.angajat_id));
         const sv = { exista: b.svGrafic.length > 0, zone: svZ, randuri: svRanduri, persoane: new Set(svRanduri.map((g) => g.angajat_id)).size, lipsesc: new Set(svLipsa.map((g) => g.angajat_id)).size, locuriFara: svLipsa.length, absId: lipsesc };
-        return { numeSv: b.nume, oreOrar, oreAbsenti, oreAcop, prezenti, motive, sv, absenti: rez, neacop, supl, profCuOre, practica: dn.pract.map((p) => ({ clasa: p.clasa, coord: b.nume.get(p.angajat_id) || "" })).sort((x, y) => ordClasaOrar(x.clasa, y.clasa)) };
+        const oreProf = new Map(); b.orar.filter((o) => Number(o.zi) === w).forEach((o) => oreProf.set(o.angajat_id, (oreProf.get(o.angajat_id) || 0) + 1));
+        const absOre = new Set(rez.filter((r) => r.ore.length).map((r) => r.id));
+        return { oreProf, absOre, numeSv: b.nume, oreOrar, oreAbsenti, oreAcop, prezenti, motive, sv, absenti: rez, neacop, supl, profCuOre, practica: dn.pract.map((p) => ({ clasa: p.clasa, coord: b.nume.get(p.angajat_id) || "" })).sort((x, y) => ordClasaOrar(x.clasa, y.clasa)) };
       };
-      let dataSel = aziD(), rezultat = null, sD = "";
+      let dataSel = aziD(), rezultat = null, sD = "", cheieDeschisa = "";
       const incarca = async () => {
         const f = iso(dataSel), anId = anPentru(f), b = await baza(anId), dn = await dinamic(anId, f);
         sD = JSON.stringify([f, dn]);
@@ -2785,33 +2793,91 @@
         }
         zona.append(hero, zile);
         if (info.suspendat || !c) return;
-        // ---- Cifre
-        const st = el("div", "az-stats");
-        const tile = (n, et, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et)); return t; };
-        st.append(tile(c.absenti.length, "Lipsesc", c.absenti.length ? "att" : "bun"), tile(c.neacop.length, "Ore neacoperite", c.neacop.length ? "rau" : "bun"), tile(c.supl.size, "Suplinesc", ""), tile(c.practica.length, "Clase la practică", ""));
-        zona.appendChild(st);
+        // ---- Cifre: fiecare se poate apăsa și arată lista din spatele ei
+        const sv = c.sv;
+        const ET = (r) => r.motive.map((m) => MOTIV[m] || m).join(" · ");
+        const grupe = [], D = {};
+        const grup = () => { const g = { st: el("div", "az-stats"), det: el("div", "az-det") }; grupe.push(g); return g; };
+        const arataDet = () => {
+          grupe.forEach((g) => g.det.replaceChildren());
+          Object.values(D).forEach((x) => { x.t.classList.remove("sel"); x.t.setAttribute("aria-expanded", "false"); });
+          const x = D[cheieDeschisa]; if (!x) { cheieDeschisa = ""; return; }
+          x.t.classList.add("sel"); x.t.setAttribute("aria-expanded", "true"); x.g.det.appendChild(x.bld());
+        };
+        const comuta = (key) => { cheieDeschisa = cheieDeschisa === key ? "" : key; arataDet(); };
+        const tile = (g, key, n, et, cls, bld) => {
+          const t = el("button", "az-stat clk " + (cls || "")); t.type = "button"; t.setAttribute("aria-expanded", "false");
+          t.append(el("b", "", String(n)), el("span", "", et)); D[key] = { g, t, bld }; t.addEventListener("click", () => comuta(key)); g.st.appendChild(t);
+        };
+        const chip = (g, box, key, text, bld) => {
+          const x = el("span", "oz-cl clk", text); x.tabIndex = 0; x.setAttribute("role", "button");
+          D[key] = { g, t: x, bld }; x.addEventListener("click", () => comuta(key)); x.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); comuta(key); } }); box.appendChild(x);
+        };
+        const card = (titlu, nr, linii, rau) => {
+          const k = el("div", "az-card" + (rau ? " az-rau" : "")); const cp = el("div", "az-cap"); cp.append(el("b", "", titlu), el("span", "az-motiv", nr)); k.appendChild(cp);
+          if (!linii.length) k.appendChild(el("p", "az-nota", "Nimic de arătat."));
+          linii.forEach((l) => k.appendChild(l)); return k;
+        };
+        const linie = (nm, dr, tag) => { const r = el("div", "az-ora"); r.appendChild(el("b", "", nm)); if (dr) r.appendChild(el("span", "az-disc", dr)); if (tag) r.appendChild(tag); return r; };
+        const nPers = (n) => n + (n === 1 ? " persoană" : " persoane");
+        const nume = (id) => c.numeSv.get(id) || "?";
+        const hm = (m) => Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
+        const startP = (n) => 480 + (n - 1) * 60 + 50;
+        const interval = (z, schimb) => {
+          if (schimb === "dimineata") return "8:00–12:00";
+          const arePr = [...sv.zone.values()].some((x) => x.sediu === z.sediu && x.corp === z.corp && x.tip === "profesori");
+          return arePr ? "13:50–" + (8 + Math.max(z.pauza_max || 6, 6)) + ":00" : "12:00–16:00";
+        };
+        const textRand = (g) => g.pauza ? "pauza " + PAUZE_ET[g.pauza] + " (" + hm(startP(g.pauza)) + ")" : (g.schimb === "dupa_amiaza" ? "după-amiaza" : "dimineața") + " (" + interval(sv.zone.get(g.zona_id), g.schimb) + ")";
+        const tagLips = (id) => sv.absId.has(id) ? el("span", "az-tag rau", "lipsește") : null;
+        // câte o linie pe persoană și zonă, cu toate pauzele
+        const liniiPers = (rd) => {
+          const m = new Map(); rd.forEach((g) => { const k = g.zona_id + "|" + g.angajat_id; if (!m.has(k)) m.set(k, []); m.get(k).push(g); });
+          return [...m.values()].sort((x, y) => { const zx = sv.zone.get(x[0].zona_id), zy = sv.zone.get(y[0].zona_id); return (zx.ordine || 0) - (zy.ordine || 0) || zx.id - zy.id || nume(x[0].angajat_id).localeCompare(nume(y[0].angajat_id), "ro"); }).map((l) => {
+            const z = sv.zone.get(l[0].zona_id), pz = l.filter((g) => g.pauza).sort((x, y) => x.pauza - y.pauza).map((g) => PAUZE_ET[g.pauza] + " (" + hm(startP(g.pauza)) + ")");
+            const parti = []; if (pz.length) parti.push((pz.length === 1 ? "pauza " : "pauzele ") + pz.join(", ")); l.filter((g) => !g.pauza).forEach((g) => parti.push(textRand(g)));
+            return linie(nume(l[0].angajat_id), etZonaServ(z) + " · " + parti.join(", "), tagLips(l[0].angajat_id));
+          });
+        };
+        const liniiLocuri = (rd) => [...rd].sort((x, y) => nume(x.angajat_id).localeCompare(nume(y.angajat_id), "ro") || (x.pauza || 99) - (y.pauza || 99)).map((g) => linie(nume(g.angajat_id), etZonaServ(sv.zone.get(g.zona_id)) + " · " + textRand(g), tagLips(g.angajat_id)));
+        const nDistinct = (rd) => new Set(rd.map((g) => g.angajat_id)).size;
+        const rdLips = sv.randuri.filter((g) => sv.absId.has(g.angajat_id));
+        const rdOra = (o, extra, tag) => { const rd = ora(o, extra); if (tag) rd.appendChild(tag); return rd; };
+        const g1 = grup();
+        tile(g1, "lipsesc", c.absenti.length, "Lipsesc", c.absenti.length ? "att" : "bun", () => card("Cine lipsește", nPers(c.absenti.length), c.absenti.map((r) => linie(r.nume, ET(r) + " · " + (r.ore.length ? oraS(r.ore.length) : "fără ore în această zi")))));
+        tile(g1, "neacop", c.neacop.length, "Ore neacoperite", c.neacop.length ? "rau" : "bun", () => card("Ore neacoperite", oraS(c.neacop.length), c.neacop.map((o) => rdOra(o, el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora + " · " + o.nume))), c.neacop.length > 0));
+        tile(g1, "supl", c.supl.size, "Suplinesc", "", () => card("Cine suplinește", nPers(c.supl.size), [...c.supl].sort((x, y) => x[0].localeCompare(y[0], "ro")).map(([nm, l]) => linie(nm, oraS(l.length) + " · în locul lui " + [...new Set(l.map((o) => o.pentru))].join(", ")))));
+        tile(g1, "practica", c.practica.length, "Clase la practică", "", () => card("Clase la practică", String(c.practica.length), c.practica.map((p) => linie(p.clasa, p.coord ? "coordonator: " + p.coord : ""))));
+        zona.append(g1.st, g1.det);
         // ---- Orele zilei
         zona.appendChild(el("h3", "az-h", "Orele zilei"));
-        const st2 = el("div", "az-stats");
-        st2.append(tile(c.prezenti, "Profesori prezenți"), tile(c.oreOrar, "Ore în orar"), tile(c.oreAbsenti, "Ore ale celor care lipsesc", c.oreAbsenti ? "att" : ""), tile(c.oreAcop, "Ore acoperite prin suplinire", c.oreAcop ? "bun" : ""));
-        zona.appendChild(st2);
+        const g2 = grup();
+        const prez = [...c.oreProf].filter(([id]) => !c.absOre.has(id)).map(([id, n]) => [c.numeSv.get(id) || "?", n]).sort((x, y) => x[0].localeCompare(y[0], "ro"));
+        tile(g2, "prezenti", c.prezenti, "Profesori prezenți", "", () => card("Profesori prezenți", nPers(prez.length), prez.map(([nm, n]) => linie(nm, oraS(n)))));
+        tile(g2, "oreorar", c.oreOrar, "Ore în orar", "", () => card("Ore în orar, pe profesori", oraS(c.oreOrar), [...c.oreProf].map(([id, n]) => [c.numeSv.get(id) || "?", n, id]).sort((x, y) => x[0].localeCompare(y[0], "ro")).map(([nm, n, id]) => linie(nm, oraS(n), c.absOre.has(id) ? el("span", "az-tag rau", "lipsește") : null))));
+        tile(g2, "oreabs", c.oreAbsenti, "Ore ale celor care lipsesc", c.oreAbsenti ? "att" : "", () => card("Ore ale celor care lipsesc", oraS(c.oreAbsenti), c.absenti.flatMap((r) => r.ore.map((o) => rdOra(o, el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora + " · " + r.nume), o.status === "acoperita" ? el("span", "az-tag ok", "suplinește " + o.de) : o.status === "practica" ? el("span", "az-tag pr", "clasa este la practică") : el("span", "az-tag rau", "neacoperită"))))));
+        tile(g2, "oreacop", c.oreAcop, "Ore acoperite prin suplinire", c.oreAcop ? "bun" : "", () => card("Ore acoperite prin suplinire", oraS(c.oreAcop), [...c.supl].flatMap(([nm, l]) => l.map((o) => ({ ...o, nm }))).sort((x, y) => x.ora - y.ora || ordClasaOrar(x.clasa, y.clasa)).map((o) => rdOra(o, el("span", "az-disc", "în locul lui " + o.pentru), el("span", "az-tag ok", "suplinește " + o.nm)))));
+        zona.append(g2.st);
         if (c.motive.size) {
           const mc = el("div", "oz-clase");
-          [...c.motive].sort((x, y) => y[1] - x[1] || (MOTIV[x[0]] || x[0]).localeCompare(MOTIV[y[0]] || y[0], "ro")).forEach(([m, n]) => mc.appendChild(el("span", "oz-cl", (MOTIV[m] || m) + " · " + n)));
+          [...c.motive].sort((x, y) => y[1] - x[1] || (MOTIV[x[0]] || x[0]).localeCompare(MOTIV[y[0]] || y[0], "ro")).forEach(([m, n]) => chip(g2, mc, "m:" + m, (MOTIV[m] || m) + " · " + n, () => card(MOTIV[m] || m, nPers(n), c.absenti.filter((r) => r.motive.includes(m)).map((r) => linie(r.nume, r.ore.length ? oraS(r.ore.length) : "fără ore în această zi")))));
           zona.appendChild(mc);
         }
+        zona.appendChild(g2.det);
         // ---- Serviciul pe școală (cifre)
-        const sv = c.sv;
         if (sv.exista) {
           zona.appendChild(el("h3", "az-h", "Serviciul pe școală"));
-          const st3 = el("div", "az-stats");
-          st3.append(tile(sv.persoane, "De serviciu azi"), tile(sv.randuri.length, "Locuri de serviciu (pauze și schimburi)"), tile(sv.lipsesc, "De serviciu și lipsesc", sv.lipsesc ? "att" : "bun"), tile(sv.locuriFara, "Locuri fără supraveghetor", sv.locuriFara ? "rau" : "bun"));
-          zona.appendChild(st3);
+          const g3 = grup();
+          tile(g3, "svpers", sv.persoane, "De serviciu azi", "", () => card("De serviciu azi", nPers(sv.persoane), liniiPers(sv.randuri)));
+          tile(g3, "svlocuri", sv.randuri.length, "Locuri de serviciu (pauze și schimburi)", "", () => card("Locuri de serviciu", String(sv.randuri.length), liniiLocuri(sv.randuri)));
+          tile(g3, "svlips", sv.lipsesc, "De serviciu și lipsesc", sv.lipsesc ? "att" : "bun", () => card("De serviciu și lipsesc", nPers(sv.lipsesc), liniiPers(rdLips)));
+          tile(g3, "svfara", sv.locuriFara, "Locuri fără supraveghetor", sv.locuriFara ? "rau" : "bun", () => card("Locuri fără supraveghetor", String(sv.locuriFara), liniiLocuri(rdLips), sv.locuriFara > 0));
+          zona.appendChild(g3.st);
           const ps = el("div", "oz-clase");
-          SEDII_SERV.forEach((sd) => { const n = new Set(sv.randuri.filter((g) => sv.zone.get(g.zona_id).sediu === sd).map((g) => g.angajat_id)).size; if (n) ps.appendChild(el("span", "oz-cl", sd + " · " + n + (n === 1 ? " persoană" : " persoane"))); });
+          SEDII_SERV.forEach((sd) => { const rd = sv.randuri.filter((g) => sv.zone.get(g.zona_id).sediu === sd), n = nDistinct(rd); if (n) chip(g3, ps, "s:" + sd, sd + " · " + nPers(n), () => card(sd, nPers(n), liniiPers(rd))); });
           if (ps.children.length) zona.appendChild(ps);
+          zona.appendChild(g3.det);
         }
-        const ET = (r) => r.motive.map((m) => MOTIV[m] || m).join(" · ");
         const ora = (o, extra) => { const rd = el("div", "az-ora"); rd.append(el("span", "t", intervalOra(o.ora).split("–")[0]), el("span", "oz-clasa mic", o.clasa)); if (extra) rd.appendChild(extra); return rd; };
         // ---- Ore neacoperite
         if (c.neacop.length) {
@@ -2848,37 +2914,16 @@
         }
         if (sv.exista && sv.randuri.length) {
           zona.appendChild(el("h3", "az-h", "Cine este de serviciu"));
-          const hm = (m) => Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
-          const startP = (n) => 480 + (n - 1) * 60 + 50;
-          const interval = (z, schimb) => {
-            if (schimb === "dimineata") return "8:00–12:00";
-            const arePr = [...sv.zone.values()].some((x) => x.sediu === z.sediu && x.corp === z.corp && x.tip === "profesori");
-            return arePr ? "13:50–" + (8 + Math.max(z.pauza_max || 6, 6)) + ":00" : "12:00–16:00";
-          };
           SEDII_SERV.forEach((sd) => {
             const rd = sv.randuri.filter((g) => sv.zone.get(g.zona_id).sediu === sd); if (!rd.length) return;
-            const k = el("div", "az-card"); const cp = el("div", "az-cap");
-            const nPers = new Set(rd.map((g) => g.angajat_id)).size;
-            cp.append(el("b", "", sd), el("span", "az-motiv", nPers + (nPers === 1 ? " persoană" : " persoane"))); k.appendChild(cp);
-            const zoneSd = [...new Set(rd.map((g) => g.zona_id))].map((id) => sv.zone.get(id)).sort((x, y) => (x.ordine || 0) - (y.ordine || 0) || x.id - y.id);
-            zoneSd.forEach((z) => {
-              const persz = new Map(); rd.filter((g) => g.zona_id === z.id).forEach((g) => { if (!persz.has(g.angajat_id)) persz.set(g.angajat_id, []); persz.get(g.angajat_id).push(g); });
-              [...persz].map(([id, l]) => [id, l, c.numeSv.get(id) || "?"]).sort((x, y) => x[2].localeCompare(y[2], "ro")).forEach(([id, l, nm]) => {
-                const pz = l.filter((g) => g.pauza).map((g) => g.pauza).sort((x, y) => x - y).map((n) => PAUZE_ET[n] + " (" + hm(startP(n)) + ")");
-                const sch = l.filter((g) => !g.pauza).map((g) => (g.schimb === "dupa_amiaza" ? "după-amiaza" : "dimineața") + " (" + interval(z, g.schimb) + ")");
-                const parti = []; if (pz.length) parti.push((pz.length === 1 ? "pauza " : "pauzele ") + pz.join(", ")); parti.push(...sch);
-                const r = el("div", "az-ora"); r.append(el("b", "", nm), el("span", "az-disc", etZonaServ(z) + " · " + parti.join(", ")));
-                if (sv.absId.has(id)) r.appendChild(el("span", "az-tag rau", "lipsește"));
-                k.appendChild(r);
-              });
-            });
-            zona.appendChild(k);
+            zona.appendChild(card(sd, nPers(nDistinct(rd)), liniiPers(rd)));
           });
         }
+        arataDet();
         if (!c.absenti.length && !c.practica.length) zona.appendChild(el("p", "oz-mic2", "Nicio absență sau practică în această zi."));
       };
       const seteaza = async (d) => {
-        dataSel = d;
+        dataSel = d; cheieDeschisa = "";
         zona.style.opacity = ".55";
         try { await incarca(); } catch (e) { msg.textContent = "Situația zilei nu a putut fi încărcată."; zona.style.opacity = ""; return; }
         msg.textContent = ""; zona.style.opacity = ""; deseneaza();
