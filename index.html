@@ -353,6 +353,13 @@
     .bar #bar-pontaj.hidden { display:none; }
     .bar #btn-admin { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; background:#fff; color:var(--accent); border:0; font-weight:800; }
     .bar #btn-admin.hidden { display:none; }
+    .sv-card { margin:0 0 14px; padding:12px 14px; background:var(--card); border:1.5px solid var(--line); border-left:6px solid var(--accent); border-radius:12px; }
+    .sv-card h3 { margin:0 0 6px; font-size:1.02rem; }
+    .sv-rand { display:flex; flex-wrap:wrap; gap:2px 12px; padding:6px 8px; border-radius:8px; align-items:baseline; }
+    .sv-rand.azi { background:var(--teal-100); }
+    .sv-zi { font-weight:800; min-width:92px; }
+    .sv-text { flex:1 1 220px; }
+    .sv-nota { color:var(--muted); font-size:.85rem; }
     .bar #btn-ajutor { width:auto; min-height:38px; margin:0; padding:6px 14px; font-size:.9rem; background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); font-weight:800; }
     .bar #btn-ajutor.hidden { display:none; }
     #ajutor { position:fixed; right:12px; bottom:12px; z-index:60; width:min(430px, calc(100vw - 24px)); height:min(620px, calc(100vh - 24px)); display:flex; flex-direction:column; background:var(--card); color:var(--text); border:2px solid var(--accent); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); overflow:hidden; }
@@ -1996,6 +2003,31 @@
       setTimeout(curata, 1500);
     }
     $("inapoi-orar").addEventListener("click", arataPrincipal);
+    // Serviciul pe școală, în cuvinte, pe zile. Pauza 1 este dintre ora 1 și ora 2. rows: { zi, pauza, schimb, zona, sediu, corp, nota }
+    function randeazaServiciu(rows, titlu) {
+      if (!rows || !rows.length) return null;
+      const ZILE = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
+      const azi = (new Date().getDay() + 6) % 7 + 1;
+      const loc = (x) => [x.sediu && x.sediu !== "Centru" ? x.sediu : "", x.corp && x.corp !== "Corp unic" && x.corp !== x.zona ? x.corp : "", x.zona].filter(Boolean).join(" · ");
+      const card = el("section", "sv-card"); card.appendChild(el("h3", "", "🛎️ " + titlu));
+      for (let zi = 1; zi <= 5; zi++) {
+        const dz = rows.filter((r) => r.zi === zi); if (!dz.length) continue;
+        const grupe = new Map();
+        dz.forEach((r) => { const k = loc(r); const g = grupe.get(k) || grupe.set(k, { pauze: [], schimburi: [], note: [] }).get(k); if (r.pauza) g.pauze.push(r.pauza); if (r.schimb) g.schimburi.push(r.schimb); if (r.nota) g.note.push(r.nota); });
+        const rand = el("div", "sv-rand" + (zi === azi ? " azi" : ""));
+        rand.appendChild(el("span", "sv-zi", ZILE[zi - 1] + (zi === azi ? " · azi" : "")));
+        const bucati = [...grupe.entries()].map(([k, g]) => {
+          const p = [...new Set(g.pauze)].sort((a, b) => a - b).map((n) => n + "–" + (n + 1));
+          const parti = [];
+          if (p.length) parti.push((p.length === 1 ? "pauza " : "pauzele ") + p.join(", "));
+          g.schimburi.forEach((sc) => parti.push(sc === "dimineata" ? "toată dimineața" : sc === "dupa_amiaza" ? "după-amiaza" : sc));
+          return (k ? k + ": " : "") + parti.join(", ") + (g.note.length ? " (" + g.note.join("; ") + ")" : "");
+        });
+        rand.appendChild(el("span", "sv-text", bucati.join(" · ")));
+        card.appendChild(rand);
+      }
+      return card;
+    }
     async function deschideOrar() {
       memoreazaVedere("orar");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
@@ -2025,7 +2057,9 @@
         zona.replaceChildren(el("p", "who", "Se încarcă…"));
         const a = ani.find((x) => x.id === selAn.value);
         try {
-          const [ang, rows, disc] = await Promise.all([angajatiAn(a), toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa, disciplina_id").eq("an_id", a.id).order("angajat_id").order("zi").order("ora")), toate(() => db.from("discipline").select("id, scurt, complet").order("id"))]);
+          const [ang, rows, disc, svRows, svZone] = await Promise.all([angajatiAn(a), toate(() => db.from("orar_profesori").select("angajat_id, zi, ora, clasa, disciplina_id").eq("an_id", a.id).order("angajat_id").order("zi").order("ora")), toate(() => db.from("discipline").select("id, scurt, complet").order("id")),
+            toate(() => db.from("serviciu_grafic").select("id, angajat_id, zi, pauza, schimb, zona_id, nota").eq("an_id", a.id).order("id")).catch(() => []),
+            toate(() => db.from("serviciu_zone").select("id, denumire, sediu, corp").eq("an_id", a.id).order("id")).catch(() => [])]);
           const dm = new Map(disc.map((x) => [x.id, x]));
           const nume = new Map(ang.map((x) => [x.id, x.nume]));
           const pe = new Map(); rows.forEach((r) => { if (!pe.has(r.angajat_id)) pe.set(r.angajat_id, []); pe.get(r.angajat_id).push(r); });
@@ -2033,7 +2067,8 @@
           const clase = [...new Set(rows.map((r) => r.clasa))].sort(ordClasaOrar);
           const { data: calDb } = await db.rpc("orar_calendar");
           const cal = calDb && calDb.structura ? calDb : { structura: [], libere: [], practica: [] };
-          date = { an: a.denumire, rows, nume, pe, profesori, clase, dm, cal };
+          const zn = new Map(svZone.map((z) => [z.id, z]));
+          date = { an: a.denumire, rows, nume, pe, profesori, clase, dm, cal, sv: svRows.map((g) => { const z = zn.get(g.zona_id) || {}; return { angajat_id: g.angajat_id, zi: g.zi, pauza: g.pauza, schimb: g.schimb, nota: g.nota, zona: z.denumire, sediu: z.sediu, corp: z.corp }; }) };
         } catch (e) { date = null; zona.replaceChildren(); msg.textContent = "Orarul nu a putut fi încărcat."; return; }
         msg.textContent = ""; umple();
       };
@@ -2053,6 +2088,7 @@
         if (!selX.value) return zona.appendChild(el("p", "who", mod === "profesori" ? "Alege un profesor ca să vezi și să tipărești orarul lui." : "Alege o clasă ca să vezi și să tipărești orarul ei."));
         const p = mod === "profesori" ? pagProf(date.profesori.find((x) => x.id === selX.value)) : pagClasa(selX.value);
         zona.appendChild(el("p", "who", p.titlu + (p.sub ? " · " + p.sub : "") + " · " + date.an));
+        if (mod === "profesori") { const numeSel = date.nume.get(selX.value); const sv = randeazaServiciu(date.sv.filter((g) => date.nume.get(g.angajat_id) === numeSel), "Serviciu pe școală"); if (sv) zona.appendChild(sv); }
         const vb = el("div", "oz-vedere");
         [["calendar", "Calendar"], ["grila", "Grilă"]].forEach(([k, et]) => { const b = el("button", "", et); b.type = "button"; b.setAttribute("aria-pressed", String(vedere === k)); b.addEventListener("click", () => { vedere = k; arata(); }); vb.appendChild(b); });
         zona.appendChild(vb);
@@ -2086,9 +2122,13 @@
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("orarmeu").classList.remove("hidden");
       const msg = $("orarmeu-msg"), corp = $("orarmeu-corp"); msg.textContent = ""; corp.replaceChildren();
-      const { data, error } = await db.rpc("orar_propriu_disc");
+      const [{ data, error }, rsv] = await Promise.all([db.rpc("orar_propriu_disc"), db.rpc("serviciu_al_meu")]);
       if (error) { msg.textContent = "Orarul nu a putut fi încărcat. Încearcă din nou."; return; }
-      if (!data || !data.length) { corp.appendChild(el("p", "who", "Nu există încă un orar pentru contul tău. Dacă ești profesor, cere administratorului să îți lege contul de numele tău din lista de angajați.")); return; }
+      let sv = rsv && !rsv.error && rsv.data ? rsv.data : [];
+      const idAnSv = (sv.find((x) => x.denumire === anulScolarZilei()) || sv[0] || {}).an_id; sv = sv.filter((x) => x.an_id === idAnSv);
+      const cardSv = randeazaServiciu(sv, "Serviciul meu pe școală");
+      if (cardSv) corp.appendChild(cardSv);
+      if (!data || !data.length) { if (!cardSv) corp.appendChild(el("p", "who", "Nu există încă un orar pentru contul tău. Dacă ești profesor, cere administratorului să îți lege contul de numele tău din lista de angajați.")); return; }
       const { data: numeProf } = await db.rpc("nume_angajat_propriu");
       const { data: calDb } = await db.rpc("orar_calendar");
       const cal = calDb && calDb.structura ? calDb : { structura: [], libere: [], practica: [] };
