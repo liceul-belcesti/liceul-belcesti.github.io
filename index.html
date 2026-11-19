@@ -6821,6 +6821,24 @@
             K.forEach((k) => { const u = alege([k]); if (u) da([k], u); });
           });
         }
+        // Echilibrare: persoanele din grupul sălii ajung la același număr de pauze (diferență de cel mult 1, adică egal când totalul e par).
+        // Se mută o pauză de la cel cu mai multe la cel cu mai puține, doar unde cel din urmă poate, de preferat lângă pauzele lui.
+        const slSala = sloturi.filter((s) => s.z.id === z.id);
+        for (let it = 0; it < 200 && pool.length > 1; it++) {
+          const ord = pool.slice().sort((p, q) => incarcare(q) - incarcare(p) || numeDe(p).localeCompare(numeDe(q), "ro"));
+          const mult = ord[0], putin = ord[ord.length - 1];
+          if (incarcare(mult) - incarcare(putin) <= 1) break;
+          let best = null, bs = -1e9;
+          slSala.filter((s) => s.who === mult && !s.locked && s.cand.has(putin) && !ocupat(putin, s.zi, s.k)).forEach((s) => {
+            const vecin = (k) => { const x = slSala.find((y) => y.zi === s.zi && y.k === k && y.lay === s.lay); return x && x.who; };
+            let sc = 0;
+            if (vecin(s.k - 1) === putin || vecin(s.k + 1) === putin) sc += 10;
+            if (vecin(s.k - 1) !== mult || vecin(s.k + 1) !== mult) sc += 5;
+            if (sc > bs) { bs = sc; best = s; }
+          });
+          if (!best) break;
+          take(best); put(best, putin);
+        }
       });
       // 2) Zone cu profesori: ținte proporționale cu orele, între 4 și 8 pauze.
       const profSloturi = sloturi.filter((s) => s.z.tip === "profesori");
