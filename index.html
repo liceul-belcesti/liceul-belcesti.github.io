@@ -105,6 +105,11 @@
     #ang-adauga { margin:12px 0; }
     .norma { margin-top:4px; font-size:.92rem; }
     .norma b { font-weight:700; }
+    .ang-form .ccc-bifa { display:flex; align-items:center; gap:8px; margin:12px 0; font-weight:700; }
+    .ang-form .ccc-bifa input { width:22px; min-height:22px; margin:0; flex:none; }
+    .ver-rand { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--line); font-size:.92rem; }
+    .ver-rand span { flex:1 1 220px; }
+    .ver-rand button { width:auto; margin:0; min-height:38px; padding:6px 14px; }
     .ang-form { background:var(--card); border:2px solid var(--accent); border-radius:14px; padding:14px; margin:12px 0; }
     .ang-form .nr { display:grid; grid-template-columns:minmax(118px,1fr) 1.3fr 48px; gap:8px; margin-top:10px; }
     .ang-form .nr select { width:100%; min-width:0; }
@@ -8020,8 +8025,11 @@
       const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
       if (c.poate) {
         const ctl = el("div", "ctl");
-        const g = el("button", "", c.grafic.length ? "Generează din nou" : "Generează graficul"); g.type = "button"; g.addEventListener("click", () => previzualizeazaGrafic(c));
-        ctl.appendChild(g); lista.appendChild(ctl);
+        // Cu un grafic existent, regenerarea este o acțiune rară și grea: cere confirmare, iar înainte de înlocuire se face o copie de siguranță.
+        const g = el("button", c.grafic.length ? "secondary" : "", c.grafic.length ? "Generează din nou…" : "Generează graficul"); g.type = "button";
+        g.addEventListener("click", () => (c.grafic.length ? confirmaGenerareServ(c) : previzualizeazaGrafic(c)));
+        const v = el("button", "secondary", "Versiuni anterioare"); v.type = "button"; v.addEventListener("click", () => arataVersiuniServ(c));
+        ctl.append(g, v); lista.appendChild(ctl);
       }
       if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, la „Administrare serviciu pe școală”, fila „Zone și clase”."));
       if (!c.grafic.length) return lista.appendChild(el("p", "who", "Graficul nu a fost încă generat pentru " + c.a.denumire + "."));
@@ -8226,6 +8234,63 @@
       });
       box.scrollIntoView({ block: "nearest" });
     }
+    // Copia de siguranță a graficului curent (toate rândurile, inclusiv cele manuale), făcută înainte de orice înlocuire.
+    async function copieGraficServ(an, motiv) {
+      try {
+        const rows = await toate(() => db.from("serviciu_grafic").select("zona_id, zi, pauza, schimb, angajat_id, manual, nota").eq("an_id", an.id).order("id"));
+        if (!rows.length) return true;
+        const { error } = await db.from("serviciu_grafic_copii").insert({ an_id: an.id, motiv, randuri: rows, nr_randuri: rows.length });
+        return !error;
+      } catch (e) { return false; }
+    }
+    function confirmaGenerareServ(c) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", "Generezi din nou graficul?"));
+      box.appendChild(el("p", "who", "Graficul curent va fi înlocuit cu unul nou, calculat din orar. Serviciul se poate schimba pentru mulți colegi, care îl văd în „Orarul meu” și primesc notificări după el."));
+      box.appendChild(el("p", "who", "Căsuțele completate sau modificate manual se păstrează. Înainte de înlocuire se salvează o copie a graficului de acum, la „Versiuni anterioare”, de unde poți reveni. Se arată întâi o previzualizare; nu se schimbă nimic până nu confirmi încă o dată."));
+      const lab = el("label", "ccc-bifa"); const cb = document.createElement("input"); cb.type = "checkbox"; lab.append(cb, document.createTextNode(" Înțeleg că graficul curent va fi înlocuit"));
+      box.appendChild(lab);
+      const ctl = el("div", "ctl"); const ok = el("button", "", "Calculează graficul nou"); ok.type = "button"; ok.disabled = true;
+      const nu = el("button", "secondary", "Renunță"); nu.type = "button"; ctl.append(ok, nu); box.appendChild(ctl);
+      cb.addEventListener("change", () => { ok.disabled = !cb.checked; });
+      nu.addEventListener("click", () => zona.replaceChildren());
+      ok.addEventListener("click", () => previzualizeazaGrafic(c));
+      box.scrollIntoView({ block: "nearest" });
+    }
+    async function arataVersiuniServ(c) {
+      const zona = $("serviciu-form"); zona.replaceChildren();
+      const box = el("div", "ang-form"); zona.appendChild(box);
+      box.appendChild(el("h3", "", "Versiuni anterioare ale graficului"));
+      const info = el("p", "who", "Se încarcă…"); box.appendChild(info);
+      const inchide = el("button", "secondary", "Închide"); inchide.type = "button"; inchide.addEventListener("click", () => zona.replaceChildren());
+      const { data, error } = await db.from("serviciu_grafic_copii").select("id, creat_la, motiv, nr_randuri").eq("an_id", c.a.id).order("creat_la", { ascending: false }).order("id", { ascending: false }).limit(15);
+      if (error) { info.textContent = "Versiunile nu au putut fi încărcate."; box.appendChild(inchide); return; }
+      info.textContent = data.length ? "Înainte de fiecare înlocuire a graficului se salvează automat o copie (ultimele 15). Restaurarea înlocuiește graficul de acum, care se salvează și el ca versiune." : "Nu există încă versiuni anterioare. Se salvează automat câte una înainte de fiecare înlocuire a graficului.";
+      const fmt = (t) => new Date(t).toLocaleString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      data.forEach((v) => {
+        const rd = el("div", "ver-rand"); box.appendChild(rd);
+        const arata = () => {
+          rd.replaceChildren(el("span", "", fmt(v.creat_la) + " · " + (v.motiv || "copie") + (v.nr_randuri ? " · " + v.nr_randuri + " rânduri" : "")));
+          if (c.poate) { const b = el("button", "secondary", "Restaurează"); b.type = "button"; b.addEventListener("click", intreaba); rd.appendChild(b); }
+        };
+        const intreaba = () => {
+          rd.replaceChildren(el("span", "", "Graficul de acum va fi înlocuit cu versiunea din " + fmt(v.creat_la) + ". Confirmi?"));
+          const da = el("button", "", "Da, restaurează"), nu = el("button", "secondary", "Nu"); da.type = nu.type = "button";
+          nu.addEventListener("click", arata);
+          da.addEventListener("click", async () => {
+            da.disabled = nu.disabled = true;
+            const { data: n, error: e } = await db.rpc("restaureaza_grafic_serviciu", { p_copie: v.id });
+            if (e) { da.disabled = nu.disabled = false; return mesajServ("Graficul nu a putut fi restaurat. Încearcă din nou."); }
+            zona.replaceChildren(); mesajServ("Graficul a fost restaurat (" + n + " rânduri).", true); desenezServiciu();
+          });
+          rd.append(da, nu);
+        };
+        arata();
+      });
+      box.appendChild(inchide);
+      box.scrollIntoView({ block: "nearest" });
+    }
     async function previzualizeazaGrafic(c) {
       const zona = $("serviciu-form"); zona.replaceChildren();
       const box = el("div", "ang-form"); zona.appendChild(box);
@@ -8237,6 +8302,13 @@
       const nume = r.nume;
       box.replaceChildren(el("h3", "", "Graficul propus"));
       box.appendChild(el("p", "who", "Previzualizare: " + r.out.length + " rânduri noi" + (r.lipsa.length ? ", " + r.lipsa.length + " locuri rămase neacoperite" : ", toate locurile sunt acoperite") + ". Nu se salvează nimic până nu confirmi."));
+      if (c.grafic.length) {
+        const cheie = (g) => [g.zona_id, g.zi, g.pauza || "", g.schimb || "", g.angajat_id].join("|");
+        const vechi = new Set(c.grafic.map(cheie)), nou = new Set(c.grafic.filter((g) => g.manual).concat(r.out).map(cheie)), schimbati = new Set();
+        vechi.forEach((k) => { if (!nou.has(k)) schimbati.add(k.split("|")[4]); }); nou.forEach((k) => { if (!vechi.has(k)) schimbati.add(k.split("|")[4]); });
+        const total = new Set(c.grafic.map((g) => g.angajat_id).concat(r.out.map((g) => g.angajat_id))).size;
+        box.appendChild(el("p", "who", schimbati.size ? "⚠️ Față de graficul actual, serviciul se schimbă pentru " + schimbati.size + " din " + total + (total === 1 ? " persoană." : " persoane.") : "Graficul nou este identic cu cel de acum."));
+      }
       const sedFix = c.zone.filter((z) => z.tip === "fix" && !c.persoane.some((p) => p.zona_id === z.id && p.tip === "pool"));
       sedFix.forEach((z) => box.appendChild(el("p", "who", "⚠️ Pentru " + z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " nu ai adăugat persoanele care pot face serviciu (butonul „Persoane” de la fila „Zone și clase”). Până atunci toate pauzele de acolo rămân de completat.")));
       (r.sub.length ? r.capac : []).filter((x) => x.persoane && x.locuri / x.persoane < r.minim).forEach((x) => box.appendChild(el("p", "who", "⚠️ " + x.sediu + ": sunt " + x.locuri + " locuri la pauze pentru " + x.persoane + " persoane care predau în principal acolo (în medie " + (Math.round(x.locuri / x.persoane * 10) / 10).toString().replace(".", ",") + " pauze). Pentru " + r.minim + " pauze fiecăruia ar fi nevoie de " + x.persoane * r.minim + " locuri.")));
@@ -8275,6 +8347,7 @@
       nu.addEventListener("click", () => zona.replaceChildren());
       ok.addEventListener("click", async () => {
         ok.disabled = true;
+        if (c.grafic.length && !(await copieGraficServ(c.a, "înainte de înlocuire"))) { ok.disabled = false; return mesajServ("Copia de siguranță nu a putut fi făcută, așa că graficul nu a fost schimbat. Încearcă din nou."); }
         const extra = []; alese.forEach((t, i) => { if (t) { const l = r.lipsa[i]; extra.push({ zona_id: l.z.id, zi: l.zi, pauza: l.k || (l.z.tip === "fix" ? 1 : null), schimb: l.schimb || null, angajat_id: t, nota: null, manual: true }); } });
         const { error: e1 } = await db.from("serviciu_grafic").delete().eq("an_id", c.a.id).eq("manual", false);
         if (e1) { ok.disabled = false; return mesajServ("Graficul vechi nu a putut fi șters."); }
@@ -8283,7 +8356,7 @@
           const { error } = await db.from("serviciu_grafic").insert(rows.slice(i, i + 300));
           if (error) { ok.disabled = false; return mesajServ("Graficul nu a putut fi salvat complet. Generează din nou."); }
         }
-        zona.replaceChildren(); mesajServ("Graficul a fost salvat (" + rows.length + " rânduri).", true); desenezServiciu();
+        zona.replaceChildren(); mesajServ("Graficul a fost salvat (" + rows.length + " rânduri)." + (c.grafic.length ? " Versiunea anterioară se păstrează la „Versiuni anterioare”." : ""), true); desenezServiciu();
       });
     }
 
