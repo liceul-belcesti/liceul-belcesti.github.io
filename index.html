@@ -6739,6 +6739,10 @@
       const cl = (t, zi, o) => { const m = classAt.get(t); return m && m[zi] ? m[zi].get(o) : undefined; };
       const claseGrup = new Map();
       d.zone.filter((z) => z.tip === "profesori").forEach((z) => { const g = grup(z); const s = claseGrup.get(g) || new Set(); zoneCl.get(z.id).forEach((c) => s.add(c)); claseGrup.set(g, s); });
+      // Dacă profesorii și învățătorii au un singur corp (ca la Munteni), clasele învățătorilor aparțin aceleiași clădiri:
+      // un profesor care predă la clasele mici din clădire este considerat prezent în clădire și face serviciu împreună cu ceilalți.
+      const clasePrimare = (z) => { const s = new Set(); d.zone.filter((x) => x.tip === "invatatori" && x.sediu === z.sediu && x.corp === z.corp).forEach((x) => zoneCl.get(x.id).forEach((c) => s.add(c))); return s; };
+      d.zone.filter((z) => z.tip === "invatatori" && claseGrup.has(grup(z))).forEach((z) => zoneCl.get(z.id).forEach((c) => claseGrup.get(grup(z)).add(c)));
       const claseSediu = new Map();
       d.zone.forEach((z) => { const s = claseSediu.get(z.sediu) || new Set(); zoneCl.get(z.id).forEach((c) => s.add(c)); claseSediu.set(z.sediu, s); });
       const claseDe = (z) => (z.tip === "fix" ? claseSediu.get(z.sediu) : claseGrup.get(grup(z)));
@@ -6752,7 +6756,8 @@
         const v = tot ? oreGrup(t, g) / tot : 0; afinC.set(k, v); return v;
       };
       // Ore ale persoanei la clasele chiar din zona respectivă (nu doar din corpul legat).
-      const oreZona = (t, z) => { let n = 0; zoneCl.get(z.id).forEach((c) => { const v = orePeClasa.get(c) && orePeClasa.get(c).get(t); if (v) n += v.n; }); return n; };
+      const clZonaExt = (z) => { const s = new Set(zoneCl.get(z.id)); if (z.tip === "profesori") clasePrimare(z).forEach((c) => s.add(c)); return s; };
+      const oreZona = (t, z) => { let n = 0; clZonaExt(z).forEach((c) => { const v = orePeClasa.get(c) && orePeClasa.get(c).get(t); if (v) n += v.n; }); return n; };
       const faraZona = (t, z) => (oreZona(t, z) ? 0 : 1);
       // Potrivirea unei persoane cu o zonă: bonus pentru cei cu prioritate, penalizare pentru ceilalți când zona are persoane prioritare.
       const pot = (t, z, wa, wz) => {
@@ -6765,7 +6770,7 @@
       // Cât de potrivită este o persoană la o pauză: 0 = are oră înainte și după în zonă, 3 = fereastră între ore în zonă.
       const tier = (t, s) => {
         const pr = prioZ.get(s.z.id), priT = !!(pr && pr.has(t));
-        const cg = priT ? claseSediu.get(s.z.sediu) : claseDe(s.z), cz = zoneCl.get(s.z.id), fix = s.z.tip === "fix" || priT;
+        const cg = priT ? claseSediu.get(s.z.sediu) : claseDe(s.z), cz = clZonaExt(s.z), fix = s.z.tip === "fix" || priT;
         const a = cl(t, s.zi, s.k), b = cl(t, s.zi, s.k + 1), ia = !!(a && cg.has(a)), ib = !!(b && cg.has(b));
         if (ia && ib) return (fix || cz.has(a) || cz.has(b)) ? 0 : 1;
         if (ia || ib) return 2;
