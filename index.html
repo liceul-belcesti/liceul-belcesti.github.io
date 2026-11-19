@@ -1028,6 +1028,88 @@
     #serviciu .gr-t.pf td { text-align:left; font-size:.7rem; vertical-align:top; }
     #serviciu .gr-t.pf tbody th { text-align:left; position:sticky; left:0; z-index:1; min-width:120px; white-space:normal; }
     #serviciu .gr-t.pf td.tot { font-weight:700; text-align:center; }
+    /* ===== Serviciu pe școală: aspect ===== */
+    #serviciu [hidden] { display:none !important; }
+    #serviciu #serviciu-tab { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:6px; padding:0; background:transparent; margin:6px 0 10px; }
+    #serviciu #serviciu-tab button { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-height:44px; padding:6px 8px; border-radius:12px; transition:transform .15s, box-shadow .15s, background .15s; }
+    #serviciu #serviciu-tab button:hover { transform:translateY(-1px); }
+    @media (max-width:520px) { #serviciu #serviciu-tab button { font-size:.74rem; padding:6px 2px; } }
+    #serviciu .azi-bara { margin:8px 0 10px; padding:10px 12px; border-radius:14px; border:1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-left:6px solid var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--card)); animation:serv-apare .4s ease both; }
+    #serviciu .azi-titlu { font-weight:800; font-size:.9rem; margin-bottom:4px; }
+    #serviciu .azi-linie { display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin:3px 0; }
+    #serviciu .azi-zona { font-size:.72rem; color:var(--muted); min-width:110px; }
+    #serviciu .filtre { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:8px 0 4px; }
+    #serviciu .chip { width:auto; flex:0 0 auto; min-height:34px; margin:0; padding:4px 14px; border-radius:999px; font-size:.82rem; font-weight:700; background:var(--card); color:var(--accent); border:1.5px solid color-mix(in srgb, var(--accent) 45%, var(--line)); transition:background .15s, transform .15s; }
+    #serviciu .chip:hover { transform:translateY(-1px); }
+    #serviciu .chip[aria-pressed="true"] { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+    #serviciu .cauta-pers { flex:1 1 180px; min-width:150px; margin:0; min-height:36px; border-radius:999px; }
+    #serviciu .sediu-et { margin:18px 0 2px; font-size:1.05rem; letter-spacing:.02em; }
+    #serviciu .corp { margin:14px 0 6px; animation:serv-apare .45s ease both; animation-delay:calc(var(--i, 0) * 60ms); }
+    #serviciu .corp-cap { display:flex; align-items:center; gap:6px; margin:0 0 4px; }
+    #serviciu .corp-tg { flex:0 0 34px; width:34px; min-width:34px; min-height:34px; margin:0; padding:0; border-radius:10px; background:var(--bg); color:var(--text); border:1px solid var(--line); font-size:.9rem; }
+    #serviciu .corp-titlu { flex:1; display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:38px; margin:0; padding:6px 14px; text-align:left; font-size:1rem; font-weight:800; color:var(--text); background:linear-gradient(90deg, color-mix(in srgb, var(--accent) 16%, var(--card)), var(--card)); border:1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius:12px; transition:box-shadow .15s, transform .15s; }
+    #serviciu .corp-titlu:hover { box-shadow:0 3px 10px rgba(0,0,0,.14); transform:translateY(-1px); }
+    #serviciu .corp-print { font-size:.72rem; font-weight:700; color:var(--accent); opacity:.85; white-space:nowrap; }
+    #serviciu .zona-et { margin:8px 2px 0; font-size:.82rem; font-weight:700; color:var(--muted); }
+    #serviciu .gr-w { border-radius:14px; box-shadow:0 1px 6px rgba(0,0,0,.08); background:var(--card); }
+    #serviciu .gr-t th small { display:block; font-weight:500; font-size:.66rem; color:var(--muted); margin-top:1px; }
+    #serviciu .gr-t tbody th { position:sticky; left:0; z-index:1; min-width:78px; text-align:left; padding-left:10px; }
+    #serviciu .gr-t tr.azi th { background:color-mix(in srgb, var(--accent) 18%, var(--bg)); }
+    #serviciu .gr-t tr.azi th small { display:inline-block; margin:0 0 0 6px; padding:0 6px; border-radius:8px; background:var(--accent); color:var(--on-accent); font-weight:700; }
+    #serviciu .gr-t td { min-width:96px; padding:4px; transition:background .15s; }
+    #serviciu .gr-t td.click:hover { background:color-mix(in srgb, var(--accent) 9%, var(--card)); }
+    #serviciu .gr-t td.gol.click::after { content:"＋"; color:var(--muted); font-size:1rem; }
+    #serviciu .gr-t td.acum { box-shadow:inset 0 0 0 2px var(--accent); animation:serv-puls 2s ease-in-out infinite; }
+    #serviciu .pers { display:block; margin:2px 0; padding:3px 7px; border-radius:8px; text-align:left; font-size:.74rem; font-weight:600; line-height:1.25; white-space:normal; color:var(--text); background:color-mix(in srgb, hsl(var(--h) 70% 50%) 17%, var(--card)); border-left:4px solid hsl(var(--h) 62% 46%); cursor:pointer; transition:transform .12s, box-shadow .12s, opacity .15s; }
+    #serviciu .azi-linie .pers { display:inline-block; margin:0; }
+    #serviciu .pers:hover, #serviciu .pers:focus-visible { transform:translateY(-1px); box-shadow:0 2px 8px rgba(0,0,0,.2); outline:none; }
+    #serviciu.gr-dim .pers, #serviciu .gr-dim .pers { opacity:.28; }
+    #serviciu .gr-dim .pers.ev { opacity:1; box-shadow:0 0 0 2px hsl(var(--h) 70% 45%); }
+    #serviciu .lnk-pers { cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
+    #serviciu .lnk-pers:hover { color:var(--accent); }
+    @keyframes serv-apare { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    @keyframes serv-puls { 0%,100% { background-color:transparent; } 50% { background-color:color-mix(in srgb, var(--accent) 12%, transparent); } }
+    @media (prefers-reduced-motion: reduce) { #serviciu *, #tipar-serviciu-fond * { animation:none !important; transition:none !important; } }
+    /* fereastra de previzualizare și tipărire */
+    #tipar-serviciu-fond { position:fixed; inset:0; z-index:2000; overflow:auto; padding:12px; background:rgba(15,23,42,.6); display:flex; flex-direction:column; align-items:center; gap:10px; animation:serv-apare .2s ease both; }
+    #tipar-serviciu-fond .ts-bara { position:sticky; top:0; z-index:3; display:flex; gap:8px; padding:6px; border-radius:12px; background:var(--card); box-shadow:0 2px 10px rgba(0,0,0,.3); }
+    #tipar-serviciu-fond .ts-bara button { width:auto; white-space:nowrap; margin:0; min-height:40px; padding:6px 16px; }
+    #tipar-serviciu-fond .ts-pag { box-sizing:border-box; width:min(1100px, 100%); padding:18px 22px; border-radius:12px; background:#fff; color:#111; font-family:Arial, Helvetica, sans-serif; box-shadow:0 8px 30px rgba(0,0,0,.35); }
+    #tipar-serviciu-fond .po-cap { display:flex; align-items:center; gap:18px; padding-bottom:6px; border-bottom:4px solid #1c7fc4; }
+    #tipar-serviciu-fond .po-logo { height:58px; width:auto; }
+    #tipar-serviciu-fond .po-scoala { margin:0; font-family:Georgia, "Times New Roman", serif; font-weight:700; color:#12275a; line-height:1.15; }
+    #tipar-serviciu-fond .po-scoala span { display:block; }
+    #tipar-serviciu-fond .po-scoala .l1 { font-size:.8rem; letter-spacing:.14em; }
+    #tipar-serviciu-fond .po-scoala .l2 { font-size:1.2rem; font-weight:800; }
+    #tipar-serviciu-fond .po-scoala .l3 { font-size:.75rem; letter-spacing:.5em; }
+    #tipar-serviciu-fond .po-titlu { margin:12px 0 0; text-align:center; font-weight:800; font-size:1.05rem; color:#1c7fc4; letter-spacing:.03em; }
+    #tipar-serviciu-fond .po-nume { margin:2px 0; text-align:center; font-weight:800; font-size:1.5rem; color:#12275a; }
+    #tipar-serviciu-fond .po-sub { margin:0 0 10px; text-align:center; font-size:.85rem; color:#555; }
+    #tipar-serviciu-fond .ts-zet { margin:10px 0 3px; font-weight:800; font-size:.95rem; color:#12275a; }
+    #tipar-serviciu-fond .ts-zona { break-inside:avoid; }
+    #tipar-serviciu-fond .gr-w { overflow-x:auto; margin:3px 0 8px; }
+    #tipar-serviciu-fond .gr-t { table-layout:fixed; border-collapse:collapse; width:100%; font-size:.85rem; color:#111; }
+    #tipar-serviciu-fond .gr-t th, #tipar-serviciu-fond .gr-t td { border:1px solid #8aa9c4; padding:5px 6px; text-align:center; vertical-align:middle; white-space:pre-line; background:#fff; }
+    #tipar-serviciu-fond .gr-t thead th { background:#1c7fc4; color:#fff; font-weight:800; }
+    #tipar-serviciu-fond .gr-t thead th small { display:block; font-weight:400; font-size:.7rem; color:#e3f0fa; }
+    #tipar-serviciu-fond .gr-t tbody th { background:#e6f1fa; color:#12275a; text-align:left; font-weight:800; width:90px; }
+    #tipar-serviciu-fond .pers { display:block; padding:2px 4px; font-weight:600; background:none; border:0; color:#111; }
+    #tipar-serviciu-fond .pers-t td.are { background:#eaf3fb; font-weight:700; font-size:.8rem; }
+    #tipar-serviciu-fond .ts-sumar { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+    #tipar-serviciu-fond .ts-sumar div { padding:6px 12px; border:1px solid #8aa9c4; border-radius:8px; background:#f2f8fc; }
+    #tipar-serviciu-fond .ts-sumar b { font-size:1.15rem; color:#12275a; }
+    #tipar-serviciu-fond .ts-nota { margin:8px 0 0; font-size:.75rem; color:#555; }
+    @page serv { size:A4 landscape; margin:8mm; }
+    @media print {
+      body.tipar-serv > :not(#tipar-serviciu-fond) { display:none !important; }
+      body.tipar-serv { background:#fff !important; }
+      body.tipar-serv #tipar-serviciu-fond { position:static; display:block; padding:0; background:none; overflow:visible; animation:none; }
+      body.tipar-serv #tipar-serviciu-fond .ts-bara { display:none !important; }
+      body.tipar-serv #tipar-serviciu-fond .ts-pag { page:serv; width:auto; padding:0; border-radius:0; box-shadow:none; }
+      body.tipar-serv #tipar-serviciu-fond .po-logo { height:16mm; }
+      body.tipar-serv #tipar-serviciu-fond .gr-t { font-size:10pt; }
+      body.tipar-serv #tipar-serviciu-fond .gr-t th, body.tipar-serv #tipar-serviciu-fond .gr-t td { padding:3mm 2mm; }
+    }
     #serviciu .rap-sumar { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin:6px 0 10px; }
     #serviciu .rap-sumar div { border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--card); }
     #serviciu .rap-sumar b { display:block; font-size:1.25rem; }
@@ -6439,12 +6521,12 @@
       { sediu: "Centru", corp: "Corp A", grupa: "Corp A + Corp B", den: "Etaj 1", tip: "profesori", nr: 1, clase: ["5A", "7B", "8A"] },
       { sediu: "Centru", corp: "Corp B", grupa: "Corp A + Corp B", den: "Parter", tip: "profesori", nr: 1, clase: ["9C", "10C", "11C"] },
       { sediu: "Centru", corp: "Corp B", grupa: "Corp A + Corp B", den: "Etaj 2", tip: "profesori", nr: 1, clase: ["9D", "10B", "11B"] },
-      { sediu: "Centru", corp: "Corp Spiru Haret", grupa: "Corp Spiru Haret", den: "Toate etajele", tip: "profesori", nr: 1, clase: ["9A", "10A", "11A", "12A"] },
-      { sediu: "Centru", corp: "Corp ateliere", grupa: "Corp ateliere", den: "Toate încăperile", tip: "profesori", nr: 1, clase: ["10D", "11D"] },
+      { sediu: "Centru", corp: "Corp Spiru Haret", grupa: "Corp Spiru Haret", den: "Corp Spiru Haret", tip: "profesori", nr: 1, clase: ["9A", "10A", "11A", "12A"] },
+      { sediu: "Centru", corp: "Corp ateliere", grupa: "Corp ateliere", den: "Corp ateliere", tip: "profesori", nr: 1, clase: ["10D", "11D"] },
       { sediu: "Centru", corp: "Sala de sport", grupa: "Sala de sport", den: "Sala de sport", tip: "fix", nr: 1, clase: [] },
-      { sediu: "Centru", corp: "Corp învățători", grupa: "Corp învățători", den: "Toate încăperile", tip: "invatatori", nr: 2, dupa: 1, clase: ["CPBel", "2ABel", "4ABel", "4BBel", "1ABel", "3ABel"] },
+      { sediu: "Centru", corp: "Corp învățători", grupa: "Corp învățători", den: "Corp învățători", tip: "invatatori", nr: 2, dupa: 1, clase: ["CPBel", "2ABel", "4ABel", "4BBel", "1ABel", "3ABel"] },
       { sediu: "Munteni", corp: "Munteni", grupa: "Munteni", den: "Munteni", tip: "profesori", nr: 1, dupa: 2, pauzeMax: 8, clase: ["MunCP", "Mun2B", "Mun4C", "Mun5C", "Mun6C", "Mun8C"] },
-      { sediu: "Tansa", corp: "Corp unic", grupa: "Corp unic", den: "Învățători și educatoare", tip: "invatatori", nr: 1, dupa: 1, clase: ["CPTan", "2TanC", "Tan2C", "4TanD", "Tan4D"] }
+      { sediu: "Tansa", corp: "Tansa", grupa: "Tansa", den: "Tansa", tip: "invatatori", nr: 1, dupa: 1, clase: ["CPTan", "2TanC", "Tan2C", "4TanD", "Tan4D"] }
     ];
     $("inapoi-serviciu").addEventListener("click", arataPrincipal);
     $("serviciu-tab").addEventListener("click", (ev) => {
@@ -7257,6 +7339,157 @@
       const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === zi && (g.pauza || null) === pauza && (g.schimb || null) === schimb);
       return { rows, nume };
     }
+    // ===== Graficul de serviciu: interfață =====
+    // Prima oră începe la 8:00; orele durează 50 de minute, pauzele 10 minute. Pauza k este între ora k și ora k+1.
+    const ORA0 = 8 * 60;
+    const hhmm = (m) => Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0");
+    const intervalPauza = (k) => { const a = ORA0 + (k - 1) * 60 + 50; return [a, a + 10]; };
+    const textPauza = (k) => { const [a, b] = intervalPauza(k); return hhmm(a) + "–" + hhmm(b); };
+    const INTERVAL_SCHIMB = { dimineata: "8:00–12:00", dupa_amiaza: "12:00–16:00" };
+    const hueDe = (id) => { let h = 7; String(id).split("").forEach((ch) => { h = (h * 31 + ch.charCodeAt(0)) % 360; }); return h; };
+    const etZonaScurt = (z) => (z.sediu !== "Centru" && z.corp !== z.sediu ? z.sediu + " · " : "") + z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "");
+    const corpInchise = new Set();
+    let filtruSediuServ = "", cautaServ = "";
+    // Următoarea pauză (sau cea în curs) din ziua de azi, dacă azi este zi de școală.
+    function pauzaUrmatoare() {
+      const d = new Date(), zi = d.getDay(); if (zi < 1 || zi > 5) return null;
+      const m = d.getHours() * 60 + d.getMinutes();
+      for (let k = 1; k <= 8; k++) { const [a, b] = intervalPauza(k); if (m <= b) return { zi, k, acum: m >= a }; }
+      return null;
+    }
+    // Aceeași ordine a persoanelor din aceeași căsuță de la o pauză la alta: cine a fost primul rămâne primul.
+    function ordCelula(rows, lastPos, nume) {
+      const n = rows.length, out = new Array(n).fill(null), rest = [];
+      rows.forEach((r) => { const p = lastPos.get(r.angajat_id); if (p !== undefined && p < n && !out[p]) out[p] = r; else rest.push(r); });
+      rest.sort((a, b) => (nume.get(a.angajat_id) || "").localeCompare(nume.get(b.angajat_id) || "", "ro"));
+      for (let i = 0; i < n; i++) if (!out[i]) out[i] = rest.shift();
+      out.forEach((r, i) => lastPos.set(r.angajat_id, i));
+      return out;
+    }
+    function evidentiaza(pred) {
+      const rad = $("serviciu-lista"); rad.classList.toggle("gr-dim", !!pred);
+      rad.querySelectorAll(".pers").forEach((p) => p.classList.toggle("ev", !!pred && pred(p.dataset.id, p.dataset.nume)));
+    }
+    const reaplicaCautare = () => { const q = normServ(cautaServ.trim()); evidentiaza(q ? (id, n) => normServ(n).includes(q) : null); };
+    const normServ = (x) => String(x).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    function chipPersoana(c, r, nume, interactiv) {
+      const n = nume.get(r.angajat_id) || "?";
+      const s = el("span", "pers", n + (r.nota ? " (" + r.nota + ")" : "")); s.dataset.id = r.angajat_id; s.dataset.nume = n; s.style.setProperty("--h", String(hueDe(r.angajat_id)));
+      if (interactiv) {
+        s.tabIndex = 0; s.title = "Apasă ca să vezi serviciul acestei persoane";
+        s.addEventListener("click", (ev) => { ev.stopPropagation(); arataPersoana(c, r.angajat_id); });
+        s.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.stopPropagation(); arataPersoana(c, r.angajat_id); } });
+        s.addEventListener("mouseenter", () => evidentiaza((id) => id === r.angajat_id));
+        s.addEventListener("mouseleave", reaplicaCautare);
+      }
+      return s;
+    }
+    // Tabelul unei zone: zile pe rânduri, pauze (cu intervalul orar) sau diminața/după-amiaza pe coloane.
+    function tabelZona(c, z, nume, interactiv) {
+      const w = el("div", "gr-w"); const t = document.createElement("table"); t.className = "gr-t"; w.appendChild(t);
+      const cap = z.tip === "invatatori"
+        ? [["Dimineața", INTERVAL_SCHIMB.dimineata, null, "dimineata"], ["După-amiaza", INTERVAL_SCHIMB.dupa_amiaza, null, "dupa_amiaza"]]
+        : Array.from({ length: pauzeZona(z) }, (_, i) => i + 1).map((k) => ["Pauza " + PAUZE_ET[k], textPauza(k), k, null]);
+      const ur = interactiv ? pauzaUrmatoare() : null, azi = new Date().getDay();
+      const thead = document.createElement("thead"); const tr0 = document.createElement("tr"); tr0.appendChild(document.createElement("th"));
+      cap.forEach((x) => { const th = document.createElement("th"); th.appendChild(document.createTextNode(x[0])); th.appendChild(el("small", "", x[1])); tr0.appendChild(th); });
+      thead.appendChild(tr0); t.appendChild(thead);
+      const tb = document.createElement("tbody");
+      for (let zi = 1; zi <= 5; zi++) {
+        const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = ZILE_SC[zi];
+        if (interactiv && zi === azi) { tr.classList.add("azi"); th.appendChild(el("small", "", "azi")); }
+        tr.appendChild(th);
+        const lastPos = new Map();
+        cap.forEach((x) => {
+          const td = document.createElement("td"); const { rows } = celulaGrafic(c, z, zi, x[2], x[3]);
+          ordCelula(rows, lastPos, nume).forEach((r) => td.appendChild(chipPersoana(c, r, nume, interactiv)));
+          if (!rows.length) td.classList.add("gol"); if (rows.some((r) => r.manual)) td.classList.add("man");
+          if (ur && ur.zi === zi && x[2] === ur.k) td.classList.add("acum");
+          if (interactiv && c.poate) { td.classList.add("click"); td.title = "Apasă pe căsuță ca să schimbi persoana"; td.addEventListener("click", () => formCelula(c, z, zi, x[2], x[3])); }
+          tr.appendChild(td);
+        });
+        tb.appendChild(tr);
+      }
+      t.appendChild(tb); return w;
+    }
+    // Fereastra de previzualizare și tipărire (orarul unui corp sau serviciul unei persoane).
+    function inchideTiparServ() { const f = $("tipar-serviciu-fond"); if (f) f.remove(); document.body.classList.remove("tipar-serv", "ts-deschis"); document.removeEventListener("keydown", escTiparServ); }
+    const escTiparServ = (ev) => { if (ev.key === "Escape") inchideTiparServ(); };
+    function deschideTiparServ(c, titlu, sub, noduri) {
+      inchideTiparServ();
+      const fond = el("div", ""); fond.id = "tipar-serviciu-fond"; fond.setAttribute("role", "dialog"); fond.setAttribute("aria-modal", "true"); fond.setAttribute("aria-label", titlu);
+      fond.addEventListener("click", (ev) => { if (ev.target === fond) inchideTiparServ(); });
+      const bara = el("div", "ts-bara"); const bP = el("button", "", "🖨 Tipărește"); bP.type = "button"; const bX = el("button", "secondary", "✕ Închide"); bX.type = "button";
+      bara.append(bP, bX); fond.appendChild(bara);
+      const pag = el("section", "ts-pag");
+      const cp = el("div", "po-cap"); const lg = el("img", "po-logo"); lg.src = "logo-sigla.png"; lg.alt = "";
+      const sc = el("p", "po-scoala"); sc.append(el("span", "l1", "LICEUL TEHNOLOGIC"), el("span", "l2", "VICTOR MIHĂILESCU CRAIU"), el("span", "l3", "BELCEȘTI"));
+      cp.append(lg, sc); pag.appendChild(cp);
+      pag.appendChild(el("p", "po-titlu", "PROGRAM DE SERVICIU PE ȘCOALĂ"));
+      pag.appendChild(el("p", "po-nume", titlu));
+      pag.appendChild(el("p", "po-sub", sub + (sub ? " · " : "") + "anul școlar " + c.a.denumire));
+      noduri.forEach((n) => pag.appendChild(n));
+      pag.appendChild(el("p", "ts-nota", "Pauza 1–2 este între ora 1 și ora 2. Orele durează 50 de minute, cu pauze de 10 minute, începând cu ora 8:00."));
+      fond.appendChild(pag); document.body.appendChild(fond); document.body.classList.add("ts-deschis");
+      bX.addEventListener("click", inchideTiparServ);
+      bP.addEventListener("click", () => { document.body.classList.add("tipar-serv"); const gata = () => { document.body.classList.remove("tipar-serv"); window.removeEventListener("afterprint", gata); }; window.addEventListener("afterprint", gata); window.print(); setTimeout(gata, 1500); });
+      document.addEventListener("keydown", escTiparServ); bP.focus();
+    }
+    function tiparesteCorp(c, sediu, corp, zone) {
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
+      const noduri = zone.map((z) => { const s = el("div", "ts-zona"); if (z.denumire !== z.corp) s.appendChild(el("p", "ts-zet", z.denumire)); s.appendChild(tabelZona(c, z, nume, false)); return s; });
+      deschideTiparServ(c, corp.toUpperCase(), sediu !== corp ? sediu : "", noduri);
+    }
+    // Serviciul unei persoane, pe zile și pe pauze.
+    function arataPersoana(c, id) {
+      const nume = new Map(c.angs.map((x) => [x.id, x.nume])), zonaDe = new Map(c.zone.map((z) => [z.id, z]));
+      const rows = c.grafic.filter((g) => g.angajat_id === id && zonaDe.has(g.zona_id));
+      const pz = rows.filter((g) => g.pauza), sch = rows.filter((g) => !g.pauza);
+      const noduri = []; const pl = (n, o, m) => n + " " + (n === 1 ? o : m);
+      if (!rows.length) { noduri.push(el("p", "ts-nota", "Nu are serviciu în graficul curent.")); return deschideTiparServ(c, (nume.get(id) || "Persoană necunoscută").toUpperCase(), "", noduri); }
+      const zile = new Set(rows.map((g) => g.zi)), locuri = new Map();
+      rows.forEach((g) => { const k = etZonaScurt(zonaDe.get(g.zona_id)); locuri.set(k, (locuri.get(k) || 0) + 1); });
+      const sumar = el("div", "ts-sumar");
+      [[String(pz.length), pz.length === 1 ? "pauză" : "pauze"], [String(zile.size), zile.size === 1 ? "zi cu serviciu" : "zile cu serviciu"], [[...locuri.keys()].length === 1 ? [...locuri.keys()][0] : String(locuri.size), [...locuri.keys()].length === 1 ? "locul" : "locuri"]].forEach(([v, t]) => { const d = el("div", ""); d.append(el("b", "", v), document.createTextNode(" " + t)); sumar.appendChild(d); });
+      noduri.push(sumar);
+      const maxK = Math.max(5, ...pz.map((g) => g.pauza));
+      const w = el("div", "gr-w"); const t = document.createElement("table"); t.className = "gr-t pers-t"; w.appendChild(t);
+      const thead = document.createElement("thead"); const tr0 = document.createElement("tr"); tr0.appendChild(document.createElement("th"));
+      for (let k = 1; k <= maxK; k++) { const th = document.createElement("th"); th.appendChild(document.createTextNode("Pauza " + PAUZE_ET[k])); th.appendChild(el("small", "", textPauza(k))); tr0.appendChild(th); }
+      if (sch.length) { const th = document.createElement("th"); th.appendChild(document.createTextNode("Pe zi întreagă")); tr0.appendChild(th); }
+      thead.appendChild(tr0); t.appendChild(thead);
+      const tb = document.createElement("tbody");
+      for (let zi = 1; zi <= 5; zi++) {
+        const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = ZILE_SC[zi]; tr.appendChild(th);
+        for (let k = 1; k <= maxK; k++) {
+          const td = document.createElement("td"); const g = pz.filter((x) => x.zi === zi && x.pauza === k);
+          if (g.length) { td.classList.add("are"); td.style.setProperty("--h", String(hueDe(g[0].zona_id))); td.textContent = g.map((x) => etZonaScurt(zonaDe.get(x.zona_id)) + (x.nota ? " (" + x.nota + ")" : "")).join("\n"); } else td.classList.add("gol-p");
+          tr.appendChild(td);
+        }
+        if (sch.length) {
+          const td = document.createElement("td"); const g = sch.filter((x) => x.zi === zi);
+          if (g.length) { td.classList.add("are"); td.textContent = g.map((x) => (x.schimb === "dimineata" ? "Dimineața " : "După-amiaza ") + INTERVAL_SCHIMB[x.schimb || "dimineata"] + "\n" + etZonaScurt(zonaDe.get(x.zona_id)) + (x.nota ? " (" + x.nota + ")" : "")).join("\n"); } else td.classList.add("gol-p");
+          tr.appendChild(td);
+        }
+        tb.appendChild(tr);
+      }
+      t.appendChild(tb); noduri.push(w);
+      deschideTiparServ(c, (nume.get(id) || "Persoană necunoscută").toUpperCase(), "serviciul persoanei", noduri);
+    }
+    const faLinkPersoana = (n, c, id) => { n.classList.add("lnk-pers"); n.tabIndex = 0; n.title = "Apasă ca să vezi serviciul acestei persoane"; n.addEventListener("click", () => arataPersoana(c, id)); n.addEventListener("keydown", (ev) => { if (ev.key === "Enter") arataPersoana(c, id); }); };
+    function bannerAzi(c, nume) {
+      const ur = pauzaUrmatoare(); if (!ur) return null;
+      const zonaPauza = c.zone.filter((z) => z.tip !== "invatatori" && ur.k <= pauzeZona(z));
+      const linii = [];
+      zonaPauza.forEach((z) => { const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === ur.zi && g.pauza === ur.k); if (rows.length) linii.push([etZonaScurt(z), ordCelula(rows, new Map(), nume)]); });
+      const dim = new Date().getHours() < 12 ? "dimineata" : "dupa_amiaza";
+      c.zone.filter((z) => z.tip === "invatatori").forEach((z) => { const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === ur.zi && g.schimb === dim); if (rows.length) linii.push([etZonaScurt(z) + " · " + INTERVAL_SCHIMB[dim], ordCelula(rows, new Map(), nume)]); });
+      if (!linii.length) return null;
+      const b = el("div", "azi-bara");
+      b.appendChild(el("div", "azi-titlu", "📍 Azi, " + ZILE_SC[ur.zi] + " · " + (ur.acum ? "pauza în curs " : "următoarea pauză ") + PAUZE_ET[ur.k] + " (" + textPauza(ur.k) + ")"));
+      linii.forEach(([et, rows]) => { const l = el("div", "azi-linie"); l.appendChild(el("span", "azi-zona", et)); rows.forEach((r) => l.appendChild(chipPersoana(c, r, nume, true))); b.appendChild(l); });
+      return b;
+    }
     function desenezGrafic(c) {
       const lista = $("serviciu-lista");
       const nume = new Map(c.angs.map((x) => [x.id, x.nume]));
@@ -7267,31 +7500,42 @@
       }
       if (!c.zone.length) return lista.appendChild(el("p", "who", "Mai întâi definește zonele, la „Administrare serviciu pe școală”, fila „Zone și clase”."));
       if (!c.grafic.length) return lista.appendChild(el("p", "who", "Graficul nu a fost încă generat pentru " + c.a.denumire + "."));
-      lista.appendChild(el("p", "who", "Apasă pe o căsuță ca să schimbi persoana. Modificările făcute de tine se păstrează."));
+      const azi = bannerAzi(c, nume); if (azi) lista.appendChild(azi);
+      // Filtre: sediul și căutarea unei persoane (evidențiază toate căsuțele ei)
+      const bara = el("div", "filtre");
+      const sedii = SEDII_SERV.filter((s) => c.zone.some((z) => z.sediu === s && c.grafic.some((g) => g.zona_id === z.id)));
+      [["", "Toate"]].concat(sedii.map((s) => [s, s])).forEach(([v, et]) => {
+        const b = el("button", "chip", et); b.type = "button"; b.setAttribute("aria-pressed", filtruSediuServ === v ? "true" : "false");
+        b.addEventListener("click", () => { filtruSediuServ = v; bara.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); lista.querySelectorAll("[data-sediu]").forEach((n) => { n.hidden = !!v && n.dataset.sediu !== v; }); });
+        bara.appendChild(b);
+      });
+      const cauta = document.createElement("input"); cauta.type = "search"; cauta.className = "cauta-pers"; cauta.placeholder = "Caută o persoană în grafic"; cauta.setAttribute("aria-label", "Caută o persoană în grafic"); cauta.value = cautaServ;
+      cauta.addEventListener("input", () => { cautaServ = cauta.value; reaplicaCautare(); });
+      bara.appendChild(cauta); lista.appendChild(bara);
+      lista.appendChild(el("p", "who", c.poate ? "Apasă pe un nume ca să vezi serviciul persoanei sau pe restul căsuței ca să o schimbi. Apasă pe numele unui corp ca să-i tipărești orarul complet." : "Apasă pe un nume ca să vezi serviciul persoanei sau pe numele unui corp ca să-i tipărești orarul complet."));
       SEDII_SERV.forEach((s) => {
         const zs = c.zone.filter((z) => z.sediu === s && c.grafic.some((g) => g.zona_id === z.id)); if (!zs.length) return;
-        lista.appendChild(el("h3", "grup-clasa", s));
-        zs.forEach((z) => {
-          if (!(z.corp === s && z.denumire === z.corp)) lista.appendChild(el("div", "ang-nume", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "")));
-          const w = el("div", "gr-w"); const t = document.createElement("table"); t.className = "gr-t";
-          const cap = (z.tip === "invatatori") ? [["Dimineața", null, "dimineata"], ["După-amiaza", null, "dupa_amiaza"]] : Array.from({ length: pauzeZona(z) }, (_, i) => i + 1).map((k) => ["Pauza " + PAUZE_ET[k], k, null]);
-          const thead = document.createElement("thead"); const tr0 = document.createElement("tr"); tr0.appendChild(document.createElement("th"));
-          cap.forEach((x) => { const th = document.createElement("th"); th.textContent = x[0]; tr0.appendChild(th); }); thead.appendChild(tr0); t.appendChild(thead);
-          const tb = document.createElement("tbody");
-          for (let zi = 1; zi <= 5; zi++) {
-            const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = ZILE_SC[zi]; tr.appendChild(th);
-            cap.forEach((x) => {
-              const td = document.createElement("td"); const { rows } = celulaGrafic(c, z, zi, x[1], x[2]);
-              td.textContent = rows.map((r) => (nume.get(r.angajat_id) || "?") + (r.nota ? " (" + r.nota + ")" : "")).join("\n");
-              if (!rows.length) td.classList.add("gol"); if (rows.some((r) => r.manual)) td.classList.add("man");
-              if (c.poate) { td.classList.add("click"); td.addEventListener("click", () => formCelula(c, z, zi, x[1], x[2])); }
-              tr.appendChild(td);
-            });
-            tb.appendChild(tr);
-          }
-          t.appendChild(tb); w.appendChild(t); lista.appendChild(w);
+        const corpuri = []; zs.forEach((z) => { let g = corpuri.find((x) => x.corp === z.corp); if (!g) { g = { corp: z.corp, zone: [] }; corpuri.push(g); } g.zone.push(z); });
+        const sec = el("section", "sediu"); sec.dataset.sediu = s; sec.hidden = !!filtruSediuServ && filtruSediuServ !== s;
+        const faraTitluSediu = corpuri.length === 1 && corpuri[0].corp === s;
+        if (!faraTitluSediu) sec.appendChild(el("h3", "sediu-et", s));
+        corpuri.forEach((g, i) => {
+          const cs = el("div", "corp"); cs.style.setProperty("--i", String(i));
+          const cheie = s + "|" + g.corp, inchis = corpInchise.has(cheie);
+          const cap = el("div", "corp-cap");
+          const tg = el("button", "corp-tg", inchis ? "▸" : "▾"); tg.type = "button"; tg.title = "Restrânge sau extinde"; tg.setAttribute("aria-expanded", inchis ? "false" : "true");
+          const ti = el("button", "corp-titlu", g.corp); ti.type = "button"; ti.title = "Apasă ca să tipărești orarul complet al corpului"; ti.appendChild(el("span", "corp-print", "🖨 Tipărește"));
+          ti.addEventListener("click", () => tiparesteCorp(c, s, g.corp, g.zone));
+          cap.append(tg, ti); cs.appendChild(cap);
+          const corp = el("div", "corp-corp"); corp.hidden = inchis;
+          g.zone.forEach((z) => { if (z.denumire !== z.corp) corp.appendChild(el("div", "zona-et", z.denumire)); corp.appendChild(tabelZona(c, z, nume, true)); });
+          cs.appendChild(corp);
+          tg.addEventListener("click", () => { const h = !corp.hidden; corp.hidden = h; tg.textContent = h ? "▸" : "▾"; tg.setAttribute("aria-expanded", h ? "false" : "true"); if (h) corpInchise.add(cheie); else corpInchise.delete(cheie); });
+          sec.appendChild(cs);
         });
+        lista.appendChild(sec);
       });
+      reaplicaCautare();
     }
     // Graficul pe profesori: o linie pe persoană, cu serviciul ei pe zile (doar consultare; se modifică din graficul pe zone).
     function desenezPeProfesori(c) {
@@ -7311,7 +7555,7 @@
       thead.appendChild(tr0); t.appendChild(thead);
       const tb = document.createElement("tbody"); const randuri = [];
       persoane.forEach((id) => {
-        const rows = per.get(id); const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = nume.get(id) || "Angajat necunoscut"; tr.appendChild(th);
+        const rows = per.get(id); const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = nume.get(id) || "Angajat necunoscut"; faLinkPersoana(th, c, id); tr.appendChild(th);
         for (let zi = 1; zi <= 5; zi++) {
           const td = document.createElement("td"); const grupe = new Map();
           rows.filter((g) => g.zi === zi).forEach((g) => { const gr = grupe.get(g.zona_id) || grupe.set(g.zona_id, { pauze: [], sch: [], note: [] }).get(g.zona_id); if (g.pauza) gr.pauze.push(g.pauza); if (g.schimb) gr.sch.push(g.schimb); if (g.nota) gr.note.push(g.nota); });
@@ -7392,7 +7636,7 @@
         const antetCsv = ["Nr. crt.", "Persoana", "Ore în orar", "Pauze de serviciu", "Zile cu serviciu pe întreaga zi", "Zile cu serviciu", "Unde face serviciu", "Cel mai lung bloc de pauze", "Observații"];
         const csv = [antetCsv];
         date.forEach((x, i) => {
-          const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = x.nume;
+          const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = x.nume; faLinkPersoana(th, c, x.id);
           const cel = (t, cl) => { const td = document.createElement("td"); td.textContent = t; if (cl) td.className = cl; return td; };
           tr.appendChild(cel(String(i + 1), "n")); tr.appendChild(th); tr.appendChild(cel(String(x.ore), "n"));
           tr.appendChild(cel([x.n ? String(x.n) : "", x.nz ? pl(x.nz, "zi", "zile") + " întregi" : ""].filter(Boolean).join("\n") || "0", "n"));
@@ -7420,7 +7664,7 @@
     function formCelula(c, z, zi, pauza, schimb) {
       const zona = $("serviciu-form"); zona.replaceChildren();
       const box = el("div", "ang-form"); zona.appendChild(box);
-      box.appendChild(el("h3", "", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " · " + ZILE_SC[zi] + " · " + (pauza ? "pauza " + PAUZE_ET[pauza] : schimb === "dimineata" ? "dimineața" : "după-amiaza")));
+      box.appendChild(el("h3", "", z.corp + (z.denumire !== z.corp ? " · " + z.denumire : "") + " · " + ZILE_SC[zi] + " · " + (pauza ? "pauza " + PAUZE_ET[pauza] + " (" + textPauza(pauza) + ")" : schimb === "dimineata" ? "dimineața (" + INTERVAL_SCHIMB.dimineata + ")" : "după-amiaza (" + INTERVAL_SCHIMB.dupa_amiaza + ")")));
       const { rows, nume } = celulaGrafic(c, z, zi, pauza, schimb);
       if (!rows.length) box.appendChild(el("p", "who", "Nimeni de serviciu."));
       rows.forEach((r) => {
