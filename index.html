@@ -6,6 +6,11 @@
   <meta name="theme-color" content="#0b7f8a">
   <title>Spațiul digital al școlii</title>
   <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Școala">
   <style>
     :root {
       --w:400px;
@@ -114,6 +119,12 @@
     .alerta { display:block; width:100%; margin:0 0 16px; padding:14px 16px; min-height:48px; text-align:left; font-weight:700;
               color:#fff; background:var(--err); border:0; border-radius:12px; cursor:pointer; }
     .alerta.hidden { display:none; }
+    .notif-tel { margin:0 0 16px; padding:12px 14px; background:var(--card); border:1.5px solid var(--line); border-left:6px solid var(--accent); border-radius:12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
+    .notif-tel.hidden { display:none; }
+    .notif-tel .nt-text { flex:1 1 240px; display:flex; flex-direction:column; gap:2px; }
+    .notif-tel .nt-text span { font-size:.9rem; color:var(--muted); }
+    .notif-tel .nt-butoane { display:flex; flex-wrap:wrap; gap:8px; }
+    .notif-tel .nt-butoane button { width:auto; margin:0; min-height:40px; padding:6px 14px; }
     #anunturi textarea { display:block; width:100%; box-sizing:border-box; padding:10px 12px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
     .anunt .anunt-text { white-space:pre-wrap; margin:8px 0; line-height:1.45; }
     .anunt .anunt-fis { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
@@ -1299,6 +1310,15 @@
         <select id="activ-ca"></select>
       </div>
 
+      <section id="notif-tel" class="notif-tel hidden" aria-live="polite">
+        <div class="nt-text"><b>📱 Serviciul pe școală, pe telefon</b><span id="nt-stare"></span></div>
+        <div class="nt-butoane">
+          <button id="nt-activeaza" type="button">Activează notificările</button>
+          <button id="nt-proba" class="secondary hidden" type="button">Trimite o probă</button>
+          <button id="nt-opreste" class="secondary hidden" type="button">Dezactivează</button>
+        </div>
+      </section>
+
       <button id="alerta" class="alerta hidden" type="button"></button>
       <button id="alerta-copie" class="alerta hidden" type="button"></button>
 
@@ -1602,6 +1622,62 @@
     }
 
     // Comutator „Vezi platforma ca”: schimbă doar ce se vede în pagină; drepturile reale rămân cele din baza de date.
+    // ===== Notificări pe telefon (serviciul pe școală) =====
+    // Telefonul se abonează prin aplicația instalabilă (sw.js); serverul trimite dimineața serviciul zilei. Fără abonare, mesajul vine pe e-mail.
+    const eIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const eInstalata = () => !!(window.navigator.standalone || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches));
+    const bytesDinB64 = (b) => { const p = "=".repeat((4 - (b.length % 4)) % 4), r = atob((b + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
+    const b64DinBuf = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const notifTelSuportat = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    async function abonareCurenta() { try { const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch (e) { return null; } }
+    async function pregatesteNotifTelefon(areAngajat) {
+      const box = $("notif-tel"); if (!box) return;
+      const stare = $("nt-stare"), bA = $("nt-activeaza"), bP = $("nt-proba"), bO = $("nt-opreste");
+      if (!areAngajat) { box.classList.add("hidden"); return; }
+      box.classList.remove("hidden");
+      const arata = async (mesaj) => {
+        const supt = notifTelSuportat(), ab = supt ? await abonareCurenta() : null;
+        const refuzat = supt && Notification.permission === "denied";
+        bA.classList.toggle("hidden", !supt || !!ab || refuzat || (eIos() && !eInstalata())); bP.classList.toggle("hidden", !ab); bO.classList.toggle("hidden", !ab);
+        if (mesaj) stare.textContent = mesaj;
+        else if (!supt) stare.textContent = eIos() && !eInstalata() ? "Pe iPhone: apasă Partajează, apoi „Adaugă pe ecranul principal”, deschide aplicația de pe ecran și activează notificările de acolo. Până atunci primești serviciul pe e-mail." : "Acest browser nu permite notificări. Primești serviciul zilei pe e-mail.";
+        else if (eIos() && !eInstalata()) stare.textContent = "Pe iPhone: apasă Partajează, apoi „Adaugă pe ecranul principal”, deschide aplicația de pe ecran și activează notificările de acolo. Până atunci primești serviciul pe e-mail.";
+        else if (refuzat) stare.textContent = "Notificările sunt blocate în setările browserului pentru acest site. Primești serviciul pe e-mail.";
+        else if (ab) stare.textContent = "Active pe acest telefon: în zilele cu serviciu primești dimineața, la 7:00, pauzele și locul.";
+        else stare.textContent = "Primești dimineața, la 7:00, în zilele cu serviciu, pauzele și locul. Acum primești mesajul pe e-mail.";
+      };
+      if ("serviceWorker" in navigator) { try { await navigator.serviceWorker.register("sw.js"); } catch (e) { /* fără notificări */ } }
+      await arata();
+      bA.onclick = async () => {
+        bA.disabled = true;
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm !== "granted") return arata(perm === "denied" ? "Ai blocat notificările. Le poți permite din setările browserului pentru acest site." : "Notificările nu au fost activate.");
+          const reg = await navigator.serviceWorker.register("sw.js"); await navigator.serviceWorker.ready;
+          const { data: k, error: eK } = await db.functions.invoke("serviciu-notificari", { body: { actiune: "cheie" } });
+          if (eK || !k || !k.cheie) return arata("Cheia pentru notificări nu a putut fi încărcată. Încearcă din nou.");
+          const veche = await reg.pushManager.getSubscription(); if (veche) await veche.unsubscribe();
+          const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytesDinB64(k.cheie) });
+          const j = sub.toJSON();
+          const { error: eS } = await db.rpc("abonare_push", { p_endpoint: sub.endpoint, p_p256dh: (j.keys && j.keys.p256dh) || b64DinBuf(sub.getKey("p256dh")), p_auth: (j.keys && j.keys.auth) || b64DinBuf(sub.getKey("auth")), p_agent: navigator.userAgent.slice(0, 300) });
+          if (eS) { await sub.unsubscribe(); return arata("Abonarea nu a putut fi salvată. Încearcă din nou."); }
+          await arata("Gata: notificările sunt active pe acest telefon. Apasă „Trimite o probă” ca să verifici.");
+        } catch (e) { await arata("Notificările nu au putut fi activate pe acest telefon."); }
+        finally { bA.disabled = false; }
+      };
+      bP.onclick = async () => {
+        bP.disabled = true; stare.textContent = "Se trimite…";
+        const { data: r, error } = await db.functions.invoke("serviciu-notificari", { body: { actiune: "proba" } });
+        bP.disabled = false;
+        if (error || !r) return arata("Proba nu a putut fi trimisă. Încearcă din nou.");
+        arata(r.trimise > 0 ? "Proba a fost trimisă. Dacă nu apare în câteva secunde, verifică setările de notificări ale telefonului." : "Proba nu a ajuns" + (r.coduri && r.coduri.length ? " (cod " + r.coduri.join(", ") + ")" : "") + ". Dezactivează și activează din nou notificările.");
+      };
+      bO.onclick = async () => {
+        bO.disabled = true;
+        try { const sub = await abonareCurenta(); if (sub) { const ep = sub.endpoint; await sub.unsubscribe(); await db.from("push_abonari").delete().eq("endpoint", ep); } } catch (e) { /* oprit oricum pe telefon */ }
+        bO.disabled = false; arata("Notificările au fost dezactivate pe acest telefon. Primești serviciul zilei pe e-mail.");
+      };
+    }
     function pregatesteComutator() {
       const sel = $("activ-ca");
       let salvat = "";
@@ -8138,7 +8214,7 @@
       if (!sesiune) return arataLogin();
       const { data, error } = await db
         .from("profiluri")
-        .select("nume, roluri, activ, completat, sters_la")
+        .select("nume, roluri, activ, completat, sters_la, angajat_nume")
         .eq("id", sesiune.user.id)
         .maybeSingle();
 
@@ -8174,6 +8250,7 @@
       $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
       $("bar-email").textContent = sesiune.user.email; $("bar-functie").textContent = $("rol").textContent;
       pregatesteComutator();
+      pregatesteNotifTelefon(!!data.angajat_nume);
       let v = ""; try { v = sessionStorage.getItem("vedere") || ""; } catch (e) {}
       if (v === "administrare" && poatePontaj()) deschideAdministrare();
       else if (v && moduleleMele(euRoluri).includes(v) && MODULE[v] && MODULE[v].activ) deschideModul(v);
