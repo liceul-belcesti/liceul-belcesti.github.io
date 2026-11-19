@@ -7515,7 +7515,6 @@
       pag.appendChild(el("p", "po-nume", titlu));
       pag.appendChild(el("p", "po-sub", sub + (sub ? " · " : "") + "anul școlar " + c.a.denumire));
       noduri.forEach((n) => pag.appendChild(n));
-      pag.appendChild(el("p", "ts-nota", "Pauza 1–2 este între ora 1 și ora 2. Orele durează 50 de minute, cu pauze de 10 minute, începând cu ora 8:00."));
       fond.appendChild(pag); document.body.appendChild(fond); document.body.classList.add("ts-deschis");
       bX.addEventListener("click", inchideTiparServ);
       bP.addEventListener("click", () => { document.body.classList.add("tipar-serv"); const gata = () => { document.body.classList.remove("tipar-serv"); window.removeEventListener("afterprint", gata); }; window.addEventListener("afterprint", gata); window.print(); setTimeout(gata, 1500); });
