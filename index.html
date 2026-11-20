@@ -176,6 +176,8 @@
     .dt { position:relative; display:block; }
     .dt-in { color:transparent; }
     .dt-in::-webkit-datetime-edit { opacity:0; }
+    .dt-in::-webkit-date-and-time-value { opacity:0; }
+    input.dt-in.dt-in { color:transparent; -webkit-text-fill-color:transparent; }
     .dt-afis { position:absolute; left:15px; right:46px; top:0; bottom:0; display:flex; align-items:center; pointer-events:none; color:var(--text); font:inherit; overflow:hidden; white-space:nowrap; }
     .dt-afis.gol { color:var(--muted); }
     input:focus { outline:3px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color:var(--accent); }
@@ -208,6 +210,8 @@
       #acasa header.bar .name { flex:1 1 0; min-width:0; font-size:.95rem; padding-top:2px; }
       #acasa header.bar .name small { font-size:.68rem; }
       #acasa header.bar #bar-user { display:none; }
+      #acasa header.bar.cu-inapoi .name { display:none; }
+      #acasa header.bar.cu-inapoi .bar-dreapta { margin-left:auto; }
       #acasa header.bar button { min-height:36px; padding:6px 10px; font-size:.85rem; }
       #acasa header.bar .bar-dreapta { gap:6px; flex:0 1 auto; }
       #acasa header.bar .refresh, #acasa header.bar .clopot { padding:4px 9px; }
@@ -8535,6 +8539,7 @@
         let gasit = false;
         lista.forEach((x) => { const arata = !gasit && vizibil(x.p); if (arata) gasit = true; x.b.style.display = arata ? "" : "none"; });
         $("bar-pontaj").classList.toggle("hidden", !vizibil($("pontaj")) || vizibil($("administrare")));
+        const bara = document.querySelector("#acasa header.bar"); if (bara) bara.classList.toggle("cu-inapoi", gasit);
       }
       // Săgeata „înapoi” a browserului merge la ecranul anterior din platformă, nu la pagina Google.
       const cheie = () => { const x = lista.find((y) => vizibil(y.p)); return x ? x.b.id : ""; };
