@@ -2780,7 +2780,7 @@
         const absOre = new Set(rez.filter((r) => r.ore.length).map((r) => r.id));
         return { orarZi: b.orar.filter((o) => Number(o.zi) === w), oreProf, absOre, numeSv: b.nume, oreOrar, oreAbsenti, oreAcop, prezenti, motive, sv, absenti: rez, neacop, supl, profCuOre, practica: dn.pract.map((p) => ({ clasa: p.clasa, coord: b.nume.get(p.angajat_id) || "" })).sort((x, y) => ordClasaOrar(x.clasa, y.clasa)) };
       };
-      let dataSel = aziD(), rezultat = null, sD = "", cheieDeschisa = "", vedere = "acum";
+      let dataSel = aziD(), rezultat = null, sD = "", cheieDeschisa = "", vedere = "azi";
       const incarca = async () => {
         const f = iso(dataSel), anId = anPentru(f), b = await baza(anId), dn = await dinamic(anId, f);
         sD = JSON.stringify([f, dn]);
