@@ -3042,14 +3042,33 @@
         msg.textContent = ""; zona.style.opacity = ""; deseneaza();
       };
       await seteaza(dataSel);
-      if (!window.__ozInt) window.__ozInt = setInterval(() => { try { const a = $("azi"); if (window.__ozAcum && a && !a.classList.contains("hidden") && document.visibilityState === "visible") window.__ozAcum(); } catch (e) { /* la următoarea încercare */ } }, 30000);
-      window.__ozRef = async () => {
+      const aziVizibil = () => { const a = $("azi"); return !!a && !a.classList.contains("hidden") && document.visibilityState === "visible"; };
+      const reimprospateazaDate = async () => {
         if (!zona.isConnected || zona.offsetParent === null) return;
         try {
           const f = iso(dataSel), anId = anPentru(f), b = await baza(anId), dn = await dinamic(anId, f);
           if (JSON.stringify([f, dn]) !== sD) { sD = JSON.stringify([f, dn]); rezultat = { f, b, dn, calc: calculeaza(f, ziSapt(dataSel) + 1, b, dn) }; deseneaza(); }
         } catch (e) { /* la următoarea încercare */ }
       };
+      window.__ozRef = reimprospateazaDate;
+      // „Acum” se actualizează la 30 de secunde și imediat ce revii în aplicație (telefonul oprește temporizatoarele cât timp aplicația e în fundal);
+      // la revenire și din 5 în 5 minute se citesc din nou și datele zilei, iar ecranul se redesenează doar dacă s-a schimbat ceva.
+      // Ziua afișată rămâne cea aleasă, dar dacă s-a schimbat data (peste miezul nopții) și se vedea „azi”, se trece pe noua zi.
+      window.__aziAcum = () => { try { if (aziVizibil() && window.__ozAcum) window.__ozAcum(); } catch (e) { /* la următoarea încercare */ } };
+      window.__aziDate = async () => {
+        if (!aziVizibil()) return;
+        if (vedere === "acum" && iso(dataSel) !== iso(aziD())) { seteaza(aziD()); return; }
+        await reimprospateazaDate(); window.__aziAcum();
+      };
+      clearInterval(window.__ozIntAzi); window.__ozIntAzi = setInterval(window.__aziAcum, 30000);
+      clearInterval(window.__ozIntAziDate); window.__ozIntAziDate = setInterval(() => window.__aziDate && window.__aziDate(), 300000);
+      if (!window.__aziListeners) {
+        window.__aziListeners = true;
+        const laRevenire = () => { if (window.__aziDate) window.__aziDate(); };
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) laRevenire(); });
+        window.addEventListener("focus", laRevenire);
+        window.addEventListener("pageshow", laRevenire);
+      }
     }
 
     // ---------- Cereri de învoire (profesor): cere, vezi răspunsul, anulează ----------
