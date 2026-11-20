@@ -124,9 +124,15 @@
     .alerta { display:block; width:100%; margin:0 0 16px; padding:14px 16px; min-height:48px; text-align:left; font-weight:700;
               color:#fff; background:var(--err); border:0; border-radius:12px; cursor:pointer; }
     .alerta.hidden { display:none; }
-    .notif-tel { margin:0 0 16px; padding:12px 14px; background:var(--card); border:1.5px solid var(--line); border-left:6px solid var(--accent); border-radius:12px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
+    .notif-tel { margin:0 0 12px; padding:8px 14px; background:var(--card); border:1.5px solid var(--line); border-left:6px solid var(--accent); border-radius:12px; }
     .notif-tel.hidden { display:none; }
-    .notif-tel .nt-text { flex:1 1 240px; display:flex; flex-direction:column; gap:2px; }
+    .notif-tel summary { display:flex; align-items:center; gap:4px 10px; flex-wrap:wrap; min-height:32px; cursor:pointer; list-style:none; }
+    .notif-tel summary::-webkit-details-marker { display:none; }
+    .notif-tel summary::after { content:"›"; margin-left:auto; font-size:1.3rem; line-height:1; color:var(--muted); transition:transform .15s; }
+    .notif-tel details[open] summary::after { transform:rotate(90deg); }
+    .notif-tel .nt-scurt { font-size:.85rem; color:var(--muted); font-weight:600; }
+    .notif-tel .nt-corp { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:8px; }
+    .notif-tel .nt-text { flex:1 1 100%; display:flex; flex-direction:column; gap:2px; }
     .notif-tel .nt-text span { font-size:.9rem; color:var(--muted); }
     .notif-tel .nt-opt { flex:1 1 100%; order:2; display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted); cursor:pointer; }
     .notif-tel .nt-opt b { color:var(--text); font-weight:600; }
@@ -196,11 +202,34 @@
            background:linear-gradient(90deg, var(--hero-a), var(--hero-b)); color:#fff; }
     .bar .name { font-weight:700; line-height:1.2; font-size:1rem; }
     .bar .name small { display:block; font-weight:400; opacity:.85; font-size:.78rem; }
+    @media (max-width:600px) {
+      .bar { padding:8px 12px; padding-top:max(8px, env(safe-area-inset-top)); gap:6px 10px; }
+      .bar .name { flex:1 1 0; min-width:0; font-size:.95rem; }
+      .bar .name small { font-size:.72rem; }
+      .bar #bar-user { display:none; }
+      .bar button { min-height:36px; padding:6px 12px; }
+    }
     .bar button { width:auto; min-height:40px; margin:0; padding:8px 14px; color:#fff; background:rgba(255,255,255,.16);
                   border:1px solid rgba(255,255,255,.4); font-size:.9rem; white-space:nowrap; flex-shrink:0; }
     .wrap { max-width:960px; margin:0 auto; padding:22px 16px max(32px, env(safe-area-inset-bottom)); }
     .hello { margin:0 0 4px; font-size:1.5rem; line-height:1.2; }
     .who { margin:0 0 6px; color:var(--muted); }
+    .hello-rand { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin:0 0 12px; }
+    .hello-rand .who { margin:0; font-size:.9rem; }
+    .hello-rand .role { padding:2px 10px; font-size:.8rem; }
+    #acasa > main.wrap { padding-top:14px; }
+    #acasa .hello { font-size:1.3rem; }
+    .ziua-mea { margin:0 0 12px; }
+    .ziua-mea #zm-corp { cursor:pointer; }
+    .zm-card { background:var(--card); border:1.5px solid var(--line); border-left:6px solid var(--accent); border-radius:12px; padding:10px 14px; }
+    .zm-cap { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; }
+    .zm-cap b { font-size:1.05rem; }
+    .zm-cap span { color:var(--muted); font-size:.85rem; font-weight:600; }
+    .zm-cap .zm-mai { margin-left:auto; color:var(--accent); font-weight:800; }
+    .zm-lista { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; }
+    .zm-lista li { display:flex; gap:8px; align-items:baseline; font-size:.95rem; line-height:1.35; }
+    .zm-lista li.zm-acum { font-weight:700; }
+    .zm-ico { flex:none; width:1.4em; text-align:center; }
     .role { display:inline-block; padding:3px 12px; border-radius:999px; background:var(--teal-100); color:var(--accent);
             font-weight:700; font-size:.85rem; }
     h3.sect { margin:26px 0 12px; font-size:1.05rem; }
@@ -1322,23 +1351,29 @@
     </section>
     <main class="wrap">
       <h1 class="hello">Bun venit, <span id="prenume"></span>!</h1>
-      <p class="who"><span id="cine"></span></p>
-      <span class="role" id="rol"></span>
+      <div class="hello-rand"><span class="role" id="rol"></span><p class="who"><span id="cine"></span></p></div>
       <div id="comutator" class="switch hidden">
         <label for="activ-ca">Vezi platforma ca:</label>
         <select id="activ-ca"></select>
       </div>
 
+      <section id="ziua-mea" class="ziua-mea hidden" aria-live="polite"><div id="zm-corp" class="orm" role="button" tabindex="0" aria-label="Ziua mea: deschide orarul complet"></div></section>
+
       <section id="notif-tel" class="notif-tel hidden" aria-live="polite">
-        <div class="nt-text"><b>📱 Notificări de dimineață pe telefon</b><span id="nt-stare"></span></div>
-        <label class="nt-opt"><input type="checkbox" id="nt-orar"> <span><b>Orarul zilei</b> — la 7:00, în zilele de școală în care ai ore</span></label>
-        <label class="nt-opt"><input type="checkbox" id="nt-serviciu"> <span><b>Serviciul pe școală</b> — la 7:00, în zilele în care ești de serviciu</span></label>
-        <label class="nt-opt nt-email"><input type="checkbox" id="nt-email"> <span>Dacă nu am notificările active pe telefon, trimite-mi pe e-mail ce am ales</span></label>
-        <div class="nt-butoane">
-          <button id="nt-activeaza" type="button">Activează notificările</button>
-          <button id="nt-proba" class="secondary hidden" type="button">Trimite o probă</button>
-          <button id="nt-opreste" class="secondary hidden" type="button">Dezactivează</button>
-        </div>
+        <details id="nt-det">
+          <summary><b>📱 Notificări de dimineață</b><span id="nt-scurt" class="nt-scurt"></span></summary>
+          <div class="nt-corp">
+            <div class="nt-text"><span id="nt-stare"></span></div>
+            <label class="nt-opt"><input type="checkbox" id="nt-orar"> <span><b>Orarul zilei</b> — la 7:00, în zilele de școală în care ai ore</span></label>
+            <label class="nt-opt"><input type="checkbox" id="nt-serviciu"> <span><b>Serviciul pe școală</b> — la 7:00, în zilele în care ești de serviciu</span></label>
+            <label class="nt-opt nt-email"><input type="checkbox" id="nt-email"> <span>Dacă nu am notificările active pe telefon, trimite-mi pe e-mail ce am ales</span></label>
+            <div class="nt-butoane">
+              <button id="nt-activeaza" type="button">Activează notificările</button>
+              <button id="nt-proba" class="secondary hidden" type="button">Trimite o probă</button>
+              <button id="nt-opreste" class="secondary hidden" type="button">Dezactivează</button>
+            </div>
+          </div>
+        </details>
       </section>
 
       <button id="alerta" class="alerta hidden" type="button"></button>
@@ -1649,6 +1684,32 @@
     // Telefonul se abonează prin aplicația instalabilă (sw.js); serverul trimite dimineața serviciul zilei. Fără abonare, mesajul vine pe e-mail.
     const eIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     const eInstalata = () => !!(window.navigator.standalone || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches));
+    // „Ziua mea”: rezumat scurt pe pagina principală (orele de azi, ce urmează, serviciul), pentru conturile legate de un angajat
+    let zmUltima = 0;
+    async function pregatesteZiuaMea(areAngajat) {
+      const sec = $("ziua-mea"), corp = $("zm-corp"); if (!sec || !corp) return;
+      if (!areAngajat) { sec.classList.add("hidden"); return; }
+      if (!corp.dataset.legat) {
+        corp.dataset.legat = "1";
+        corp.addEventListener("click", () => deschideOrarMeu());
+        corp.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); deschideOrarMeu(); } });
+        const lareintoarcere = () => { if (document.hidden || $("acasa").classList.contains("hidden")) return; if (Date.now() - zmUltima > 120000) pregatesteZiuaMea(true); else if (window.__zmRedesenat) window.__zmRedesenat(); };
+        document.addEventListener("visibilitychange", lareintoarcere); window.addEventListener("focus", lareintoarcere); window.addEventListener("pageshow", lareintoarcere);
+      }
+      try {
+        zmUltima = Date.now();
+        const [r1, r2, r3, r4] = await Promise.all([db.rpc("orar_propriu_disc"), db.rpc("serviciu_al_meu"), db.rpc("orar_calendar"), db.rpc("nume_angajat_propriu")]);
+        if (r1.error || !r1.data || !r1.data.length) { sec.classList.add("hidden"); return; }
+        const data = r1.data;
+        let sv = r2 && !r2.error && r2.data ? r2.data : [];
+        const idAnSv = (sv.find((x) => x.denumire === anulScolarZilei()) || sv[0] || {}).an_id; sv = sv.filter((x) => x.an_id === idAnSv);
+        const cal = r3 && !r3.error && r3.data && r3.data.structura ? r3.data : { structura: [], libere: [], practica: [] };
+        const ani = []; data.forEach((r) => { if (!ani.find((x) => x.id === r.an_id)) ani.push({ id: r.an_id, den: r.denumire }); });
+        corp.replaceChildren();
+        randeazaOrarModern({ zona: corp, data, numeProf: r4 && r4.data, cal, ani, tipar: false, sv, compact: true });
+        sec.classList.remove("hidden");
+      } catch (e) { /* rămâne ce se vedea sau ascuns */ }
+    }
     const bytesDinB64 = (b) => { const p = "=".repeat((4 - (b.length % 4)) % 4), r = atob((b + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
     const b64DinBuf = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     const notifTelSuportat = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -1668,6 +1729,7 @@
         const refuzat = supt && Notification.permission === "denied";
         bA.classList.toggle("hidden", !supt || !!ab || refuzat || (eIos() && !eInstalata())); bP.classList.toggle("hidden", !ab); bO.classList.toggle("hidden", !ab);
         cO.checked = setari.orar; cS.checked = setari.serviciu; cE.checked = setari.email;
+        const sc = alese(); $("nt-scurt").textContent = !sc ? "nu ai ales nimic" : sc.charAt(0).toUpperCase() + sc.slice(1) + (supt && !ab ? " · neactivat pe telefon" : "");
         if (mesaj) stare.textContent = mesaj;
         else if (!supt) stare.textContent = eIos() && !eInstalata() ? ios + faraTel() : "Acest browser nu permite notificări." + (!alese() ? " Alege mai jos ce vrei să primești." : setari.email ? " Primești pe e-mail ce ai ales." : " Nu primești nicio notificare.");
         else if (eIos() && !eInstalata()) stare.textContent = ios + faraTel();
@@ -2446,7 +2508,7 @@
     }
     // Vedere modernă (zi / săptămână, calendar, practică): folosită la „Orarul meu” și la ecranul de orar al administratorului.
     // data: rânduri { an_id, zi, ora, clasa, scurt, complet, eticheta?, text?, grup? }
-    function randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar, etGrup, sv }) {
+    function randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar, etGrup, sv, compact }) {
       const ZL = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const ZL7 = [...ZL, "Sâmbătă", "Duminică"];
       const LUNI_RO = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
@@ -2515,6 +2577,31 @@
         const claseMele = new Set(ore.map((r) => r.clasa));
         const oreZi = (d) => { const w = ziSapt(d); return w > 4 ? [] : ore.filter((r) => r.zi === w + 1).sort((x, y) => x.ora - y.ora); };
         const tit = (r) => r.complet || "Ora " + r.ora;
+        // ---- Rezumat scurt al zilei (pagina principală): fără navigare, fără linia timpului
+        if (compact) {
+          const info = infoZi(dataSel, claseMele), prac = new Set(info.practica.map((x) => x.clasa));
+          const lista = info.suspendat ? [] : oreZi(dataSel), active = lista.filter((r) => !prac.has(r.clasa));
+          const svR = svZi(dataSel, info), svP = svPauze(svR), svS = svSchimburi(svR);
+          const cur = active.find((r) => mN >= stOra(r) && mN < stOra(r) + 50), urm = cur ? null : active.find((r) => stOra(r) > mN);
+          const cd = el("div", "zm-card"), cp = el("div", "zm-cap");
+          cp.append(el("b", "", "Ziua mea"), el("span", "", textData(dataSel) + (info.modul ? " · " + info.modul : "")), el("span", "zm-mai", "Orarul complet ›")); cd.appendChild(cp);
+          const ul = el("ul", "zm-lista");
+          const li = (ico, tx, cls) => { const x = el("li", cls || ""); x.append(el("span", "zm-ico", ico), el("span", "", tx)); ul.appendChild(x); };
+          const detOra = (r) => (r.eticheta || r.clasa) + (r.text || r.complet ? " · " + (r.text || r.complet) : "");
+          if (info.suspendat) li("📅", info.titlu + (info.sub ? " · " + info.sub : ""));
+          else if (!active.length) li("📚", "Nicio oră de predat azi");
+          else {
+            li("📚", oraS(active.length) + " · de la " + interval(active[0].ora).split("–")[0] + " până la " + interval(active[active.length - 1].ora).split("–")[1]);
+            if (cur) li("▶️", "Acum: ora " + cur.ora + " · " + detOra(cur) + " · până la " + hm(stOra(cur) + 50), "zm-acum");
+            else if (urm) li("⏭️", "Urmează: ora " + urm.ora + ", la " + hm(stOra(urm)) + " · " + detOra(urm));
+            else li("✅", "Orele de azi s-au încheiat");
+          }
+          svS.forEach((x) => li("🛎️", "Serviciu pe școală · " + x.text + (x.loc ? " · " + x.loc : "")));
+          if (svP.length) li("🛎️", "Serviciu pe școală · " + (svP.length === 1 ? "pauza " : "pauzele ") + svP.map((g) => g.pauza + "–" + (g.pauza + 1) + " (" + hm(stPauza(g.pauza)) + ")").join(", ") + (svP.some((g) => g.locuri.length) ? " · " + [...new Set(svP.flatMap((g) => g.locuri))].join(", ") : ""));
+          const prAz = info.practica.filter((x) => lista.some((r) => r.clasa === x.clasa) || x.al_meu);
+          if (prAz.length) li("🧰", "Practică: " + (prAz.length === 1 ? "clasa " : "clasele ") + prAz.map((x) => x.clasa).join(", "));
+          cd.appendChild(ul); zona.appendChild(cd); return;
+        }
         // ---- Comutator Ziua / Săptămâna
         const comut = el("div", "oz-comut");
         [["zile", "Ziua"], ["sapt", "Săptămâna"]].forEach(([k, et]) => {
@@ -2645,7 +2732,9 @@
           if (w) ch.forEach((x) => { x.style.minWidth = Math.ceil(w) + "px"; x.style.textAlign = "center"; x.style.boxSizing = "border-box"; });
         });
       };
-      clearInterval(window.__ozInt); window.__ozInt = setInterval(() => { const n = new Date(); if (!document.hidden && zona.isConnected && zona.offsetParent !== null && iso(n) === iso(dataSel)) deseneaza(); }, 60000);
+      const numeInt = compact ? "__ozIntZm" : "__ozInt";
+      if (compact) window.__zmRedesenat = deseneaza;
+      clearInterval(window[numeInt]); window[numeInt] = setInterval(() => { const n = new Date(); if (!document.hidden && zona.isConnected && zona.offsetParent !== null && iso(n) === iso(dataSel)) deseneaza(); }, 60000);
       deseneaza();
       return (nd, nc) => { if (nd) data = nd; if (nc) cal = nc; deseneaza(); }; // actualizare fără reîncărcarea paginii
     }
@@ -8585,6 +8674,7 @@
       $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
       $("bar-email").textContent = sesiune.user.email; $("bar-functie").textContent = $("rol").textContent;
       pregatesteComutator();
+      pregatesteZiuaMea(!!data.angajat_nume);
       pregatesteNotifTelefon(!!data.angajat_nume);
       let v = ""; try { v = sessionStorage.getItem("vedere") || ""; } catch (e) {}
       if (v === "administrare" && poatePontaj()) deschideAdministrare();
