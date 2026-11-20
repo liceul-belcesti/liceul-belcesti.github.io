@@ -2776,7 +2776,7 @@
       const oraS = (n) => n + (n === 1 ? " oră" : " ore");
       const cer = async (p) => { const r = await p; if (r.error) throw r.error; return r.data; };
       const ABS = ["CO", "CM", "BP", "AM", "M", "CCC", "I", "O", "N"];
-      const MOTIV = { CO: "Concediu de odihnă", CM: "Concediu medical", BP: "Boală profesională", AM: "Accident de muncă", M: "Maternitate", CCC: "Creșterea copilului", I: "Învoire", O: "Obligații cetățenești", N: "Absență nemotivată" };
+      const MOTIV = { CO: "Concediu de odihnă", CM: "Concediu medical", BP: "Boală profesională", AM: "Accident de muncă", M: "Maternitate", CCC: "Creșterea copilului", I: "Învoire", Ip: "Învoire la câteva ore", O: "Obligații cetățenești", N: "Absență nemotivată" };
       let ani, struct, libere, disc;
       try {
         [ani, struct, libere, disc] = await Promise.all([
@@ -2819,28 +2819,32 @@
         bazaAni.set(anId, b); return b;
       };
       const dinamic = async (anId, f) => {
-        const [manual, inloc, ccc, pract, svPr] = await Promise.all([
+        const [manual, inloc, ccc, pract, svPr, plan] = await Promise.all([
           toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare").eq("zi", f).in("valoare", ABS)),
           toate(() => db.from("pontaj_inlocuiri").select("norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore, ore_clase, partial").is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("de_la").order("id")),
           toate(() => db.from("concedii_lungi").select("angajat_id, tip, de_la, pana_la, inlocuitor_angajat_id, toate_orele, clase").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f)),
           toate(() => db.from("practica_clase").select("clasa, angajat_id, de_la, pana_la").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("clasa")),
           // cine preia serviciul celor învoiți (din cererile aprobate); fără această funcție, graficul rămâne neschimbat
-          (async () => { try { const r = await db.rpc("serviciu_preluat", { p_data: f }); return r.error ? [] : (r.data || []); } catch (e) { return []; } })()
+          (async () => { try { const r = await db.rpc("serviciu_preluat", { p_data: f }); return r.error ? [] : (r.data || []); } catch (e) { return []; } })(),
+          // orele schimbate prin învoiri aprobate (inclusiv cele la câteva ore, care nu trec prin concedii)
+          (async () => { try { const r = await db.rpc("plan_zi", { p_data: f }); return r.error ? [] : (r.data || []); } catch (e) { return []; } })()
         ]);
-        return { manual, inloc, ccc, pract, svPr };
+        return { manual, inloc, ccc, pract, svPr, plan };
       };
       // Calculul zilei: cine lipsește, ce ore ale lor sunt acoperite și de cine
       const calculeaza = (f, w, b, dn) => {
         const absent = new Map(); // angajat_id -> { motive:Set, acoperiri:[] }
-        const ia = (id) => { if (!absent.has(id)) absent.set(id, { motive: new Set(), inloc: [], ccc: [] }); return absent.get(id); };
+        const ia = (id) => { if (!absent.has(id)) absent.set(id, { motive: new Set(), inloc: [], ccc: [], plan: [], doarPlan: false }); return absent.get(id); };
         dn.manual.forEach((x) => { const a = b.dePeNorma.get(x.norma_id); if (a) ia(a).motive.add(x.valoare); });
         dn.inloc.forEach((q) => { if (q.partial) return; const a = b.dePeNorma.get(q.norma_id); if (a) { const r = ia(a); r.motive.add(q.tip); r.inloc.push(q); } });
         dn.ccc.forEach((c) => { const r = ia(c.angajat_id); r.motive.add(c.tip || "CCC"); r.ccc.push(c); });
+        // învoiri aprobate la câteva ore: cine nu e absent toată ziua lipsește doar la orele alese
+        (dn.plan || []).forEach((p) => { if (!b.nume.has(p.absent_id)) return; const r = ia(p.absent_id); if (!r.motive.size) { r.motive.add("Ip"); r.doarPlan = true; } r.plan.push(p); });
         const practica = new Set(dn.pract.map((p) => p.clasa));
         const numeInl = (id, nm) => (id && b.nume.get(id)) || nm || "alt coleg";
         const rez = [], supl = new Map();
         absent.forEach((r, id) => {
-          const ore = b.orar.filter((o) => o.angajat_id === id && Number(o.zi) === w).sort((x, y) => x.ora - y.ora).map((o) => { const d = dm.get(o.disciplina_id); return { ora: Number(o.ora), clasa: o.clasa, disc: d ? d.complet : "", status: practica.has(o.clasa) ? "practica" : "neacoperita", de: "" }; });
+          const ore = b.orar.filter((o) => o.angajat_id === id && Number(o.zi) === w && (!r.doarPlan || r.plan.some((p) => Number(p.ora) === Number(o.ora) && p.clasa === o.clasa))).sort((x, y) => x.ora - y.ora).map((o) => { const d = dm.get(o.disciplina_id); return { ora: Number(o.ora), clasa: o.clasa, disc: d ? d.complet : "", status: practica.has(o.clasa) ? "practica" : "neacoperita", de: "" }; });
           const liber = () => ore.filter((o) => o.status === "neacoperita");
           r.inloc.forEach((q) => {
             const nm = numeInl(q.inlocuitor_angajat_id, q.inlocuitor_nume), oc = q.ore_clase && q.ore_clase[f];
@@ -2851,6 +2855,11 @@
             const nm = numeInl(c.inlocuitor_angajat_id, "");
             if (!c.inlocuitor_angajat_id) return;
             liber().forEach((o) => { if (c.toate_orele || (c.clase || []).includes(o.clasa)) { o.status = "acoperita"; o.de = nm; } });
+          });
+          r.plan.forEach((p) => {
+            const o = ore.find((y) => y.ora === Number(p.ora) && y.clasa === p.clasa && y.status === "neacoperita"); if (!o) return;
+            if (p.mod === "inlocuitor" && p.inlocuitor) { o.status = "acoperita"; o.de = p.inlocuitor; }
+            else if (p.mod === "vine" || p.mod === "pleaca") { o.status = "clasa"; o.de = p.mod === "vine" ? "clasa vine de la ora " + p.de_la_ora : "clasa pleacă acasă de la ora " + p.de_la_ora; }
           });
           ore.filter((o) => o.status === "acoperita").forEach((o) => { if (!supl.has(o.de)) supl.set(o.de, []); supl.get(o.de).push({ ora: o.ora, clasa: o.clasa, pentru: b.nume.get(id) || "?" }); });
           rez.push({ id, nume: b.nume.get(id) || "?", motive: [...r.motive], ore });
@@ -3015,6 +3024,7 @@
               const r = el("div", "az-ora"); r.appendChild(el("span", "oz-clasa mic", o.clasa));
               if (practicaSet.has(o.clasa)) { prac++; r.append(el("b", "", tit), el("span", "az-disc", disc), el("span", "az-tag pr", "clasa este la practică")); }
               else if (ab && ab.o.status === "acoperita") { acop++; r.append(el("b", "", ab.o.de), el("span", "az-disc", disc + " · în locul lui " + tit), el("span", "az-tag ok", "suplinește")); }
+              else if (ab && ab.o.status === "clasa") { r.append(el("b", "", tit), el("span", "az-disc", disc), el("span", "az-tag pr", ab.o.de)); }
               else if (ab && ab.o.status === "neacoperita") { neacop++; r.append(el("b", "", tit), el("span", "az-disc", disc), el("span", "az-tag rau", "neacoperită")); }
               else r.append(el("b", "", tit), el("span", "az-disc", disc));
               return r;
@@ -3068,7 +3078,7 @@
         const prez = [...c.oreProf].filter(([id]) => !c.absOre.has(id)).map(([id, n]) => [c.numeSv.get(id) || "?", n]).sort((x, y) => x[0].localeCompare(y[0], "ro"));
         tile(g2, "prezenti", c.prezenti, "Profesori prezenți", "", () => card("Profesori prezenți", nPers(prez.length), prez.map(([nm, n]) => linie(nm, oraS(n)))));
         tile(g2, "oreorar", c.oreOrar, "Ore în orar", "", () => card("Ore în orar, pe profesori", oraS(c.oreOrar), [...c.oreProf].map(([id, n]) => [c.numeSv.get(id) || "?", n, id]).sort((x, y) => x[0].localeCompare(y[0], "ro")).map(([nm, n, id]) => linie(nm, oraS(n), c.absOre.has(id) ? el("span", "az-tag rau", "lipsește") : null))));
-        tile(g2, "oreabs", c.oreAbsenti, "Ore ale celor care lipsesc", c.oreAbsenti ? "att" : "", () => card("Ore ale celor care lipsesc", oraS(c.oreAbsenti), c.absenti.flatMap((r) => r.ore.map((o) => rdOra(o, el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora + " · " + r.nume), o.status === "acoperita" ? el("span", "az-tag ok", "suplinește " + o.de) : o.status === "practica" ? el("span", "az-tag pr", "clasa este la practică") : el("span", "az-tag rau", "neacoperită"))))));
+        tile(g2, "oreabs", c.oreAbsenti, "Ore ale celor care lipsesc", c.oreAbsenti ? "att" : "", () => card("Ore ale celor care lipsesc", oraS(c.oreAbsenti), c.absenti.flatMap((r) => r.ore.map((o) => rdOra(o, el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora + " · " + r.nume), o.status === "acoperita" ? el("span", "az-tag ok", "suplinește " + o.de) : o.status === "practica" ? el("span", "az-tag pr", "clasa este la practică") : o.status === "clasa" ? el("span", "az-tag pr", o.de) : el("span", "az-tag rau", "neacoperită"))))));
         tile(g2, "oreacop", c.oreAcop, "Ore acoperite prin suplinire", c.oreAcop ? "bun" : "", () => card("Ore acoperite prin suplinire", oraS(c.oreAcop), [...c.supl].flatMap(([nm, l]) => l.map((o) => ({ ...o, nm }))).sort((x, y) => x.ora - y.ora || ordClasaOrar(x.clasa, y.clasa)).map((o) => rdOra(o, el("span", "az-disc", "în locul lui " + o.pentru), el("span", "az-tag ok", "suplinește " + o.nm)))));
         zona.append(g2.st);
         if (c.motive.size) {
@@ -3105,7 +3115,7 @@
           c.absenti.forEach((r) => {
             const k = el("div", "az-card"); const cp = el("div", "az-cap"); cp.append(el("b", "", r.nume), el("span", "az-motiv", ET(r))); k.appendChild(cp);
             if (!r.ore.length) k.appendChild(el("p", "az-nota", "Nu are ore în această zi."));
-            r.ore.forEach((o) => { const tg = o.status === "acoperita" ? el("span", "az-tag ok", "suplinește " + o.de) : o.status === "practica" ? el("span", "az-tag pr", "clasa este la practică") : el("span", "az-tag rau", "neacoperită"); k.appendChild(ora(o, el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora))); k.lastChild.appendChild(tg); });
+            r.ore.forEach((o) => { const tg = o.status === "acoperita" ? el("span", "az-tag ok", "suplinește " + o.de) : o.status === "practica" ? el("span", "az-tag pr", "clasa este la practică") : o.status === "clasa" ? el("span", "az-tag pr", o.de) : el("span", "az-tag rau", "neacoperită"); k.appendChild(ora(o, el("span", "az-disc", (o.disc ? o.disc + " · " : "") + "ora " + o.ora))); k.lastChild.appendChild(tg); });
             zona.appendChild(k);
           });
         }
