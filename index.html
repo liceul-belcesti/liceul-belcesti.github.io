@@ -3332,6 +3332,7 @@
             const { error } = await db.rpc("cerere_invoire_decide", { p_id: c.id, p_aproba: aproba, p_nota: nota || null });
             if (error) { await reincarca(error.message || "Decizia nu a putut fi salvată."); return; }
             db.functions.invoke("trimite-decizie-email", { body: { cerere_id: c.id } }).catch(() => {});
+            if (aproba) db.functions.invoke("serviciu-notificari", { body: { actiune: "preluari", cerere_id: c.id } }).catch(() => {}); // cine preia serviciul pe școală este anunțat
             await reincarca(aproba ? "Cererea a fost aprobată." : "Cererea a fost respinsă.", true);
           };
           ap.addEventListener("click", () => { if (confirm("Aprobi cererea de învoire a lui " + c.solicitant + "?" + (asteapta ? "\n\nNu toți înlocuitorii propuși au acceptat." : ""))) decide(true, null); });
@@ -3426,6 +3427,7 @@
           const { error } = await db.rpc("cerere_invoire_decide", { p_id: c.id, p_aproba: aproba, p_nota: nota || null });
           if (error) { await reface(error.message || "Decizia nu a putut fi salvată."); return; }
           db.functions.invoke("trimite-decizie-email", { body: { cerere_id: c.id } }).catch(() => {});
+          if (aproba) db.functions.invoke("serviciu-notificari", { body: { actiune: "preluari", cerere_id: c.id } }).catch(() => {}); // cine preia serviciul pe școală este anunțat
           await reface(aproba ? "Cererea a fost aprobată." : "Cererea a fost respinsă.", true);
         };
         ap.addEventListener("click", () => { if (confirm("Aprobi cererea de învoire a lui " + c.angajat + "?" + (asteapta ? "\n\nNu toți înlocuitorii propuși au acceptat." : ""))) decide(true, null); });
