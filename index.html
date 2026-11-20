@@ -203,11 +203,14 @@
     .bar .name { font-weight:700; line-height:1.2; font-size:1rem; }
     .bar .name small { display:block; font-weight:400; opacity:.85; font-size:.78rem; }
     @media (max-width:600px) {
-      .bar { padding:8px 12px; padding-top:max(8px, env(safe-area-inset-top)); gap:6px 10px; }
-      .bar .name { flex:1 1 0; min-width:0; font-size:.95rem; }
-      .bar .name small { font-size:.72rem; }
-      .bar #bar-user { display:none; }
-      .bar button { min-height:36px; padding:6px 12px; }
+      #acasa header.bar { padding:8px 12px; padding-top:max(8px, env(safe-area-inset-top)); gap:6px 10px; }
+      #acasa header.bar { align-items:flex-start; }
+      #acasa header.bar .name { flex:1 1 0; min-width:0; font-size:.95rem; padding-top:2px; }
+      #acasa header.bar .name small { font-size:.68rem; }
+      #acasa header.bar #bar-user { display:none; }
+      #acasa header.bar button { min-height:36px; padding:6px 10px; font-size:.85rem; }
+      #acasa header.bar .bar-dreapta { gap:6px; flex:0 1 auto; }
+      #acasa header.bar .refresh, #acasa header.bar .clopot { padding:4px 9px; }
     }
     .bar button { width:auto; min-height:40px; margin:0; padding:8px 14px; color:#fff; background:rgba(255,255,255,.16);
                   border:1px solid rgba(255,255,255,.4); font-size:.9rem; white-space:nowrap; flex-shrink:0; }
@@ -394,6 +397,9 @@
     .bar .bar-dreapta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
     .bar .clopot { position:relative; width:auto; min-height:38px; margin:0; padding:4px 12px; font-size:1.15rem; background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); }
     .bar .clopot.hidden { display:none; }
+    .bar .refresh { width:auto; min-height:38px; margin:0; padding:4px 12px; font-size:1.25rem; line-height:1; background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.7); }
+    .bar .refresh.se-roteste { animation:rot-refresh .8s linear infinite; }
+    @keyframes rot-refresh { to { transform:rotate(360deg); } }
     .bar .clopot-nr { position:absolute; top:-7px; right:-7px; min-width:20px; height:20px; padding:0 5px; border-radius:10px; background:#d92d20; color:#fff; font-size:.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 2px #0e7c86; }
     .bar .clopot-nr.hidden { display:none; }
     .clopot-meniu { position:fixed; z-index:50; background:var(--card); color:var(--text); border:1.5px solid var(--line); border-radius:14px; box-shadow:0 6px 20px rgba(0,0,0,.25); padding:6px; display:flex; flex-direction:column; gap:4px; min-width:220px; }
@@ -1333,6 +1339,7 @@
       <div id="bar-inapoi"></div>
       <div class="name">Spațiul virtual al școlii<small>Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești</small></div>
       <div class="bar-dreapta">
+        <button id="btn-refresh" class="refresh" type="button" aria-label="Reîmprospătează pagina" title="Reîmprospătează pagina">↻</button>
         <button id="clopot" class="clopot hidden" type="button" aria-label="Anunțuri noi">🔔<span id="clopot-nr" class="clopot-nr hidden"></span></button>
         <button id="btn-ajutor" class="hidden" type="button">💬 Ajutor</button>
         <button id="btn-admin" class="hidden" type="button">⚙ Administrare</button>
@@ -3163,6 +3170,8 @@
     // ---------- Cereri de învoire (profesor): cere, vezi răspunsul, anulează ----------
     // Evaluare: deocamdată arată clasele și disciplinele profesorului (din orarul lui, anul școlar curent).
     $("inapoi-evaluare").addEventListener("click", arataPrincipal);
+    // Buton de reîmprospătare: pe iPhone, în aplicația de pe ecran, nu există tragere în jos pentru reîncărcare
+    $("btn-refresh").addEventListener("click", () => { $("btn-refresh").classList.add("se-roteste"); setTimeout(() => location.reload(), 150); });
     async function deschideEvaluare() {
       memoreazaVedere("evaluare");
       const fd = (z) => z.split("-").reverse().join("/");
