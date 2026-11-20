@@ -215,6 +215,16 @@
       #acasa header.bar button { min-height:36px; padding:6px 10px; font-size:.85rem; }
       #acasa header.bar .bar-dreapta { gap:6px; flex:0 1 auto; }
       #acasa header.bar .refresh, #acasa header.bar .clopot { padding:4px 9px; }
+      /* tot antetul pe un singur rând: titlul se taie cu „…”, butoanele devin iconițe */
+      #acasa header.bar { flex-wrap:nowrap; align-items:center; }
+      #acasa header.bar .name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-top:0; }
+      #acasa header.bar .name small { display:none; }
+      #acasa header.bar .bar-dreapta { flex-wrap:nowrap; flex:none; gap:4px; }
+      #acasa header.bar #btn-ajutor, #acasa header.bar #btn-admin, #acasa header.bar #iesire, #acasa header.bar #btn-pco { font-size:0; width:34px; min-width:34px; padding:0; text-align:center; line-height:1; }
+      #acasa header.bar #btn-ajutor::before { content:"💬"; font-size:1.05rem; }
+      #acasa header.bar #btn-admin::before { content:"⚙"; font-size:1.15rem; }
+      #acasa header.bar #iesire::before { content:"🚪"; font-size:1.05rem; }
+      #acasa header.bar #btn-pco::before { content:"💶"; font-size:1.05rem; }
     }
     .bar button { width:auto; min-height:40px; margin:0; padding:8px 14px; color:#fff; background:rgba(255,255,255,.16);
                   border:1px solid rgba(255,255,255,.4); font-size:.9rem; white-space:nowrap; flex-shrink:0; }
@@ -1351,13 +1361,13 @@
       <div class="bar-dreapta">
         <button id="btn-refresh" class="refresh" type="button" aria-label="Reîmprospătează pagina" title="Reîmprospătează pagina">↻</button>
         <button id="clopot" class="clopot hidden" type="button" aria-label="Anunțuri noi">🔔<span id="clopot-nr" class="clopot-nr hidden"></span></button>
-        <button id="btn-ajutor" class="hidden" type="button">💬 Ajutor</button>
-        <button id="btn-admin" class="hidden" type="button">⚙ Administrare</button>
+        <button id="btn-ajutor" class="hidden" type="button" aria-label="Ajutor" title="Ajutor">💬 Ajutor</button>
+        <button id="btn-admin" class="hidden" type="button" aria-label="Administrare" title="Administrare">⚙ Administrare</button>
         <div id="bar-pontaj" class="hidden">
-          <button id="btn-pco" class="secondary" type="button">Plata cu ora</button>
+          <button id="btn-pco" class="secondary" type="button" aria-label="Plata cu ora" title="Plata cu ora">Plata cu ora</button>
         </div>
         <div id="bar-user" class="bar-user"><span id="bar-email"></span><small id="bar-functie"></small></div>
-        <button id="iesire" type="button">Ieși din cont</button>
+        <button id="iesire" type="button" aria-label="Ieși din cont" title="Ieși din cont">Ieși din cont</button>
       </div>
     </header>
     <section id="ajutor" hidden role="dialog" aria-label="Ajutor">
