@@ -11,6 +11,8 @@ self.addEventListener("push", (e) => {
     icon: "icon-192.png",
     tag: d.eticheta || undefined,
     renotify: false,
+    requireInteraction: true,
+    vibrate: [200, 100, 200],
     data: { url: d.url || "/" }
   }));
 });
