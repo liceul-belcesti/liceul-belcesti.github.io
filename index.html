@@ -228,14 +228,14 @@
     #acasa .hello { font-size:1.3rem; }
     .ziua-mea { margin:0 0 12px; }
     .ziua-mea #zm-corp { cursor:pointer; }
-    .zm-card { background:var(--card); border:1.5px solid var(--line); border-left:6px solid var(--accent); border-radius:12px; padding:10px 14px; }
-    .zm-cap { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; }
-    .zm-cap b { font-size:1.05rem; }
-    .zm-cap span { color:var(--muted); font-size:.85rem; font-weight:600; }
-    .zm-cap .zm-mai { margin-left:auto; color:var(--accent); font-weight:800; }
-    .zm-lista { list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:4px; }
-    .zm-lista li { display:flex; gap:8px; align-items:baseline; font-size:.95rem; line-height:1.35; }
-    .zm-lista li.zm-acum { font-weight:700; }
+    .zm-card { background:var(--card); border:1.5px solid color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(6,78,87,.16); }
+    .zm-cap { display:flex; flex-wrap:wrap; align-items:center; gap:2px 10px; padding:10px 14px; background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 78%, #000) 0%, var(--accent) 100%); color:#fff; }
+    .zm-cap b { font-size:1.15rem; color:#fff; }
+    .zm-cap span { color:rgba(255,255,255,.9); font-size:.85rem; font-weight:600; }
+    .zm-cap .zm-mai { margin-left:auto; color:#fff; font-weight:800; background:rgba(255,255,255,.2); padding:3px 10px; border-radius:999px; }
+    .zm-lista { list-style:none; margin:0; padding:10px 14px 12px; display:flex; flex-direction:column; gap:6px; }
+    .zm-lista li { display:flex; gap:8px; align-items:baseline; font-size:1rem; line-height:1.35; }
+    .zm-lista li.zm-acum { font-weight:700; background:color-mix(in srgb, var(--accent) 12%, transparent); border-radius:8px; padding:5px 8px; margin:0 -8px; }
     .zm-ico { flex:none; width:1.4em; text-align:center; }
     .role { display:inline-block; padding:3px 12px; border-radius:999px; background:var(--teal-100); color:var(--accent);
             font-weight:700; font-size:.85rem; }
@@ -253,6 +253,12 @@
     .tile .d { color:var(--accent); font-size:.9rem; line-height:1.4; }
     .tile .soon { position:absolute; bottom:8px; right:8px; padding:2px 8px; border-radius:999px; font-size:.7rem; font-weight:700;
                   background:var(--card); color:var(--accent); }
+    .tile.mare { grid-column:1 / -1; order:-1; min-height:112px; align-items:center; border-radius:14px; border-color:var(--accent);
+                 background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 78%, #000) 0%, var(--accent) 100%); box-shadow:0 4px 14px rgba(6,78,87,.28); color:#fff; }
+    .tile.mare .ico { width:72px; height:72px; font-size:3rem; background:rgba(255,255,255,.18); border-radius:16px; }
+    .tile.mare .t { font-size:1.35rem; color:#fff; }
+    .tile.mare .d { color:rgba(255,255,255,.92); }
+    .tile.mare::after { content:"Deschide ›"; position:absolute; right:16px; bottom:10px; font-weight:800; font-size:.9rem; color:#fff; }
     .tile.off { opacity:.85; }
     .tile.on { cursor:pointer; border-color:var(--accent); }
     .tile.on:hover, .tile.on:focus-visible { box-shadow:var(--shadow); outline:none; border-color:var(--accent); }
@@ -1368,8 +1374,6 @@
         <select id="activ-ca"></select>
       </div>
 
-      <section id="ziua-mea" class="ziua-mea hidden" aria-live="polite"><div id="zm-corp" class="orm" role="button" tabindex="0" aria-label="Ziua mea: deschide orarul complet"></div></section>
-
       <section id="notif-tel" class="notif-tel hidden" aria-live="polite">
         <details id="nt-det">
           <summary><b>📱 Notificări de dimineață</b><span id="nt-scurt" class="nt-scurt"></span></summary>
@@ -1386,6 +1390,9 @@
           </div>
         </details>
       </section>
+
+      <section id="ziua-mea" class="ziua-mea hidden" aria-live="polite"><div id="zm-corp" class="orm" role="button" tabindex="0" aria-label="Ziua mea: deschide orarul complet"></div></section>
+
 
       <button id="alerta" class="alerta hidden" type="button"></button>
       <button id="alerta-copie" class="alerta hidden" type="button"></button>
@@ -1821,7 +1828,7 @@
       moduleleMele(roluri).forEach((cheie) => {
         const m = MODULE[cheie];
         const c = document.createElement("div");
-        c.className = m.activ ? "tile on" : "tile off";
+        c.className = (m.activ ? "tile on" : "tile off") + (cheie === "azi" ? " mare" : "");
         const soon = document.createElement("span"); soon.className = "soon"; soon.textContent = "În curând";
         if (m.activ) {
           c.setAttribute("role", "button"); c.tabIndex = 0;
@@ -2595,7 +2602,7 @@
           const svR = svZi(dataSel, info), svP = svPauze(svR), svS = svSchimburi(svR);
           const cur = active.find((r) => mN >= stOra(r) && mN < stOra(r) + 50), urm = cur ? null : active.find((r) => stOra(r) > mN);
           const cd = el("div", "zm-card"), cp = el("div", "zm-cap");
-          cp.append(el("b", "", "Ziua mea"), el("span", "", textData(dataSel) + (info.modul ? " · " + info.modul : "")), el("span", "zm-mai", "Orarul complet ›")); cd.appendChild(cp);
+          cp.append(el("b", "", "☀️ Ziua mea"), el("span", "", textData(dataSel) + (info.modul ? " · " + info.modul : "")), el("span", "zm-mai", "Orarul complet ›")); cd.appendChild(cp);
           const ul = el("ul", "zm-lista");
           const li = (ico, tx, cls) => { const x = el("li", cls || ""); x.append(el("span", "zm-ico", ico), el("span", "", tx)); ul.appendChild(x); };
           const detOra = (r) => (r.eticheta || r.clasa) + (r.text || r.complet ? " · " + (r.text || r.complet) : "");
