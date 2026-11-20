@@ -128,8 +128,10 @@
     .notif-tel.hidden { display:none; }
     .notif-tel .nt-text { flex:1 1 240px; display:flex; flex-direction:column; gap:2px; }
     .notif-tel .nt-text span { font-size:.9rem; color:var(--muted); }
-    .notif-tel .nt-email { flex:1 1 100%; order:3; display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted); cursor:pointer; }
-    .notif-tel .nt-email input { width:18px; height:18px; min-height:0; padding:0; margin:0; flex:none; accent-color:var(--accent); }
+    .notif-tel .nt-opt { flex:1 1 100%; order:2; display:flex; align-items:center; gap:8px; font-size:.9rem; color:var(--muted); cursor:pointer; }
+    .notif-tel .nt-opt b { color:var(--text); font-weight:600; }
+    .notif-tel .nt-opt.nt-email { order:3; }
+    .notif-tel .nt-opt input { width:18px; height:18px; min-height:0; padding:0; margin:0; flex:none; accent-color:var(--accent); }
     .notif-tel .nt-butoane { display:flex; flex-wrap:wrap; gap:8px; }
     .notif-tel .nt-butoane button { width:auto; margin:0; min-height:40px; padding:6px 14px; }
     #anunturi textarea { display:block; width:100%; box-sizing:border-box; padding:10px 12px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:12px; resize:vertical; }
@@ -1328,8 +1330,10 @@
       </div>
 
       <section id="notif-tel" class="notif-tel hidden" aria-live="polite">
-        <div class="nt-text"><b>📱 Serviciul pe școală, pe telefon</b><span id="nt-stare"></span></div>
-        <label class="nt-email"><input type="checkbox" id="nt-email"> <span>Trimite-mi serviciul zilei pe e-mail, când nu am notificările active pe telefon</span></label>
+        <div class="nt-text"><b>📱 Notificări de dimineață pe telefon</b><span id="nt-stare"></span></div>
+        <label class="nt-opt"><input type="checkbox" id="nt-orar"> <span><b>Orarul zilei</b> — la 7:00, în zilele de școală în care ai ore</span></label>
+        <label class="nt-opt"><input type="checkbox" id="nt-serviciu"> <span><b>Serviciul pe școală</b> — la 7:00, în zilele în care ești de serviciu</span></label>
+        <label class="nt-opt nt-email"><input type="checkbox" id="nt-email"> <span>Dacă nu am notificările active pe telefon, trimite-mi pe e-mail ce am ales</span></label>
         <div class="nt-butoane">
           <button id="nt-activeaza" type="button">Activează notificările</button>
           <button id="nt-proba" class="secondary hidden" type="button">Trimite o probă</button>
@@ -1651,34 +1655,40 @@
     async function abonareCurenta() { try { const reg = await navigator.serviceWorker.getRegistration(); return reg ? await reg.pushManager.getSubscription() : null; } catch (e) { return null; } }
     async function pregatesteNotifTelefon(areAngajat) {
       const box = $("notif-tel"); if (!box) return;
-      const stare = $("nt-stare"), bA = $("nt-activeaza"), bP = $("nt-proba"), bO = $("nt-opreste"), cE = $("nt-email");
-      let emailActiv = true;
-      const faraTel = () => emailActiv ? "Până atunci primești serviciul pe e-mail." : "Până atunci nu primești nicio notificare.";
-      const ios = "Pe iPhone: apasă Partajează, apoi „Adaugă pe ecranul principal”, deschide aplicația de pe ecran și activează notificările de acolo. ";
+      const stare = $("nt-stare"), bA = $("nt-activeaza"), bP = $("nt-proba"), bO = $("nt-opreste"), cE = $("nt-email"), cO = $("nt-orar"), cS = $("nt-serviciu");
+      let setari = { orar: false, serviciu: false, email: true };
+      const alese = () => [setari.orar ? "orarul zilei" : "", setari.serviciu ? "serviciul pe școală" : ""].filter(Boolean).join(" și ");
+      const faraTel = () => !alese() ? "" : setari.email ? " Până atunci primești ce ai ales pe e-mail." : " Până atunci nu primești nicio notificare.";
+      const acum = () => !alese() ? "" : setari.email ? " Acum primești pe e-mail ce ai ales." : " Acum nu primești nicio notificare: activează-le pe telefon.";
+      const ios = "Pe iPhone: apasă Partajează, apoi „Adaugă pe ecranul principal”, deschide aplicația de pe ecran și activează notificările de acolo.";
       if (!areAngajat) { box.classList.add("hidden"); return; }
       box.classList.remove("hidden");
       const arata = async (mesaj) => {
         const supt = notifTelSuportat(), ab = supt ? await abonareCurenta() : null;
         const refuzat = supt && Notification.permission === "denied";
         bA.classList.toggle("hidden", !supt || !!ab || refuzat || (eIos() && !eInstalata())); bP.classList.toggle("hidden", !ab); bO.classList.toggle("hidden", !ab);
+        cO.checked = setari.orar; cS.checked = setari.serviciu; cE.checked = setari.email;
         if (mesaj) stare.textContent = mesaj;
-        else if (!supt) stare.textContent = eIos() && !eInstalata() ? ios + faraTel() : "Acest browser nu permite notificări. " + (emailActiv ? "Primești serviciul zilei pe e-mail." : "Nu primești nicio notificare.");
+        else if (!supt) stare.textContent = eIos() && !eInstalata() ? ios + faraTel() : "Acest browser nu permite notificări." + (!alese() ? " Alege mai jos ce vrei să primești." : setari.email ? " Primești pe e-mail ce ai ales." : " Nu primești nicio notificare.");
         else if (eIos() && !eInstalata()) stare.textContent = ios + faraTel();
-        else if (refuzat) stare.textContent = "Notificările sunt blocate în setările browserului pentru acest site. " + (emailActiv ? "Primești serviciul pe e-mail." : "Nu primești nicio notificare.");
-        else if (ab) stare.textContent = "Active pe acest telefon: în zilele cu serviciu primești dimineața, la 7:00, pauzele și locul.";
-        else stare.textContent = "Primești dimineața, la 7:00, în zilele cu serviciu, pauzele și locul. " + (emailActiv ? "Acum primești mesajul pe e-mail." : "Acum nu primești nicio notificare: activează-le pe telefon.");
+        else if (refuzat) stare.textContent = "Notificările sunt blocate în setările browserului pentru acest site." + (!alese() ? "" : setari.email ? " Primești pe e-mail ce ai ales." : " Nu primești nicio notificare.");
+        else if (!alese()) stare.textContent = "Nu ai ales nicio notificare. Bifează mai jos ce vrei să primești dimineața, la 7:00." + (ab ? "" : " Apoi activează notificările pe acest telefon.");
+        else if (ab) stare.textContent = "Active pe acest telefon: dimineața, la 7:00, primești " + alese() + ".";
+        else stare.textContent = "Vei primi dimineața, la 7:00: " + alese() + "." + acum();
       };
       if ("serviceWorker" in navigator) { try { await navigator.serviceWorker.register("sw.js"); } catch (e) { /* fără notificări */ } }
-      try { const { data: ea } = await db.rpc("setare_serviciu_email"); if (typeof ea === "boolean") emailActiv = ea; } catch (e) { /* rămâne pornit */ }
-      cE.checked = emailActiv;
+      try { const { data: sn } = await db.rpc("setari_notificari"); if (sn && typeof sn === "object") setari = { orar: !!sn.orar, serviciu: !!sn.serviciu, email: sn.email !== false }; } catch (e) { /* rămân valorile implicite */ }
       await arata();
-      cE.onchange = async () => {
-        const dorit = cE.checked; cE.disabled = true;
-        const { data: ea, error } = await db.rpc("setare_serviciu_email", { p_activ: dorit });
-        cE.disabled = false;
-        if (error || typeof ea !== "boolean") { cE.checked = emailActiv; return arata("Setarea nu a putut fi salvată. Încearcă din nou."); }
-        emailActiv = ea; cE.checked = ea; await arata();
+      const salveaza = (camp, param, cutie) => async () => {
+        const dorit = cutie.checked; cO.disabled = cS.disabled = cE.disabled = true;
+        const { data: sn, error } = await db.rpc("setari_notificari", { [param]: dorit });
+        cO.disabled = cS.disabled = cE.disabled = false;
+        if (error || !sn || typeof sn !== "object") { cutie.checked = setari[camp]; return arata("Setarea nu a putut fi salvată. Încearcă din nou."); }
+        setari = { orar: !!sn.orar, serviciu: !!sn.serviciu, email: sn.email !== false }; await arata();
       };
+      cO.onchange = salveaza("orar", "p_orar", cO);
+      cS.onchange = salveaza("serviciu", "p_serviciu", cS);
+      cE.onchange = salveaza("email", "p_email", cE);
       bA.onclick = async () => {
         bA.disabled = true;
         try {
@@ -1706,7 +1716,7 @@
       bO.onclick = async () => {
         bO.disabled = true;
         try { const sub = await abonareCurenta(); if (sub) { const ep = sub.endpoint; await sub.unsubscribe(); await db.from("push_abonari").delete().eq("endpoint", ep); } } catch (e) { /* oprit oricum pe telefon */ }
-        bO.disabled = false; arata("Notificările au fost dezactivate pe acest telefon. " + (emailActiv ? "Primești serviciul zilei pe e-mail." : "Nu primești nicio notificare."));
+        bO.disabled = false; arata("Notificările au fost dezactivate pe acest telefon." + (!alese() ? "" : setari.email ? " Primești pe e-mail ce ai ales." : " Nu primești nicio notificare."));
       };
     }
     function pregatesteComutator() {
@@ -2770,7 +2780,7 @@
         const absOre = new Set(rez.filter((r) => r.ore.length).map((r) => r.id));
         return { orarZi: b.orar.filter((o) => Number(o.zi) === w), oreProf, absOre, numeSv: b.nume, oreOrar, oreAbsenti, oreAcop, prezenti, motive, sv, absenti: rez, neacop, supl, profCuOre, practica: dn.pract.map((p) => ({ clasa: p.clasa, coord: b.nume.get(p.angajat_id) || "" })).sort((x, y) => ordClasaOrar(x.clasa, y.clasa)) };
       };
-      let dataSel = aziD(), rezultat = null, sD = "", cheieDeschisa = "";
+      let dataSel = aziD(), rezultat = null, sD = "", cheieDeschisa = "", vedere = "acum";
       const incarca = async () => {
         const f = iso(dataSel), anId = anPentru(f), b = await baza(anId), dn = await dinamic(anId, f);
         sD = JSON.stringify([f, dn]);
@@ -2781,7 +2791,15 @@
         zona.replaceChildren();
         const azi = aziD(), fSel = iso(dataSel), eAzi = fSel === iso(azi), info = infoZi(dataSel);
         // ---- Navigare: Azi + mesaj + data (săgeți)
-        const bAzi = el("button", "oz-azi", "Azi"); bAzi.type = "button"; bAzi.disabled = eAzi;
+        if (vedere === "acum" && !eAzi) vedere = "azi";
+        const comut = el("div", "oz-comut");
+        [["acum", "Acum"], ["azi", "Azi"]].forEach(([k, t]) => {
+          const bt = el("button", "", t); bt.type = "button"; bt.setAttribute("aria-pressed", String(vedere === k));
+          bt.addEventListener("click", () => { if (vedere === k) return; vedere = k; cheieDeschisa = ""; if (k === "acum" && !eAzi) seteaza(azi); else deseneaza(); });
+          comut.appendChild(bt);
+        });
+        zona.appendChild(comut);
+        const bAzi = el("button", "oz-azi", "Astăzi"); bAzi.type = "button"; bAzi.disabled = eAzi;
         bAzi.addEventListener("click", () => seteaza(azi));
         const bPrev = el("button", "oz-sg", "‹"), bNext = el("button", "oz-sg", "›"); bPrev.type = bNext.type = "button";
         bPrev.setAttribute("aria-label", "Ziua precedentă"); bNext.setAttribute("aria-label", "Ziua următoare");
@@ -2790,7 +2808,7 @@
         inp.addEventListener("change", () => { if (inp.value) seteaza(dinIso(inp.value)); });
         const cap = el("div", "oz-cap"); cap.append(bPrev, inp, bNext);
         const sus = el("div", "oz-top"); sus.append(bAzi, el("span", "oz-nav-msg", "Selectează o zi în care vrei să vezi situația școlii"), cap);
-        zona.appendChild(sus);
+        if (vedere === "azi") zona.appendChild(sus);
         // ---- Pastilele săptămânii
         const lu = luSapt(dataSel), zile = el("div", "oz-zile");
         for (let k = 0; k < 5; k++) {
@@ -2810,7 +2828,7 @@
           hero.append(el("span", "oz-pill" + (c.neacop.length ? "" : " live"), c.neacop.length ? "Atenție" : "Totul acoperit"), el("h2", "oz-h2", c.neacop.length ? oraS(c.neacop.length) + (c.neacop.length === 1 ? " neacoperită" : " neacoperite") : (c.absenti.length ? "Toate orele sunt acoperite" : "Toți profesorii sunt prezenți")));
           hero.appendChild(el("div", "oz-meta", c.absenti.length ? c.absenti.length + (c.absenti.length === 1 ? " profesor lipsește" : " profesori lipsesc") + " din " + c.profCuOre + " cu ore în această zi" : c.profCuOre + " profesori cu ore în această zi"));
         }
-        zona.append(hero, zile);
+        if (vedere === "azi") zona.append(hero, zile); else if (info.suspendat) zona.appendChild(hero);
         if (info.suspendat || !c) return;
         // ---- Cifre: fiecare se poate apăsa și arată lista din spatele ei
         const sv = c.sv;
@@ -2823,7 +2841,7 @@
           const x = D[cheieDeschisa]; if (!x) { cheieDeschisa = ""; return; }
           x.t.classList.add("sel"); x.t.setAttribute("aria-expanded", "true"); x.g.det.appendChild(x.bld());
         };
-        const comuta = (key) => { cheieDeschisa = cheieDeschisa === key ? "" : key; arataDet(); };
+        const comuta = (key) => { if (vedere === "acum") return; cheieDeschisa = cheieDeschisa === key ? "" : key; arataDet(); };
         const tile = (g, key, n, et, cls, bld) => {
           const t = el("button", "az-stat clk " + (cls || "")); t.type = "button"; t.setAttribute("aria-expanded", "false");
           t.append(el("b", "", String(n)), el("span", "", et)); D[key] = { g, t, bld }; t.addEventListener("click", () => comuta(key)); g.st.appendChild(t);
@@ -2870,7 +2888,7 @@
         const rdOra = (o, extra, tag) => { const rd = ora(o, extra); if (tag) rd.appendChild(tag); return rd; };
         // ---- Acum: ce se întâmplă în ora sau pauza de acum (doar pentru ziua de azi)
         let actAcum = null; window.__ozAcum = null;
-        if (eAzi) {
+        if (eAzi && vedere === "acum") {
           const maxOra = Math.max(0, ...c.orarZi.map((o) => Number(o.ora)));
           const infoAcum = () => {
             const d = new Date(), m = d.getHours() * 60 + d.getMinutes(), rel = m - 480;
@@ -2931,10 +2949,12 @@
           };
           const g0 = grup(); g0.st.classList.add("un");
           const i0 = infoAcum(), t0 = infoTxt(i0);
+          cheieDeschisa = i0.tip === "inainte" || i0.tip === "dupa" ? "" : "acum";
           tile(g0, "acum", t0.titlu, t0.sub, "acum" + (t0.rau ? " rau" : ""), bldAcum);
           zona.append(g0.st, g0.det);
-          actAcum = () => { const t = infoTxt(infoAcum()), b = D.acum.t; b.querySelector("b").textContent = t.titlu; b.querySelector("span").textContent = t.sub; b.classList.toggle("rau", !!t.rau); if (cheieDeschisa === "acum") arataDet(); };
+          actAcum = () => { const i = infoAcum(), t = infoTxt(i), b = D.acum.t; b.querySelector("b").textContent = t.titlu; b.querySelector("span").textContent = t.sub; b.classList.toggle("rau", !!t.rau); cheieDeschisa = i.tip === "inainte" || i.tip === "dupa" ? "" : "acum"; arataDet(); };
           window.__ozAcum = actAcum;
+          arataDet(); return;
         }
         const g1 = grup();
         tile(g1, "lipsesc", c.absenti.length, "Lipsesc", c.absenti.length ? "att" : "bun", () => card("Cine lipsește", nPers(c.absenti.length), c.absenti.map((r) => linie(r.nume, ET(r) + " · " + (r.ore.length ? oraS(r.ore.length) : "fără ore în această zi")))));
