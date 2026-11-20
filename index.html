@@ -2709,13 +2709,15 @@
         bazaAni.set(anId, b); return b;
       };
       const dinamic = async (anId, f) => {
-        const [manual, inloc, ccc, pract] = await Promise.all([
+        const [manual, inloc, ccc, pract, svPr] = await Promise.all([
           toate(() => db.from("pontaj_manual").select("norma_id, zi, valoare").eq("zi", f).in("valoare", ABS)),
           toate(() => db.from("pontaj_inlocuiri").select("norma_id, tip, de_la, pana_la, inlocuitor_angajat_id, inlocuitor_nume, ore, ore_clase, partial").is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("de_la").order("id")),
           toate(() => db.from("concedii_lungi").select("angajat_id, tip, de_la, pana_la, inlocuitor_angajat_id, toate_orele, clase").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f)),
-          toate(() => db.from("practica_clase").select("clasa, angajat_id, de_la, pana_la").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("clasa"))
+          toate(() => db.from("practica_clase").select("clasa, angajat_id, de_la, pana_la").eq("an_id", anId).is("sters_la", null).lte("de_la", f).gte("pana_la", f).order("clasa")),
+          // cine preia serviciul celor învoiți (din cererile aprobate); fără această funcție, graficul rămâne neschimbat
+          (async () => { try { const r = await db.rpc("serviciu_preluat", { p_data: f }); return r.error ? [] : (r.data || []); } catch (e) { return []; } })()
         ]);
-        return { manual, inloc, ccc, pract };
+        return { manual, inloc, ccc, pract, svPr };
       };
       // Calculul zilei: cine lipsește, ce ore ale lor sunt acoperite și de cine
       const calculeaza = (f, w, b, dn) => {
@@ -2753,9 +2755,16 @@
         const prezenti = profCuOre - rez.filter((r) => r.ore.length).length;
         const motive = new Map(); rez.forEach((r) => r.motive.forEach((m) => motive.set(m, (motive.get(m) || 0) + 1)));
         const svZ = new Map(b.svZone.map((z) => [z.id, z]));
-        const svRanduri = b.svGrafic.filter((g) => Number(g.zi) === w && svZ.has(g.zona_id));
+        // serviciul celor învoiți: pauzele trec la înlocuitor; fără înlocuitor, locul rămâne neacoperit
+        const svPr = new Map((dn.svPr || []).map((x) => [x.zona_id + "|" + x.pauza + "|" + x.de_angajat, x.preia_angajat]));
+        const svRanduri = b.svGrafic.filter((g) => Number(g.zi) === w && svZ.has(g.zona_id)).map((g) => {
+          const k = g.zona_id + "|" + g.pauza + "|" + g.angajat_id;
+          if (!g.pauza || !svPr.has(k)) return g;
+          const p = svPr.get(k);
+          return p ? { ...g, angajat_id: p, inLocul: g.angajat_id } : { ...g, neacoperit: true };
+        });
         const lipsesc = new Set(rez.map((r) => r.id));
-        const svLipsa = svRanduri.filter((g) => lipsesc.has(g.angajat_id));
+        const svLipsa = svRanduri.filter((g) => g.neacoperit || lipsesc.has(g.angajat_id));
         const sv = { exista: b.svGrafic.length > 0, zone: svZ, randuri: svRanduri, persoane: new Set(svRanduri.map((g) => g.angajat_id)).size, lipsesc: new Set(svLipsa.map((g) => g.angajat_id)).size, locuriFara: svLipsa.length, absId: lipsesc };
         const oreProf = new Map(); b.orar.filter((o) => Number(o.zi) === w).forEach((o) => oreProf.set(o.angajat_id, (oreProf.get(o.angajat_id) || 0) + 1));
         const absOre = new Set(rez.filter((r) => r.ore.length).map((r) => r.id));
@@ -2839,19 +2848,25 @@
           return arePr ? "13:50–" + (8 + Math.max(z.pauza_max || 6, 6)) + ":00" : "12:00–16:00";
         };
         const textRand = (g) => g.pauza ? "pauza " + PAUZE_ET[g.pauza] + " (" + hm(startP(g.pauza)) + ")" : (g.schimb === "dupa_amiaza" ? "după-amiaza" : "dimineața") + " (" + interval(sv.zone.get(g.zona_id), g.schimb) + ")";
-        const tagLips = (id) => sv.absId.has(id) ? el("span", "az-tag rau", "lipsește") : null;
+        const eLips = (g) => !!g.neacoperit || sv.absId.has(g.angajat_id);
+        const tagRand = (l) => {
+          if (l.some((g) => g.neacoperit)) return el("span", "az-tag rau", "neacoperit");
+          if (sv.absId.has(l[0].angajat_id)) return el("span", "az-tag rau", "lipsește");
+          const rl = l.filter((g) => g.inLocul), inl = [...new Set(rl.map((g) => nume(g.inLocul)))];
+          return inl.length ? el("span", "az-tag ok", "în locul lui " + inl.join(", ") + (rl.length < l.length ? " (pauza " + rl.map((g) => PAUZE_ET[g.pauza]).join(", ") + ")" : "")) : null;
+        };
         // câte o linie pe persoană și zonă, cu toate pauzele
         const liniiPers = (rd) => {
           const m = new Map(); rd.forEach((g) => { const k = g.zona_id + "|" + g.angajat_id; if (!m.has(k)) m.set(k, []); m.get(k).push(g); });
           return [...m.values()].sort((x, y) => { const zx = sv.zone.get(x[0].zona_id), zy = sv.zone.get(y[0].zona_id); return (zx.ordine || 0) - (zy.ordine || 0) || zx.id - zy.id || nume(x[0].angajat_id).localeCompare(nume(y[0].angajat_id), "ro"); }).map((l) => {
             const z = sv.zone.get(l[0].zona_id), pz = l.filter((g) => g.pauza).sort((x, y) => x.pauza - y.pauza).map((g) => PAUZE_ET[g.pauza] + " (" + hm(startP(g.pauza)) + ")");
             const parti = []; if (pz.length) parti.push((pz.length === 1 ? "pauza " : "pauzele ") + pz.join(", ")); l.filter((g) => !g.pauza).forEach((g) => parti.push(textRand(g)));
-            return linie(nume(l[0].angajat_id), etZonaServ(z) + " · " + parti.join(", "), tagLips(l[0].angajat_id));
+            return linie(nume(l[0].angajat_id), etZonaServ(z) + " · " + parti.join(", "), tagRand(l));
           });
         };
-        const liniiLocuri = (rd) => [...rd].sort((x, y) => nume(x.angajat_id).localeCompare(nume(y.angajat_id), "ro") || (x.pauza || 99) - (y.pauza || 99)).map((g) => linie(nume(g.angajat_id), etZonaServ(sv.zone.get(g.zona_id)) + " · " + textRand(g), tagLips(g.angajat_id)));
+        const liniiLocuri = (rd) => [...rd].sort((x, y) => nume(x.angajat_id).localeCompare(nume(y.angajat_id), "ro") || (x.pauza || 99) - (y.pauza || 99)).map((g) => linie(nume(g.angajat_id), etZonaServ(sv.zone.get(g.zona_id)) + " · " + textRand(g), tagRand([g])));
         const nDistinct = (rd) => new Set(rd.map((g) => g.angajat_id)).size;
-        const rdLips = sv.randuri.filter((g) => sv.absId.has(g.angajat_id));
+        const rdLips = sv.randuri.filter(eLips);
         const rdOra = (o, extra, tag) => { const rd = ora(o, extra); if (tag) rd.appendChild(tag); return rd; };
         // ---- Acum: ce se întâmplă în ora sau pauza de acum (doar pentru ziua de azi)
         let actAcum = null; window.__ozAcum = null;
@@ -2895,7 +2910,7 @@
               const x = dateOra(i.h), n = x.rd.length;
               return { titlu: "Ora " + i.h, sub: oraTxt(i.de, i.de + 50) + " · " + n + (n === 1 ? " oră în desfășurare" : " ore în desfășurare") + (x.neacop ? " · " + x.neacop + (x.neacop === 1 ? " neacoperită" : " neacoperite") : "") + (x.acop ? " · " + x.acop + (x.acop === 1 ? " suplinită" : " suplinite") : ""), rau: x.neacop > 0 };
             }
-            const rd = sv.randuri.filter((g) => g.pauza === i.k || schimbActiv(g, i.de)), lips = rd.filter((g) => sv.absId.has(g.angajat_id)).length;
+            const rd = sv.randuri.filter((g) => g.pauza === i.k || schimbActiv(g, i.de)), lips = rd.filter(eLips).length;
             return { titlu: "Pauza " + PAUZE_ET[i.k], sub: oraTxt(i.de, i.de + 10) + " · urmează ora " + (i.k + 1) + (sv.exista ? " · " + nDistinct(rd) + " de serviciu" + (lips ? " · " + lips + (lips === 1 ? " lipsește" : " lipsesc") : "") : ""), rau: lips > 0 };
           };
           const bldAcum = () => {
