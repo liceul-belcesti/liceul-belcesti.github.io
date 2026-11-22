@@ -9161,6 +9161,7 @@
       const ra = await db.rpc("registru_ani");
       if (ra.error || !Array.isArray(ra.data)) { corp.replaceChildren(); return mesajRegistru("Registrul nu a putut fi încărcat. Încearcă din nou."); }
       const ani = ra.data.length ? ra.data : [new Date().getFullYear()];
+      const eAdmin = euRoluri.includes("administrator");
       const poateAnula = euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct"));
       const st = { an: ani[0], rows: [], q: "", ascunde: false };
       const deschise = new Set();
@@ -9181,15 +9182,16 @@
       const lista = el("div", "rg-tabwrap");
       corp.append(sus, filtre, formLoc, sumar, lista);
 
+      const nrText = (r) => r.nr + (r.sufix ? "/" + r.sufix : "");
       const docText = (r) => [r.nr_document ? "nr. " + r.nr_document : "", r.data_document ? "din " + fmtData(r.data_document) : ""].filter(Boolean).join(" ");
       const filtrate = () => {
         const t = faraDiacritice(st.q).trim();
-        return st.rows.filter((r) => (!st.ascunde || !r.anulat_la) && (!t || faraDiacritice([r.nr, r.partener, r.nr_document, r.continut].join(" ")).includes(t)));
+        return st.rows.filter((r) => (!st.ascunde || !r.anulat_la) && (!t || faraDiacritice([nrText(r), r.partener, r.nr_document, r.continut].join(" ")).includes(t)));
       };
       const incarca = async () => {
         const r = await db.rpc("registru_lista", { p_an: st.an });
         if (r.error || !Array.isArray(r.data)) { mesajRegistru("Lista nu a putut fi încărcată. Încearcă din nou."); return false; }
-        st.rows = r.data.slice().sort((a, b) => b.nr - a.nr); deseneazaLista(); return true;
+        st.rows = r.data.slice().sort((a, b) => b.nr - a.nr || (b.sufix || 0) - (a.sufix || 0)); deseneazaLista(); return true;
       };
 
       function deseneazaLista() {
@@ -9204,18 +9206,45 @@
         f.forEach((r) => {
           const tr = el("tr", "rg-r" + (r.anulat_la ? " rg-anulat" : "")); tr.tabIndex = 0; tr.setAttribute("role", "button"); tr.setAttribute("aria-expanded", String(deschise.has(r.id)));
           const cont = el("td", ""); cont.textContent = r.continut; if (r.anulat_la) cont.appendChild(el("span", "rg-chip rg-chip-a", "Anulat"));
-          [el("td", "rg-c-nr", String(r.nr)), el("td", "", fmtData(r.data_inreg)), el("td", "", r.partener), el("td", "", docText(r)), cont].forEach((x) => tr.appendChild(x));
+          [el("td", "rg-c-nr", nrText(r)), el("td", "", fmtData(r.data_inreg)), el("td", "", r.partener), el("td", "", docText(r)), cont].forEach((x) => tr.appendChild(x));
           const comuta = () => { if (deschise.has(r.id)) deschise.delete(r.id); else deschise.add(r.id); deseneazaLista(); };
           tr.addEventListener("click", comuta); tr.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); comuta(); } });
           tb.appendChild(tr);
           if (deschise.has(r.id)) {
             const td = el("td", "rg-act"); td.colSpan = 5;
-            if (r.anulat_la) td.appendChild(el("p", "rg-linie", "Anulat la " + dataRo(r.anulat_la) + (r.anulat_de_nume ? " de " + r.anulat_de_nume : "") + ". Motiv: " + r.anulat_motiv + ". Numărul rămâne în registru."));
-            else {
+            const gol = r.partener === "" && r.continut === "" && !r.anulat_la;
+            // Doar administratorul: rândul rămâne cu numărul și data, dar fără emitent și conținut.
+            const butonSterge = () => {
+              const b = el("button", "off", "Șterge înregistrarea"); b.type = "button";
+              let armat = false, timer = null;
+              b.addEventListener("click", async () => {
+                if (!armat) {
+                  armat = true; b.textContent = "Sigur? Rândul rămâne gol. Nu se mai poate anula";
+                  timer = setTimeout(() => { armat = false; b.textContent = "Șterge înregistrarea"; }, 6000);
+                  return;
+                }
+                clearTimeout(timer); b.disabled = true;
+                const { error } = await db.rpc("registru_sterge", { p_id: r.id });
+                if (error) { b.disabled = false; armat = false; b.textContent = "Șterge înregistrarea"; return mesajRegistru(error.message || "Ștergerea nu a reușit."); }
+                deschise.delete(r.id);
+                mesajRegistru("Înregistrarea nr. " + nrText(r) + " a fost ștearsă. Numărul rămâne în registru, gol.", true); await incarca();
+              });
+              return b;
+            };
+            // Număr suplimentar sub acesta (57/1, 57/2…), cu data aleasă de utilizator.
+            const butonSub = () => {
+              const b = el("button", "secondary", "Adaugă sub acest număr"); b.type = "button";
+              b.addEventListener("click", () => { formDoc(null, r); formLoc.scrollIntoView({ behavior: "smooth", block: "start" }); });
+              return b;
+            };
+            if (r.anulat_la) {
+              td.appendChild(el("p", "rg-linie", "Anulat la " + dataRo(r.anulat_la) + (r.anulat_de_nume ? " de " + r.anulat_de_nume : "") + ". Motiv: " + r.anulat_motiv + ". Numărul rămâne în registru."));
+              { const c2 = el("div", "ctl"); c2.appendChild(butonSub()); if (eAdmin) c2.appendChild(butonSterge()); td.appendChild(c2); }
+            } else {
               const ctl = el("div", "ctl");
               const bEd = el("button", "", "Editează"); bEd.type = "button"; bEd.addEventListener("click", () => { formDoc(r); formLoc.scrollIntoView({ behavior: "smooth", block: "start" }); });
-              ctl.appendChild(bEd);
-              if (poateAnula) {
+              ctl.appendChild(bEd); ctl.appendChild(butonSub());
+              if (poateAnula && !gol) {
                 const bAn = el("button", "off", "Anulează înregistrarea"); bAn.type = "button";
                 const nb = el("div", "rg-nota-box hidden"); const nt = document.createElement("textarea"); nt.rows = 2; nt.maxLength = 500; nt.placeholder = "Motivul anulării (obligatoriu)";
                 const conf = el("button", "off", "Confirmă anularea"); conf.type = "button"; nb.append(nt, conf);
@@ -9225,9 +9254,9 @@
                   conf.disabled = true;
                   const { error } = await db.rpc("registru_anuleaza", { p_id: r.id, p_motiv: nt.value.trim() });
                   if (error) { conf.disabled = false; return mesajRegistru(error.message || "Anularea nu a reușit."); }
-                  mesajRegistru("Înregistrarea nr. " + r.nr + " a fost anulată. Numărul rămâne în registru.", true); await incarca();
+                  mesajRegistru("Înregistrarea nr. " + nrText(r) + " a fost anulată. Numărul rămâne în registru.", true); await incarca();
                 });
-                ctl.appendChild(bAn); td.append(ctl, nb);
+                ctl.appendChild(bAn); if (eAdmin) ctl.appendChild(butonSterge()); td.append(ctl, nb);
               } else td.appendChild(ctl);
             }
             const ra2 = el("tr", "rg-r-act"); ra2.appendChild(td); tb.appendChild(ra2);
@@ -9237,10 +9266,17 @@
       }
 
       // ---- Formular: înregistrare nouă sau editare (de la cine provine, numărul și data documentului, conținutul)
-      function formDoc(r) {
+      function formDoc(r, baza) {
         formLoc.replaceChildren();
         const f = el("div", "ang-form");
-        f.appendChild(el("h3", "", r ? "Modifică înregistrarea nr. " + r.nr : "Înregistrare nouă"));
+        const sufNou = baza ? Math.max(0, ...st.rows.filter((x) => x.nr === baza.nr).map((x) => x.sufix || 0)) + 1 : 0;
+        f.appendChild(el("h3", "", r ? "Modifică înregistrarea nr. " + nrText(r) : baza ? "Număr nou sub nr. " + baza.nr + ": va fi " + baza.nr + "/" + sufNou : "Înregistrare nouă"));
+        // Data se alege doar la numerele cu sufix; la cele obișnuite o pune sistemul.
+        const cuData = !!baza || !!(r && r.sufix);
+        const azi = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Bucharest" });
+        const anReg = baza ? baza.an : r ? r.an : st.an;
+        const dataInreg = Object.assign(document.createElement("input"), { type: "date", min: anReg + "-01-01", max: azi < anReg + "-12-31" ? azi : anReg + "-12-31", value: r ? r.data_inreg : azi });
+        if (cuData) { const ld = document.createElement("label"); ld.textContent = "Data înregistrării"; f.append(ld, dataInreg); }
         const camp = (et, nod) => { const l = document.createElement("label"); l.textContent = et; f.append(l, nod); return nod; };
         const partener = camp("De la cine provine documentul", Object.assign(document.createElement("input"), { maxLength: 200, autocomplete: "off", value: r ? r.partener : "" }));
         const rand2 = el("div", "rg-form2"); const c1 = el("div", ""), c2 = el("div", "");
@@ -9254,13 +9290,22 @@
         const salv = el("button", "", r ? "Salvează" : "Înregistrează"); salv.type = "button";
         const nu = el("button", "secondary", "Renunță"); nu.type = "button"; nu.addEventListener("click", () => formLoc.replaceChildren());
         salv.addEventListener("click", async () => {
+          if (cuData && !dataInreg.value) return mesajRegistru("Alege data înregistrării.");
           if (!partener.value.trim()) return mesajRegistru("Scrie de la cine provine documentul.");
           if (!continut.value.trim()) return mesajRegistru("Scrie conținutul documentului.");
           salv.disabled = true; mesajRegistru("Se salvează…");
-          let nr = r && r.nr, id = r && r.id;
-          if (r) {
+          let nr = r && nrText(r), id = r && r.id;
+          if (baza) {
+            const { data, error } = await db.rpc("registru_adauga_sub", { p_baza: baza.id, p_data: dataInreg.value, p_partener: partener.value, p_nr_document: nrDoc.value || null, p_data_document: dataDoc.value || null, p_continut: continut.value });
+            if (error || !data) { salv.disabled = false; return mesajRegistru((error && error.message) || "Înregistrarea nu a reușit."); }
+            nr = data.nr + "/" + data.sufix; id = data.id;
+          } else if (r) {
             const { error } = await db.rpc("registru_corecteaza", { p_id: r.id, p_partener: partener.value, p_nr_document: nrDoc.value || null, p_data_document: dataDoc.value || null, p_continut: continut.value });
             if (error) { salv.disabled = false; return mesajRegistru(error.message || "Salvarea nu a reușit."); }
+            if (r.sufix && dataInreg.value && dataInreg.value !== r.data_inreg) {
+              const e2 = await db.rpc("registru_schimba_data", { p_id: r.id, p_data: dataInreg.value });
+              if (e2.error) { salv.disabled = false; return mesajRegistru(e2.error.message || "Data nu a putut fi schimbată."); }
+            }
           } else {
             const { data, error } = await db.rpc("registru_adauga", { p_partener: partener.value, p_nr_document: nrDoc.value || null, p_data_document: dataDoc.value || null, p_continut: continut.value });
             if (error || !data) { salv.disabled = false; return mesajRegistru((error && error.message) || "Înregistrarea nu a reușit."); }
@@ -9275,7 +9320,7 @@
       }
 
       // ---- Tipărire și CSV (după căutarea de pe ecran, în ordinea numerelor)
-      const randuriExport = () => filtrate().slice().sort((a, b) => a.nr - b.nr);
+      const randuriExport = () => filtrate().slice().sort((a, b) => a.nr - b.nr || (a.sufix || 0) - (b.sufix || 0));
       bTipar.addEventListener("click", () => {
         const rows = randuriExport(); if (!rows.length) return mesajRegistru("Nu există înregistrări de tipărit.");
         const vechi = document.getElementById("tipar-registru"); if (vechi) vechi.remove();
@@ -9291,7 +9336,7 @@
         const tb = el("tbody", "");
         rows.forEach((r) => {
           const tr = el("tr", r.anulat_la ? "tr-anulat" : "");
-          [r.nr, fmtData(r.data_inreg), r.partener, docText(r), (r.anulat_la ? "ANULAT (" + r.anulat_motiv + "). " : "") + r.continut]
+          [nrText(r), fmtData(r.data_inreg), r.partener, docText(r), (r.anulat_la ? "ANULAT (" + r.anulat_motiv + "). " : "") + r.continut]
             .forEach((v, i) => { const td = el("td", ""); if (r.anulat_la && i >= 2) td.appendChild(el("span", "tr-bara", String(v))); else td.textContent = String(v); tr.appendChild(td); });
           tb.appendChild(tr);
         });
@@ -9303,7 +9348,7 @@
       bCsv.addEventListener("click", () => {
         const rows = randuriExport(); if (!rows.length) return mesajRegistru("Nu există înregistrări de descărcat.");
         const csv = [["Nr. crt.", "Data", "De la cine provine", "Nr. document", "Data documentului", "Conținut", "Anulat"]]
-          .concat(rows.map((r) => [r.nr, fmtData(r.data_inreg), r.partener, r.nr_document || "", fmtData(r.data_document), r.continut, r.anulat_la ? "da: " + r.anulat_motiv : ""]));
+          .concat(rows.map((r) => [nrText(r), fmtData(r.data_inreg), r.partener, r.nr_document || "", fmtData(r.data_document), r.continut, r.anulat_la ? "da: " + r.anulat_motiv : ""]));
         const cmp = (v) => { const t = String(v).replace(/"/g, '""'); return /[;"\n]/.test(t) ? '"' + t + '"' : t; };
         const blob = new Blob(["﻿" + csv.map((x) => x.map(cmp).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob);
         const a = document.createElement("a"); a.href = url; a.download = "registru-" + st.an + ".csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
