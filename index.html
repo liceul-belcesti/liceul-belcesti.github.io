@@ -3437,7 +3437,7 @@
       const poateDecide = ["administrator", "director"].some((r) => euRoluri.includes(r)), esteDirector = euRoluri.includes("director"), esteAdmin = euRoluri.includes("administrator"), poateInreg = ["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r));
       const incarca = async () => {
         const [c, o, g, k, ac, pm, dd, lm] = await Promise.all([
-          db.from("cereri_invoire").select("id, an_id, de_la, pana_la, ore_alese, motiv, inlocuitor_propus, propuneri, optiuni_clasa, stare, nota_decizie, decis_la, creat_la").order("creat_la", { ascending: false }).limit(100),
+          db.from("cereri_invoire").select("id, an_id, de_la, pana_la, ore_alese, motiv, inlocuitor_propus, propuneri, optiuni_clasa, stare, nota_decizie, decis_la, creat_la, tip").order("creat_la", { ascending: false }).limit(100),
           db.rpc("orar_propriu_disc"), db.rpc("colegi_invoire"), db.rpc("orar_calendar"),
           db.rpc("acceptari_cereri_mele"), db.rpc("cereri_pentru_mine"), poateDecide ? db.rpc("cereri_de_decis_v2") : Promise.resolve({ data: [] }), db.rpc("limite_clase_zile")
         ]);
@@ -3454,6 +3454,8 @@
       const numeColeg = new Map(colegi.map((x) => [x.id, x.nume]));
       const ST = { in_asteptare: ["În așteptare", "cr-st att"], aprobata: ["Aprobată", "cr-st ok"], respinsa: ["Respinsă", "cr-st rau"], anulata: ["Anulată", "cr-st nul"] };
       const zona = el("div", "orm");
+      const ETIP = { CM: "Concediu medical", CO: "Concediu de odihnă" }; // învoirea este tipul obișnuit și nu are etichetă
+      const etTip = (c) => (ETIP[c.tip] ? [el("span", "cr-st nul", ETIP[c.tip])] : []);
       const ACC = { in_asteptare: ["așteaptă răspunsul", "cr-st att"], acceptat: ["a acceptat", "cr-st ok"], refuzat: ["a refuzat", "cr-st rau"] };
       const fOra = (k) => { const p = k.split("|"); return NZ[dinIso(p[0]).getDay()] + " " + fd(p[0]) + " · ora " + p[1] + " (" + intervalOra(Number(p[1])) + ") · " + p.slice(2).join("|"); };
       const listaOre = (ore) => { const d = el("details", "cr-det-ore"); d.appendChild(el("summary", "", ore.length + (ore.length === 1 ? " oră" : " ore"))); const ul = el("div", "cr-ore-lista"); [...ore].sort().forEach((k) => ul.appendChild(el("div", "", /^\d{4}-/.test(k) ? fOra(k) : k))); d.appendChild(ul); return d; };
@@ -3513,7 +3515,7 @@
         if (!deDecis.length) { sec.appendChild(el("p", "who", "Nu sunt cereri în așteptare.")); return sec; }
         deDecis.forEach((c) => {
           const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
-          cp.append(el("b", "", c.solicitant), el("span", "cr-det", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)));
+          cp.append(el("b", "", c.solicitant), el("span", "cr-det", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), ...etTip(c));
           k.appendChild(cp); k.appendChild(el("p", "cr-motiv", c.motiv));
           const ore = c.ore_alese || [], nrProp = Object.keys(c.propuneri || {}).length, no = Object.keys(c.optiuni_clasa || {}).length;
           k.appendChild(el("p", "cr-det", ore.length + (ore.length === 1 ? " oră" : " ore") + " · cu înlocuitor propus: " + nrProp + (no ? " · clasa vine mai târziu / pleacă acasă: " + no : "") + " · fără înlocuitor: " + (ore.length - nrProp - no)));
@@ -3587,7 +3589,7 @@
         if (!cereri.length) zona.appendChild(el("p", "who", "Nu ai trimis nicio cerere."));
         cereri.forEach((c) => {
           const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
-          cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", ST[c.stare][1], ST[c.stare][0]));
+          cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), ...etTip(c), el("span", ST[c.stare][1], ST[c.stare][0]));
           k.appendChild(cp);
           k.appendChild(el("p", "cr-motiv", c.motiv));
           const det = [c.ore_alese ? c.ore_alese.length + (c.ore_alese.length === 1 ? " oră aleasă" : " ore alese") : "Toate orele", ""].filter(Boolean).join(" · ");
@@ -3682,7 +3684,7 @@
           det.appendChild(sm);
           lista.forEach((c) => {
             const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
-            cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", ST[c.stare][1], ST[c.stare][0]));
+            cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), ...etTip(c), el("span", ST[c.stare][1], ST[c.stare][0]));
             k.appendChild(cp);
             const nz = zileCerere(c), no = nrOre(c);
             k.appendChild(el("p", "cr-det", "Trimisă la " + fDataOra(c.creat_la) + " · " + nz + (nz === 1 ? " zi" : " zile") + " · " + no + (no === 1 ? " oră" : " ore") + (c.modificari > 0 ? " · modificată de " + c.modificari + (c.modificari === 1 ? " dată" : " ori") : "")));
