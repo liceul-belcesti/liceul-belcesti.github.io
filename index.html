@@ -3646,6 +3646,8 @@
     $("inapoi-cereri").addEventListener("click", arataPrincipal);
     // ===== Cererea de învoire pe hârtie (șablon A4 vertical, cu număr de înregistrare) =====
     const CONDUCERE_TIPAR = { director: "Director, prof. Cătălin Ionuț BAZILUC", adjunct: "Director adjunct, prof. dr. Ciprian MIHAI" };
+    // Data și ora în formatul platformei: zz/ll/aaaa, HH:mm (ora României)
+    const dataOraPlatforma = (t) => { const p = {}; new Intl.DateTimeFormat("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(t)).forEach((x) => { p[x.type] = x.value; }); return p.day + "/" + p.month + "/" + p.year + ", " + p.hour + ":" + p.minute; };
     const ZILE_SAPT = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
     async function tiparesteCerere(id, mesaj) {
       const { data: c, error } = await db.rpc("cerere_date_tipar", { p_id: id });
@@ -3751,8 +3753,8 @@
       const ACC = { in_asteptare: ["așteaptă răspunsul", "cr-st att"], acceptat: ["a acceptat", "cr-st ok"], refuzat: ["a refuzat", "cr-st rau"] };
       const fOra = (k) => { const p = k.split("|"); return NZ[dinIso(p[0]).getDay()] + " " + fd(p[0]) + " · ora " + p[1] + " (" + intervalOra(Number(p[1])) + ") · " + p.slice(2).join("|"); };
       const listaOre = (ore) => { const d = el("details", "cr-det-ore"); d.appendChild(el("summary", "", ore.length + (ore.length === 1 ? " oră" : " ore"))); const ul = el("div", "cr-ore-lista"); [...ore].sort().forEach((k) => ul.appendChild(el("div", "", /^\d{4}-/.test(k) ? fOra(k) : k))); d.appendChild(ul); return d; };
-      const optiuniClasa = (o, dir) => {
-        const d = el("div", "cr-det-ore"); d.appendChild(el("p", "cr-nota", dir ? "Include ore în care clasa vine mai târziu sau pleacă acasă – doar directorul poate soluționa cererea." : "Include ore în care clasa vine mai târziu sau pleacă acasă – cererea este aprobată doar de director."));
+      const optiuniClasa = (o, dir, faraNota) => {
+        const d = el("div", "cr-det-ore"); if (!faraNota) d.appendChild(el("p", "cr-nota", dir ? "Include ore în care clasa vine mai târziu sau pleacă acasă – doar directorul poate soluționa cererea." : "Include ore în care clasa vine mai târziu sau pleacă acasă – cererea este aprobată doar de director."));
         const ul = el("div", "cr-ore-lista");
         Object.keys(o).sort().forEach((k) => { const v = o[k]; ul.appendChild(el("div", "", fOra(k) + " → " + (v.tip === "vine" ? "clasa vine de la ora " : "clasa pleacă acasă de la ora ") + intervalOra(v.ora).split("–")[0])); });
         d.appendChild(ul); return d;
@@ -3766,7 +3768,7 @@
         if (!chei.length) return null;
         return chei.map((k) => { const x = dupaId.get(prop[k]), sd = stareInlocuitor(x.stare, c.stare), r = el("div", "cr-acc"); r.append(el("span", "", fOra(k) + " → " + x.nume), el("span", sd[1], sd[0])); return r; });
       };
-      const fDataOra = (t) => !t ? "—" : new Date(t).toLocaleString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const fDataOra = (t) => !t ? "—" : dataOraPlatforma(t);
       const zileCerere = (c) => { if (c.ore_alese && c.ore_alese.length && /^\d{4}-/.test(c.ore_alese[0])) return new Set(c.ore_alese.map((k) => k.split("|")[0])).size; let n = 0; for (let d = dinIso(c.de_la); iso(d) <= c.pana_la; d.setDate(d.getDate() + 1)) if (d.getDay() >= 1 && d.getDay() <= 5) n++; return n; };
       const ACTIUNI = { creata: "Cerere trimisă", modificata: "Cerere modificată", anulata: "Cerere retrasă", aprobata: "Cerere aprobată", respinsa: "Cerere respinsă", stearsa: "Cerere ștearsă", retragere_ceruta: "Retragere cerută", retragere_aprobata: "Retragere aprobată", retragere_respinsa: "Retragere refuzată", stearsa_de_profesor: "Ștearsă de profesor" };
       const perDet = (d) => (d.de_la === d.pana_la ? fd(d.de_la) : fd(d.de_la) + " – " + fd(d.pana_la)) + ", " + d.ore + (d.ore === 1 ? " oră" : " ore");
@@ -3912,7 +3914,7 @@
           k.appendChild(el("p", "cr-motiv", c.motiv));
           const det = [c.ore_alese ? c.ore_alese.length + (c.ore_alese.length === 1 ? " oră aleasă" : " ore alese") : "Toate orele", ""].filter(Boolean).join(" · ");
           k.appendChild(el("p", "cr-det", det));
-          if (c.optiuni_clasa) k.appendChild(optiuniClasa(c.optiuni_clasa, false));
+          if (c.optiuni_clasa) k.appendChild(optiuniClasa(c.optiuni_clasa, false, c.stare !== "in_asteptare"));
           const rI = randuriInlocuitori(c, acc.get(c.id));
           if (rI) rI.forEach((r) => k.appendChild(r));
           else (acc.get(c.id) || []).forEach((x) => { const sd = stareInlocuitor(x.stare, c.stare), r = el("div", "cr-acc"); r.append(el("span", "", x.nume), el("span", sd[1], sd[0])); k.appendChild(r); });
@@ -9062,7 +9064,7 @@
       const { data, error } = await db.from("serviciu_grafic_copii").select("id, creat_la, motiv, nr_randuri").eq("an_id", c.a.id).order("creat_la", { ascending: false }).order("id", { ascending: false }).limit(15);
       if (error) { info.textContent = "Versiunile nu au putut fi încărcate."; box.appendChild(inchide); return; }
       info.textContent = data.length ? "Înainte de fiecare înlocuire a graficului se salvează automat o copie (ultimele 15). Restaurarea înlocuiește graficul de acum, care se salvează și el ca versiune." : "Nu există încă versiuni anterioare. Se salvează automat câte una înainte de fiecare înlocuire a graficului.";
-      const fmt = (t) => new Date(t).toLocaleString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const fmt = (t) => dataOraPlatforma(t);
       data.forEach((v) => {
         const rd = el("div", "ver-rand"); box.appendChild(rd);
         const arata = () => {
