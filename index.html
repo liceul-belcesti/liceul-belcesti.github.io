@@ -670,6 +670,23 @@
     @media (prefers-color-scheme: dark) { #cereri .cr-st.att { color:#fcd34d; } #cereri .cr-st.ok { color:#86efac; } #cereri .cr-st.rau { color:#fca5a5; } }
     /* Azi în școală */
     #cr-lista-mele { scroll-margin-top:76px; }
+    #cereri .cr-ghidaj { display:flex; align-items:flex-start; gap:10px; background:var(--card); border:2px solid var(--line); border-radius:14px; padding:10px 12px; margin:0 0 10px; cursor:pointer; }
+    #cereri .cr-ghidaj input { flex:none; width:24px; height:24px; margin:2px 0 0; }
+    #cereri .cr-ghidaj-t { display:block; }
+    #cereri .cr-ghidaj-t b { display:block; }
+    #cereri .cr-ghidaj-t small { display:block; color:var(--muted); font-size:.82rem; line-height:1.35; margin-top:2px; }
+    #cereri .gp-off .gp-pas { display:none; }
+    #cereri .gp-pas { background:var(--card); border:2px solid var(--line); border-radius:14px; padding:8px 12px 10px; margin:12px 0 6px; }
+    #cereri .gp-cap { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; }
+    #cereri .gp-nr { flex:none; color:var(--muted); font-size:.78rem; font-weight:700; }
+    #cereri .gp-t { flex:1; min-width:10em; }
+    #cereri .gp-st { flex:none; font-size:.82rem; font-weight:800; margin-left:auto; }
+    #cereri .gp-p { margin:4px 0 0; color:var(--muted); font-size:.88rem; line-height:1.4; }
+    #cereri .gp-acum { border:3px solid var(--accent); background:var(--card); padding:7px 11px 9px; }
+    #cereri .gp-acum .gp-st { color:var(--accent); }
+    #cereri .gp-acum .gp-p { color:var(--text); }
+    #cereri .gp-gata { opacity:.7; }
+
     #cereri .cr-dublu { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 10px; }
     #cereri .cr-dublu button { width:100%; margin:0; }
     #cereri .cr-dublu.fix { position:sticky; z-index:6; background:var(--bg); padding:8px 0; margin:0 0 6px; box-shadow:0 6px 8px -6px rgba(0,0,0,.25); }
@@ -3981,6 +3998,15 @@
       const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
       let filtruCereri = null, FILTRE_CERERI = null;
+      let ghidaj = false; try { ghidaj = localStorage.getItem("ghidaj_cereri") === "1"; } catch (e) { /* preferința nu se păstrează */ }
+      const seteazaGhidaj = (v) => { ghidaj = !!v; try { localStorage.setItem("ghidaj_cereri", v ? "1" : "0"); } catch (e) { /* ignorat */ } };
+      // Bifa „Ghidaj pas cu pas”: la cerere nouă apare, la fiecare pas, ce are de ales sau de scris
+      const bifaGhidaj = (dupa) => {
+        const l = el("label", "cr-ghidaj"), cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = ghidaj;
+        const t = el("span", "cr-ghidaj-t"); t.append(el("b", "", "Ghidaj pas cu pas"), el("small", "", "Bifează dacă vrei să fii ghidat pas cu pas când completezi o cerere nouă: la fiecare pas vezi ce ai de ales sau de scris."));
+        l.append(cb, t); cb.addEventListener("change", () => { seteazaGhidaj(cb.checked); if (dupa) dupa(cb.checked); });
+        return l;
+      };
       let cereri, orar, colegi, cal = { structura: [], libere: [] }, acc = new Map(), pentruMine = [], deDecis = [], lim = new Map(), numere = new Map(), oreInv = [];
       const poateDecide = ["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r)), esteDirector = (euRoluri.includes("director") || euRoluri.includes("director_adjunct")), esteAdmin = euRoluri.includes("administrator"), poateInreg = ["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r));
       const incarca = async () => {
@@ -4236,7 +4262,7 @@
       };
       const desenGhid = () => {
         zona.replaceChildren(); mesaj("");
-        zona.appendChild(randNou(true));
+        zona.appendChild(randNou(true)); zona.appendChild(bifaGhidaj());
         zona.appendChild(el("h3", "az-h", "Ghid: cum depui o cerere de învoire"));
         const randa = (lista, cont) => lista.forEach(([tip, v]) => {
           if (tip === "p") cont.appendChild(el("p", "gh-p", v));
@@ -4257,7 +4283,7 @@
       };
       const desenLista = () => {
         zona.replaceChildren();
-        zona.appendChild(randNou(false));
+        zona.appendChild(randNou(false)); zona.appendChild(bifaGhidaj());
         if (poateInreg) { const ab = el("button", "secondary", "＋ Înregistrează absență"); ab.type = "button"; ab.addEventListener("click", () => desenForm(null, true)); zona.appendChild(ab); }
         if (poateDecide) { const tt = el("button", "secondary", esteAdmin ? "← Toate cererile (panou)" : "Toate cererile, pe persoane"); tt.type = "button"; tt.addEventListener("click", () => desenToate()); zona.appendChild(tt); }
         const sd = sectiuneDeDecis(); if (sd) zona.appendChild(sd);
@@ -4470,7 +4496,7 @@
         gDe.append(document.createTextNode("De la "), de); gPana.append(document.createTextNode("Până la "), pana);
         r1.append(gDe, gPana); f.appendChild(r1);
         // Număr de înregistrare: fără el cererea nu se trimite (cererile noi ale profesorului)
-        let reg = null, sincReg = () => {};
+        let reg = null, sincReg = () => {}, refreshPasi = () => {};
         if (!pt && !ex) {
           const bx = el("div", "cr-reg"), tx = el("span", "cr-reg-t");
           const bp = el("button", "secondary", "Preia număr de înregistrare"); bp.type = "button";
@@ -4478,7 +4504,7 @@
             tx.replaceChildren();
             if (reg) { tx.append(el("b", "", "Număr de înregistrare: " + reg.nr), document.createTextNode(" din " + fd(reg.data) + ". Scrie-l pe cererea ta, dacă o predai și pe hârtie.")); }
             else tx.textContent = "Cererea se poate trimite numai după ce preiei un număr de înregistrare.";
-            bp.classList.toggle("hidden", !!reg); ok.disabled = !reg; indiciu.classList.toggle("hidden", !!reg);
+            bp.classList.toggle("hidden", !!reg); ok.disabled = !reg; indiciu.classList.toggle("hidden", !!reg); refreshPasi();
           };
           bp.addEventListener("click", async () => {
             bp.disabled = true; mesaj("");
@@ -4688,6 +4714,38 @@
         ctl.append(ok, nu); f.appendChild(ctl);
         const indiciu = el("p", "cr-det hidden", "Butonul „Trimite cererea” se activează după ce preiei numărul de înregistrare (mai sus).");
         f.appendChild(indiciu); zona.appendChild(f); sincReg();
+        // Ghidaj pas cu pas: un chenar pe fiecare pas, cu ce are de ales sau de scris; pasul curent este evidențiat
+        if (!pt) {
+          const lGh = bifaGhidaj((v) => { f.classList.toggle("gp-off", !v); refreshPasi(); }); lGh.classList.add("cr-ghidaj-f"); f.insertBefore(lGh, r1.nextSibling);
+          f.classList.toggle("gp-off", !ghidaj);
+          const alesePosibile = () => toateCheile().filter((k) => alese.has(k));
+          const faraAcoperire = () => alesePosibile().filter((k) => !propuneri.has(k) && !opt.has(k)).length;
+          const PASI = [
+            { id: "zile", inainte: lGh.nextSibling, titlu: "Alege zilele", text: "În rândul de mai sus, la „De la” alege prima zi, iar la „Până la” ultima zi. Pentru o singură zi lasă aceeași dată la ambele. Implicit este aleasă ziua de azi. Poți alege cel mult 31 de zile.", gata: () => true, cerut: false },
+            ...(!ex ? [{ id: "nr", inainte: f.querySelector(".cr-reg"), titlu: "Preia numărul de înregistrare", text: "Apasă pe „Preia număr de înregistrare”. Fără număr, cererea nu se poate trimite.", gata: () => !!reg, cerut: true }] : []),
+            { id: "tip", inainte: f.querySelector(".cr-r3"), titlu: "Alege tipul cererii și scrie motivul", text: "Alege „Învoire” sau „Învoire în interes de serviciu”. La învoire scrie motivul în câteva cuvinte. La interes de serviciu bifează un singur motiv din listă (dacă alegi „Altul”, îl scrii tu).", gata: () => (tipCerere === "S" ? !!motivS && (motivS !== "Altul" || altS.value.trim().length >= 3) : motiv.value.trim().length >= 3), cerut: true },
+            { id: "ore", inainte: lT.parentNode, titlu: "Alege orele", text: "„Toate orele din aceste zile” este bifat implicit. Dacă lipsești doar la unele ore, bifează „O parte dintre ore”, apoi bifează mai jos, în fișele zilelor, orele la care lipsești. Trebuie să rămână bifată cel puțin o oră.", gata: () => alesePosibile().length > 0, cerut: true },
+            { id: "inl", inainte: zileBox, titlu: "Alege cine te înlocuiește", text: "La fiecare oră bifată alege un înlocuitor din listă (colegii recomandați) sau apasă pe „Adaugă alt profesor”. Dacă ora se poate acoperi altfel, alege „Clasa vine de la ora…” sau „Clasa pleacă acasă de la ora…”; atunci cererea o aprobă doar directorul. Nu este obligatoriu, dar o oră fără înlocuitor rămâne neacoperită.", gata: () => alesePosibile().length > 0 && faraAcoperire() === 0, cerut: false, stare: () => (alesePosibile().length && faraAcoperire() ? faraAcoperire() + (faraAcoperire() === 1 ? " oră fără înlocuitor" : " ore fără înlocuitor") : "") },
+            { id: "trimite", inainte: ctl, titlu: "Trimite cererea", text: "Verifică zilele, motivul și orele. Apoi apasă pe „Trimite cererea”.", gata: () => false, cerut: false }
+          ];
+          PASI.forEach((p, i) => {
+            const b = el("div", "gp-pas"), cp = el("div", "gp-cap");
+            p.st = el("span", "gp-st"); cp.append(el("span", "gp-nr", "Pasul " + (i + 1) + " din " + PASI.length), el("b", "gp-t", p.titlu), p.st);
+            b.append(cp, el("p", "gp-p", p.text)); p.b = b; f.insertBefore(b, p.inainte);
+          });
+          refreshPasi = () => {
+            const cerute = PASI.filter((p) => p.cerut), primulNefacut = cerute.find((p) => !p.gata());
+            const curent = primulNefacut ? primulNefacut.id : (faraAcoperire() > 0 && alesePosibile().length ? "inl" : "trimite");
+            PASI.forEach((p) => {
+              const gata = p.id === "trimite" ? false : p.gata(), acum = p.id === curent;
+              p.b.classList.toggle("gp-gata", gata && !acum); p.b.classList.toggle("gp-acum", acum);
+              p.st.textContent = acum ? "Acum" : gata ? "✓ Făcut" : ((p.stare && p.stare()) || "");
+            });
+          };
+          f.addEventListener("input", () => setTimeout(refreshPasi, 0)); f.addEventListener("change", () => setTimeout(refreshPasi, 0)); f.addEventListener("click", () => setTimeout(refreshPasi, 0));
+          new MutationObserver(() => refreshPasi()).observe(zileBox, { childList: true, subtree: true });
+          refreshPasi();
+        }
         ok.addEventListener("click", async () => {
           if (!pt && !ex && !reg) return mesaj("Preia mai întâi numărul de înregistrare.");
           if (!de.value || !pana.value || pana.value < de.value) return mesaj("Alege corect zilele.");
