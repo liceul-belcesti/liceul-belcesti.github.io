@@ -670,6 +670,12 @@
     @media (prefers-color-scheme: dark) { #cereri .cr-st.att { color:#fcd34d; } #cereri .cr-st.ok { color:#86efac; } #cereri .cr-st.rau { color:#fca5a5; } }
     /* Azi în școală */
     #cr-lista-mele { scroll-margin-top:76px; }
+    #cereri .cr-rand { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; background:var(--card); border-radius:14px; padding:10px 14px; margin:0 0 8px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .cr-rand-nr { font-weight:800; min-width:2.2ch; }
+    #cereri .cr-rand-data { font-weight:700; }
+    #cereri .cr-rand-inr { color:var(--muted); font-size:.9rem; }
+    #cereri .cr-rand .cr-rand-b { width:auto; min-height:40px; margin:0 0 0 auto; padding:0 14px; }
+    #cereri .cr-rand-grup .cr-card { margin-top:-2px; }
     #cereri .az-stat.sel { outline:3px solid var(--accent); outline-offset:-3px; }
     #cereri .cr-stat { margin:10px 0 4px; padding:10px 14px; background:var(--card); border-radius:14px; font-size:.92rem; line-height:1.5; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     .orm .az-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:0 0 6px; }
@@ -3896,11 +3902,11 @@
         sec.appendChild(el("h3", "az-h", "Statistică · anul școlar curent"));
         const st = el("div", "az-stats");
         const FILTRE = {
-          toate: { et: "Toate cererile", f: () => true },
-          aprobata: { et: "Aprobate", f: (c) => c.stare === "aprobata" },
-          in_asteptare: { et: "În așteptare", f: (c) => c.stare === "in_asteptare" },
-          respinsa: { et: "Respinse", f: (c) => c.stare === "respinsa" },
-          numarate: { et: "Învoiri aprobate (cele numărate în zile și ore)", f: (c) => c.stare === "aprobata" && c.tip !== "S" }
+          toate: { et: "Cereri trimise", f: () => true },
+          aprobata: { et: "Cereri aprobate", f: (c) => c.stare === "aprobata" },
+          in_asteptare: { et: "Cereri în așteptare", f: (c) => c.stare === "in_asteptare" },
+          respinsa: { et: "Cereri respinse", f: (c) => c.stare === "respinsa" },
+          numarate: { et: "Învoiri aprobate, numărate în zile și ore", f: (c) => c.stare === "aprobata" && c.tip !== "S" }
         };
         const tile = (n, et, cheie, cls) => {
           const t = el("button", "az-stat " + (cls || "") + (filtruCereri === cheie ? " sel" : "")); t.type = "button"; t.setAttribute("aria-pressed", String(filtruCereri === cheie));
@@ -3925,12 +3931,12 @@
         const stat = statistica(); if (stat) zona.appendChild(stat);
         if (!orar.length) zona.appendChild(el("p", "who", "Contul tău nu este legat încă de numele tău din lista de angajați sau nu ai orar. Cere administratorului să îl lege, ca să poți trimite cereri."));
         const fAct = filtruCereri && FILTRE_CERERI ? FILTRE_CERERI[filtruCereri] : null;
-        const hMele = el("h3", "az-h", "Cererile mele" + (fAct ? " · " + fAct.et : "")); hMele.id = "cr-lista-mele"; zona.appendChild(hMele);
-        if (fAct) { const tot = el("button", "secondary", "Arată toate cererile"); tot.type = "button"; tot.addEventListener("click", () => { filtruCereri = null; desenLista(); }); zona.appendChild(tot); }
+        const hMele = el("h3", "az-h", fAct ? fAct.et : "Cererile mele"); hMele.id = "cr-lista-mele"; zona.appendChild(hMele);
+        if (fAct) { const tot = el("button", "secondary", "Închide lista"); tot.type = "button"; tot.addEventListener("click", () => { filtruCereri = null; desenLista(); }); zona.appendChild(tot); }
         if (!cereri.length) zona.appendChild(el("p", "who", "Nu ai trimis nicio cerere."));
         const vizibile = fAct ? cereri.filter(fAct.f) : cereri;
         if (cereri.length && !vizibile.length) zona.appendChild(el("p", "who", "Nicio cerere în această categorie."));
-        vizibile.forEach((c) => {
+        const construiesteCard = (c) => {
           const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
           cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), ...etTip(c), el("span", ST[c.stare][1], ST[c.stare][0]));
           k.appendChild(cp);
@@ -3984,8 +3990,20 @@
             });
             bara.appendChild(sb);
           }
-          zona.appendChild(k);
-        });
+          return k;
+        };
+        if (!fAct) vizibile.forEach((c) => zona.appendChild(construiesteCard(c)));
+        else {
+          // Cu un cartonaș apăsat: cererile numerotate, restrânse (data, numărul de înregistrare, „Vezi detalii”), cea mai nouă prima
+          const ordonate = vizibile.slice().sort((a, b) => (a.creat_la < b.creat_la ? 1 : a.creat_la > b.creat_la ? -1 : 0));
+          ordonate.forEach((c, i) => {
+            const grup = el("div", "cr-rand-grup"), rand = el("div", "cr-rand"), x = numere.get(c.id);
+            rand.append(el("span", "cr-rand-nr", (ordonate.length - i) + "."), el("span", "cr-rand-data", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", "cr-rand-inr", x ? "Nr. " + x.nr + " din " + fd(x.data_inreg) + (x.anulat ? " (anulat)" : "") : "fără număr de înregistrare"));
+            const bv = el("button", "secondary cr-rand-b", "Vezi detalii"); bv.type = "button"; let card = null;
+            bv.addEventListener("click", () => { if (card) { card.remove(); card = null; bv.textContent = "Vezi detalii"; bv.setAttribute("aria-expanded", "false"); return; } card = construiesteCard(c); grup.appendChild(card); bv.textContent = "Ascunde detalii"; bv.setAttribute("aria-expanded", "true"); });
+            bv.setAttribute("aria-expanded", "false"); rand.appendChild(bv); grup.appendChild(rand); zona.appendChild(grup);
+          });
+        }
       };
       // Profesorul a cerut retragerea unei cereri aprobate care a început: o soluționează directorul sau administratorul
       const butoaneRetragere = (c, k, nume, reface) => {
