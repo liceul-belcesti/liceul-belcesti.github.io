@@ -672,6 +672,9 @@
     #cr-lista-mele { scroll-margin-top:76px; }
     #cereri .cr-dublu { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 10px; }
     #cereri .cr-dublu button { width:100%; margin:0; }
+    #cereri .cr-dublu.fix { position:sticky; z-index:6; background:var(--bg); padding:8px 0; margin:0 0 6px; box-shadow:0 6px 8px -6px rgba(0,0,0,.25); }
+    #cereri .cr-dublu .cr-ghid-b { background:var(--card); color:var(--accent); border:2px solid var(--accent); font-weight:800; }
+    #cereri .cr-dublu .cr-ghid-b.act { background:var(--accent); color:var(--on-accent); }
     #cereri .gh-intro { background:var(--card); border-radius:16px; padding:12px 14px; margin:0 0 10px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     #cereri .gh-p { margin:0 0 8px; line-height:1.45; }
     #cereri .gh-l { margin:0 0 8px; padding-left:1.3em; line-height:1.45; }
@@ -4221,33 +4224,40 @@
           ["ul", ["„Cereri trimise”, „Aprobate”, „În așteptare”, „Respinse”: deschid lista cererilor din categoria respectivă, numerotate și restrânse.", "„Zile de învoire aprobate”: deschide un calendar al anului școlar cu zilele tale de învoire, plus statistici pe luni, pe module ale anului școlar și pe zilele săptămânii.", "„Ore de învoire aprobate”: deschide o hartă mentală cu orele tale pe clase, pe module ale anului școlar, pe discipline, pe înlocuitori și pe momentul din an."]],
           ["p", "Fiecare element are sub el o explicație scurtă."]]]
       ];
+      // Rândul „+ Cerere nouă | Ghid”: același în listă și în ghid; în ghid rămâne fixat sus și Ghid apare apăsat
+      const randNou = (ghidDeschis) => {
+        const rnd = el("div", "cr-dublu" + (ghidDeschis ? " fix" : ""));
+        const nou = el("button", "", "+ Cerere nouă"); nou.type = "button"; nou.addEventListener("click", () => desenForm());
+        const gh = el("button", "cr-ghid-b" + (ghidDeschis ? " act" : ""), "📖 Ghid"); gh.type = "button"; gh.setAttribute("aria-pressed", String(!!ghidDeschis)); gh.setAttribute("aria-label", "Ghid: cum depui o cerere de învoire");
+        gh.addEventListener("click", () => (ghidDeschis ? desenLista() : desenGhid()));
+        rnd.append(nou, gh);
+        if (ghidDeschis) { const bar = document.querySelector(".bar"); rnd.style.top = (bar ? Math.round(bar.getBoundingClientRect().height) : 56) + "px"; }
+        return rnd;
+      };
       const desenGhid = () => {
         zona.replaceChildren(); mesaj("");
-        const sus = el("div", "cr-dublu"), b1 = el("button", "secondary", "← Înapoi"); b1.type = "button"; b1.addEventListener("click", () => desenLista());
-        const b2 = el("button", "", "+ Cerere nouă"); b2.type = "button"; b2.addEventListener("click", () => desenForm()); sus.append(b1, b2); zona.appendChild(sus);
+        zona.appendChild(randNou(true));
         zona.appendChild(el("h3", "az-h", "Ghid: cum depui o cerere de învoire"));
         const randa = (lista, cont) => lista.forEach(([tip, v]) => {
           if (tip === "p") cont.appendChild(el("p", "gh-p", v));
           else { const l = document.createElement(tip === "ol" ? "ol" : "ul"); l.className = "gh-l"; v.forEach((t) => l.appendChild(el("li", "", t))); cont.appendChild(l); }
         });
         const intro = el("div", "gh-intro"); randa(GHID_INTRO, intro); zona.appendChild(intro);
-        const tot = el("button", "secondary", "Desfă toate etapele"); tot.type = "button"; zona.appendChild(tot);
+        const tot = el("button", "secondary", "Strânge toate etapele"); tot.type = "button"; zona.appendChild(tot);
         zona.appendChild(el("h3", "az-h", "Etapele"));
         const lista = el("div", "gh-etape"), toate = [];
         GHID.forEach(([titlu, corp], i) => {
-          const d = el("details", "gh-et"), s = el("summary", "gh-et-s"); s.append(el("span", "gh-nr", String(i + 1)), el("span", "gh-et-t", titlu)); d.appendChild(s);
+          const d = el("details", "gh-et"), s = el("summary", "gh-et-s"); d.open = true; s.append(el("span", "gh-nr", String(i + 1)), el("span", "gh-et-t", titlu)); d.appendChild(s);
           const c = el("div", "gh-et-c"); randa(corp, c); d.appendChild(c); lista.appendChild(d); toate.push(d);
         });
         zona.appendChild(lista);
         tot.addEventListener("click", () => { const desface = toate.some((d) => !d.open); toate.forEach((d) => { d.open = desface; }); tot.textContent = desface ? "Strânge toate etapele" : "Desfă toate etapele"; });
-        const jos = el("button", "", "+ Cerere nouă"); jos.type = "button"; jos.addEventListener("click", () => desenForm()); zona.appendChild(jos);
+        const jos = el("button", "secondary", "← Înapoi la cereri"); jos.type = "button"; jos.addEventListener("click", () => desenLista()); zona.appendChild(jos);
         window.scrollTo(0, 0);
       };
       const desenLista = () => {
         zona.replaceChildren();
-        const nou = el("button", "", "+ Cerere nouă"); nou.type = "button"; nou.addEventListener("click", () => desenForm());
-        const gh = el("button", "secondary", "Ghid"); gh.type = "button"; gh.setAttribute("aria-label", "Ghid: cum depui o cerere de învoire"); gh.addEventListener("click", () => desenGhid());
-        const rNou = el("div", "cr-dublu"); rNou.append(nou, gh); zona.appendChild(rNou);
+        zona.appendChild(randNou(false));
         if (poateInreg) { const ab = el("button", "secondary", "＋ Înregistrează absență"); ab.type = "button"; ab.addEventListener("click", () => desenForm(null, true)); zona.appendChild(ab); }
         if (poateDecide) { const tt = el("button", "secondary", esteAdmin ? "← Toate cererile (panou)" : "Toate cererile, pe persoane"); tt.type = "button"; tt.addEventListener("click", () => desenToate()); zona.appendChild(tt); }
         const sd = sectiuneDeDecis(); if (sd) zona.appendChild(sd);
