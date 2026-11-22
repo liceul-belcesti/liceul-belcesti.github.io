@@ -778,6 +778,7 @@
     #cereri .cr-rand { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; background:var(--card); border-radius:14px; padding:10px 14px; margin:0 0 8px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     #cereri .cr-rand-nr { font-weight:800; min-width:2.2ch; }
     #cereri .cr-rand-data { font-weight:700; }
+    #cereri .cr-rand-pers { font-weight:700; }
     #cereri .cr-rand-inr { color:var(--muted); font-size:.9rem; }
     #cereri .cr-rand .cr-rand-b { width:auto; min-height:40px; margin:0 0 0 auto; padding:0 14px; }
     #cereri .cr-rand-grup .cr-card { margin-top:-2px; }
@@ -4006,7 +4007,7 @@
       const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
       const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
-      let filtruCereri = null, FILTRE_CERERI = null;
+      let filtruCereri = null, FILTRE_CERERI = null; let filtruToate = null;
       let ghidaj = false; try { ghidaj = localStorage.getItem("ghidaj_cereri") === "1"; } catch (e) { /* preferința nu se păstrează */ }
       const seteazaGhidaj = (v) => { ghidaj = !!v; try { localStorage.setItem("ghidaj_cereri", v ? "1" : "0"); } catch (e) { /* ignorat */ } };
       // Bifa „Ghidaj pas cu pas”: la cerere nouă apare, la fiecare pas, ce are de ales sau de scris
@@ -4220,7 +4221,7 @@
           ["p", "Dacă zilele alese nu sunt corecte, platforma te anunță înainte să poți merge mai departe."]]],
         ["Preiei numărul de înregistrare", [
           ["p", "Cererea de învoire este un document al școlii și primește un număr din registratură."],
-          ["ol", ["Apasă pe „Preia număr de înregistrare”.", "Pe ecran apare „Număr de înregistrare”, cu numărul și data lui. Același număr va fi trecut pe cererea tipărită.", "Fără număr, cererea nu se poate trimite: butonul de trimitere rămâne închis și platforma îți cere să preiei mai întâi numărul."]],
+          ["ol", ["Apasă pe „Preia număr de înregistrare”.", "Pe ecran apare „Număr de înregistrare”, cu numărul și data lui. Numărul se trece automat pe cererea tipărită; nu trebuie să-l scrii de mână.", "Fără număr, cererea nu se poate trimite: butonul de trimitere rămâne închis și platforma îți cere să preiei mai întâi numărul."]],
           ["p", "Dacă numărul nu poate fi preluat, apare un mesaj; încearcă din nou."]]],
         ["Alegi tipul cererii și scrii motivul", [
           ["ul", ["Învoire: scrii motivul în câteva cuvinte, în câmpul „Motivul învoirii”. Motivul este obligatoriu.", "Învoire în interes de serviciu: apare o explicație scurtă și o listă de motive din care bifezi unul singur (cerc pedagogic; delegare din partea școlii; curs sau formare; ședință sau întâlnire la inspectoratul școlar; însoțirea elevilor; comisii pentru examene, evaluări sau concursuri; inspecție școlară sau lecție deschisă; probleme ale școlii la o instituție; activitate dintr-un proiect al școlii; Altul). La „Altul” scrii tu motivul."]],
@@ -4433,37 +4434,7 @@
         const nrOre = (c) => (c.ore_alese ? c.ore_alese.length : 0);
         const fara = (c) => (c.ore_alese || []).filter((k) => !(c.propuneri && c.propuneri[k]) && !(c.optiuni_clasa && c.optiuni_clasa[k])).length;
         const apr = data.filter((c) => c.stare === "aprobata"), aprI = apr.filter(numaraInvoire), aprS = apr.filter((c) => c.tip === "S"), nr = (st) => data.filter((c) => c.stare === st).length;
-        const profesori = new Set(data.map((c) => c.angajat_id));
-        // Statistica generală
-        zona.appendChild(el("h3", "az-h", "Statistică generală"));
-        const st = el("div", "az-stats");
-        const tile = (n, et, cls, act) => { const t = el(act ? "button" : "div", "az-stat " + (cls || "")); if (act) { t.type = "button"; t.addEventListener("click", act); } t.append(el("b", "", String(n)), el("span", "", et)); return t; };
-        st.append(tile(data.length, "Cereri trimise"), tile(profesori.size, "Profesori care s-au învoit"), tile(nr("in_asteptare"), "În așteptare", nr("in_asteptare") ? "att" : ""), tile(apr.length, "Aprobate", "bun"), tile(nr("respinsa"), "Respinse", nr("respinsa") ? "rau" : ""), tile(nr("anulata"), "Retrase"), tile(data.filter((c) => c.stearsa_de_profesor_la).length, "Șterse de profesor"), tile(aprS.length, "Aprobate în interes de serviciu"),
-          tile(new Set(oreToti.map((x) => x.angajat_id + "|" + x.data)).size, "Zile de învoire aprobate, însumate pe persoane", "", () => deschideStat("zile", true, () => desenToate())), tile(oreToti.length, "Ore de învoire aprobate", "", () => deschideStat("ore", true, () => desenToate())), tile(apr.reduce((t, c) => t + fara(c), 0), "Ore aprobate fără înlocuitor", apr.some((c) => fara(c)) ? "att" : ""),
-          tile(apr.reduce((t, c) => t + (c.propuneri ? Object.keys(c.propuneri).length : 0), 0), "Ore cu înlocuitor propus"), tile(apr.reduce((t, c) => t + (c.optiuni_clasa ? Object.keys(c.optiuni_clasa).length : 0), 0), "Ore cu clasa venită mai târziu / plecată acasă"), tile(data.filter((c) => c.modificari > 0).length, "Cereri modificate"));
-        zona.appendChild(st);
-        // Pe luni
-        const luni = new Map(); data.forEach((c) => { const l = c.de_la.slice(0, 7); if (!luni.has(l)) luni.set(l, { c: 0, a: 0, z: 0, o: 0 }); const x = luni.get(l); x.c++; if (c.stare === "aprobata" && numaraInvoire(c)) { x.a++; x.z += zileCerere(c); x.o += nrOre(c); } });
-        const LUNI = ["", "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
-        zona.appendChild(el("h3", "az-h", "Pe luni"));
-        const tb = el("div", "cr-tab");
-        [...luni.keys()].sort().reverse().forEach((l) => { const x = luni.get(l), r = el("div", "cr-tab-rand"); r.append(el("b", "", LUNI[Number(l.slice(5))] + " " + l.slice(0, 4)), el("span", "", x.c + " cereri · aprobate: " + x.a + " (" + x.z + " zile, " + x.o + " ore)")); tb.appendChild(r); });
-        zona.appendChild(tb);
-        // Cei mai mulți
-        const pePers = new Map(); data.forEach((c) => { if (!pePers.has(c.angajat)) pePers.set(c.angajat, []); pePers.get(c.angajat).push(c); });
-        const clasament = [...pePers.entries()].map(([n, l]) => [n, l.filter((c) => c.stare === "aprobata" && numaraInvoire(c)).reduce((t, c) => t + nrOre(c), 0), l.filter((c) => c.stare === "aprobata" && numaraInvoire(c)).reduce((t, c) => t + zileCerere(c), 0)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        if (clasament.length) { zona.appendChild(el("h3", "az-h", "Cele mai multe ore de învoire aprobate")); const cl = el("div", "cr-tab"); clasament.forEach(([n, o, z], i) => { const r = el("div", "cr-tab-rand"); r.append(el("b", "", (i + 1) + ". " + n), el("span", "", o + " ore · " + z + " zile")); cl.appendChild(r); }); zona.appendChild(cl); }
-        // Câte un cartonaș pe profesor
-        zona.appendChild(el("h3", "az-h", "Profesori care s-au învoit (" + pePers.size + ")"));
-        if (!data.length) { zona.appendChild(el("p", "who", "Nu a fost trimisă nicio cerere.")); return; }
-        [...pePers.keys()].sort((a, b) => a.localeCompare(b, "ro")).forEach((nume) => {
-          const lista = pePers.get(nume), ap = lista.filter((c) => c.stare === "aprobata"), att = lista.filter((c) => c.stare === "in_asteptare").length, resp = lista.filter((c) => c.stare === "respinsa").length;
-          const det = el("details", "cr-pers"); if (att) det.open = true; const sm = el("summary", "");
-          sm.appendChild(el("b", "", nume));
-          sm.appendChild(el("span", "cr-det", lista.length + (lista.length === 1 ? " cerere" : " cereri") + " · aprobate: " + ap.length + " (" + ap.reduce((t, c) => t + zileCerere(c), 0) + " zile, " + ap.reduce((t, c) => t + nrOre(c), 0) + " ore)"));
-          sm.appendChild(el("span", "cr-det", (att ? "în așteptare: " + att + " · " : "") + (resp ? "respinse: " + resp + " · " : "") + (lista.some((c) => c.stearsa_de_profesor_la) ? "șterse de profesor: " + lista.filter((c) => c.stearsa_de_profesor_la).length + " · " : "") + "ore fără înlocuitor: " + ap.reduce((t, c) => t + fara(c), 0) + " · ultima cerere: " + fd(lista.map((c) => c.de_la).sort().reverse()[0])));
-          det.appendChild(sm);
-          lista.forEach((c) => {
+        const cardToate = (c, nume) => {
             const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
             cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), ...etTip(c), el("span", ST[c.stare][1], ST[c.stare][0]), ...(c.retragere_ceruta_la ? [el("span", "cr-st att", "Retragere cerută")] : []), ...(c.stearsa_de_profesor_la ? [el("span", "cr-st rau", "Ștearsă de profesor")] : []));
             k.appendChild(cp);
@@ -4489,8 +4460,75 @@
               if (r.error) { bs.disabled = false; mesaj(r.error.message || "Cererea nu a putut fi ștearsă."); return; }
               await refa("Cererea a fost ștearsă.", true);
             }); bb.appendChild(bs); }
-            k.appendChild(bb); det.appendChild(k);
+            k.appendChild(bb);
+            return k;
+        };
+        const profesori = new Set(data.map((c) => c.angajat_id));
+        // Statistica generală
+        zona.appendChild(el("h3", "az-h", "Statistică generală"));
+        const st = el("div", "az-stats");
+        const nrIn = (c) => (c.propuneri ? Object.keys(c.propuneri).length : 0), nrCl = (c) => (c.optiuni_clasa ? Object.keys(c.optiuni_clasa).length : 0);
+        const FILTRE_T = {
+          toate: { et: "Cereri trimise", f: () => true },
+          in_asteptare: { et: "Cereri în așteptare", f: (c) => c.stare === "in_asteptare" },
+          aprobata: { et: "Cereri aprobate", f: (c) => c.stare === "aprobata" },
+          respinsa: { et: "Cereri respinse", f: (c) => c.stare === "respinsa" },
+          anulata: { et: "Cereri retrase", f: (c) => c.stare === "anulata" },
+          stearsa: { et: "Cereri șterse de profesor", f: (c) => !!c.stearsa_de_profesor_la },
+          serviciu: { et: "Cereri aprobate în interes de serviciu", f: (c) => c.stare === "aprobata" && c.tip === "S" },
+          fara: { et: "Cereri aprobate cu ore fără înlocuitor", f: (c) => c.stare === "aprobata" && fara(c) > 0 },
+          inlocuitor: { et: "Cereri aprobate cu ore cu înlocuitor propus", f: (c) => c.stare === "aprobata" && nrIn(c) > 0 },
+          clasa: { et: "Cereri aprobate cu clasa venită mai târziu sau plecată acasă", f: (c) => c.stare === "aprobata" && nrCl(c) > 0 },
+          modificata: { et: "Cereri modificate", f: (c) => c.modificari > 0 }
+        };
+        const tile = (n, et, cls, act, cheie) => {
+          const t = el("button", "az-stat " + (cls || "") + (!act && cheie && filtruToate === cheie ? " sel" : "")); t.type = "button"; if (!act && cheie) t.setAttribute("aria-pressed", String(filtruToate === cheie));
+          t.append(el("b", "", String(n)), el("span", "", et));
+          if (act) t.addEventListener("click", act);
+          else if (cheie) t.addEventListener("click", () => { filtruToate = filtruToate === cheie ? null : cheie; desenToate(); setTimeout(() => { const h = document.getElementById("cr-lista-toate"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50); });
+          return t;
+        };
+        const catre = (cheie) => data.filter(FILTRE_T[cheie].f).length;
+        st.append(tile(data.length, "Cereri trimise", "", null, "toate"), tile(profesori.size, "Profesori care s-au învoit", "", () => { const h = document.getElementById("cr-profesori"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); }), tile(nr("in_asteptare"), "În așteptare", nr("in_asteptare") ? "att" : "", null, "in_asteptare"), tile(apr.length, "Aprobate", "bun", null, "aprobata"), tile(nr("respinsa"), "Respinse", nr("respinsa") ? "rau" : "", null, "respinsa"), tile(nr("anulata"), "Retrase", "", null, "anulata"), tile(catre("stearsa"), "Șterse de profesor", "", null, "stearsa"), tile(aprS.length, "Aprobate în interes de serviciu", "", null, "serviciu"),
+          tile(new Set(oreToti.map((x) => x.angajat_id + "|" + x.data)).size, "Zile de învoire aprobate, însumate pe persoane", "", () => deschideStat("zile", true, () => desenToate())), tile(oreToti.length, "Ore de învoire aprobate", "", () => deschideStat("ore", true, () => desenToate())), tile(apr.reduce((t, c) => t + fara(c), 0), "Ore aprobate fără înlocuitor", apr.some((c) => fara(c)) ? "att" : "", null, "fara"),
+          tile(apr.reduce((t, c) => t + nrIn(c), 0), "Ore cu înlocuitor propus", "", null, "inlocuitor"), tile(apr.reduce((t, c) => t + nrCl(c), 0), "Ore cu clasa venită mai târziu / plecată acasă", "", null, "clasa"), tile(catre("modificata"), "Cereri modificate", "", null, "modificata"));
+        zona.appendChild(st);
+        const fT = filtruToate ? FILTRE_T[filtruToate] : null;
+        if (fT) {
+          const vizT = data.filter(fT.f).sort((a, b) => (a.creat_la < b.creat_la ? 1 : a.creat_la > b.creat_la ? -1 : 0));
+          const hT = el("h3", "az-h", fT.et + " (" + vizT.length + ")"); hT.id = "cr-lista-toate"; zona.appendChild(hT);
+          const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(); }); zona.appendChild(inch);
+          if (!vizT.length) zona.appendChild(el("p", "who", "Nicio cerere în această categorie."));
+          vizT.forEach((c, i) => {
+            const grup = el("div", "cr-rand-grup"), rand = el("div", "cr-rand"), x = numere.get(c.id);
+            rand.append(el("span", "cr-rand-nr", (vizT.length - i) + "."), el("span", "cr-rand-pers", c.angajat), el("span", "cr-rand-data", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", "cr-rand-inr", x ? "Nr. " + x.nr + " din " + fd(x.data_inreg) + (x.anulat ? " (anulat)" : "") : "fără număr de înregistrare"), el("span", ST[c.stare][1], ST[c.stare][0]));
+            const bv = el("button", "secondary cr-rand-b", "Vezi detalii"); bv.type = "button"; let card = null;
+            bv.addEventListener("click", () => { if (card) { card.remove(); card = null; bv.textContent = "Vezi detalii"; bv.setAttribute("aria-expanded", "false"); return; } card = cardToate(c, c.angajat); grup.appendChild(card); bv.textContent = "Ascunde detalii"; bv.setAttribute("aria-expanded", "true"); });
+            bv.setAttribute("aria-expanded", "false"); rand.appendChild(bv); grup.appendChild(rand); zona.appendChild(grup);
           });
+        }
+        // Pe luni
+        const luni = new Map(); data.forEach((c) => { const l = c.de_la.slice(0, 7); if (!luni.has(l)) luni.set(l, { c: 0, a: 0, z: 0, o: 0 }); const x = luni.get(l); x.c++; if (c.stare === "aprobata" && numaraInvoire(c)) { x.a++; x.z += zileCerere(c); x.o += nrOre(c); } });
+        const LUNI = ["", "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+        zona.appendChild(el("h3", "az-h", "Pe luni"));
+        const tb = el("div", "cr-tab");
+        [...luni.keys()].sort().reverse().forEach((l) => { const x = luni.get(l), r = el("div", "cr-tab-rand"); r.append(el("b", "", LUNI[Number(l.slice(5))] + " " + l.slice(0, 4)), el("span", "", x.c + " cereri · aprobate: " + x.a + " (" + x.z + " zile, " + x.o + " ore)")); tb.appendChild(r); });
+        zona.appendChild(tb);
+        // Cei mai mulți
+        const pePers = new Map(); data.forEach((c) => { if (!pePers.has(c.angajat)) pePers.set(c.angajat, []); pePers.get(c.angajat).push(c); });
+        const clasament = [...pePers.entries()].map(([n, l]) => [n, l.filter((c) => c.stare === "aprobata" && numaraInvoire(c)).reduce((t, c) => t + nrOre(c), 0), l.filter((c) => c.stare === "aprobata" && numaraInvoire(c)).reduce((t, c) => t + zileCerere(c), 0)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        if (clasament.length) { zona.appendChild(el("h3", "az-h", "Cele mai multe ore de învoire aprobate")); const cl = el("div", "cr-tab"); clasament.forEach(([n, o, z], i) => { const r = el("div", "cr-tab-rand"); r.append(el("b", "", (i + 1) + ". " + n), el("span", "", o + " ore · " + z + " zile")); cl.appendChild(r); }); zona.appendChild(cl); }
+        // Câte un cartonaș pe profesor
+        { const hp = el("h3", "az-h", "Profesori care s-au învoit (" + pePers.size + ")"); hp.id = "cr-profesori"; zona.appendChild(hp); }
+        if (!data.length) { zona.appendChild(el("p", "who", "Nu a fost trimisă nicio cerere.")); return; }
+        [...pePers.keys()].sort((a, b) => a.localeCompare(b, "ro")).forEach((nume) => {
+          const lista = pePers.get(nume), ap = lista.filter((c) => c.stare === "aprobata"), att = lista.filter((c) => c.stare === "in_asteptare").length, resp = lista.filter((c) => c.stare === "respinsa").length;
+          const det = el("details", "cr-pers"); if (att) det.open = true; const sm = el("summary", "");
+          sm.appendChild(el("b", "", nume));
+          sm.appendChild(el("span", "cr-det", lista.length + (lista.length === 1 ? " cerere" : " cereri") + " · aprobate: " + ap.length + " (" + ap.reduce((t, c) => t + zileCerere(c), 0) + " zile, " + ap.reduce((t, c) => t + nrOre(c), 0) + " ore)"));
+          sm.appendChild(el("span", "cr-det", (att ? "în așteptare: " + att + " · " : "") + (resp ? "respinse: " + resp + " · " : "") + (lista.some((c) => c.stearsa_de_profesor_la) ? "șterse de profesor: " + lista.filter((c) => c.stearsa_de_profesor_la).length + " · " : "") + "ore fără înlocuitor: " + ap.reduce((t, c) => t + fara(c), 0) + " · ultima cerere: " + fd(lista.map((c) => c.de_la).sort().reverse()[0])));
+          det.appendChild(sm);
+          lista.forEach((c) => det.appendChild(cardToate(c, nume)));
           zona.appendChild(det);
         });
       };
@@ -4513,7 +4551,7 @@
           const bp = el("button", "secondary", "Preia număr de înregistrare"); bp.type = "button";
           sincReg = () => {
             tx.replaceChildren();
-            if (reg) { tx.append(el("b", "", "Număr de înregistrare: " + reg.nr), document.createTextNode(" din " + fd(reg.data) + ". Scrie-l pe cererea ta, dacă o predai și pe hârtie.")); }
+            if (reg) { tx.append(el("b", "", "Număr de înregistrare: " + reg.nr), document.createTextNode(" din " + fd(reg.data) + ". Se trece automat pe cererea tipărită; nu trebuie să-l scrii de mână.")); }
             else tx.textContent = "Cererea se poate trimite numai după ce preiei un număr de înregistrare.";
             bp.classList.toggle("hidden", !!reg); ok.disabled = !reg; indiciu.classList.toggle("hidden", !!reg); refreshPasi();
           };
