@@ -801,12 +801,11 @@
       body.tipar-cerere > :not(#tipar-cerere) { display:none !important; }
       body.tipar-cerere { background:#fff !important; }
       body.tipar-cerere #tipar-cerere { display:block; color:#000; font-family:"Times New Roman", Times, serif; font-size:12pt; line-height:1.5; }
-      #tipar-cerere .tc-sus { display:flex; justify-content:space-between; align-items:flex-start; gap:10mm; font-size:10.5pt; }
-      #tipar-cerere .tc-scoala { font-weight:700; max-width:95mm; }
-      #tipar-cerere .tc-nr { text-align:right; white-space:nowrap; }
-      #tipar-cerere .tc-catre { margin:12mm 0 0; text-align:right; font-style:italic; }
-      #tipar-cerere h1 { text-align:center; font-size:18pt; letter-spacing:.2em; margin:10mm 0 0; }
-      #tipar-cerere .tc-sub { text-align:center; margin:0 0 4mm; font-style:italic; }
+      #tipar-cerere .tc-sus { display:block; }
+      #tipar-cerere .tc-logo { height:21mm; width:auto; display:block; }
+      #tipar-cerere .tc-nr { margin:4mm 0 0; text-align:left; }
+      #tipar-cerere .tc-catre { margin:8mm 0 0; text-align:left; }
+      #tipar-cerere h1 { text-align:center; font-size:16pt; font-weight:700; margin:10mm 0 0; }
       #tipar-cerere .tc-text { margin:5mm 0 0; text-align:justify; text-indent:12mm; }
       #tipar-cerere .tc-motiv { margin:2mm 0 0; padding:0 0 0 12mm; font-weight:700; white-space:pre-wrap; }
       #tipar-cerere table { width:100%; border-collapse:collapse; margin:3mm 0 0; font-size:11pt; line-height:1.3; }
@@ -3646,6 +3645,7 @@
     }
     $("inapoi-cereri").addEventListener("click", arataPrincipal);
     // ===== Cererea de învoire pe hârtie (șablon A4 vertical, cu număr de înregistrare) =====
+    const CONDUCERE_TIPAR = { director: "Director, prof. Cătălin Ionuț BAZILUC", adjunct: "Director adjunct, prof. dr. Ciprian MIHAI" };
     const ZILE_SAPT = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
     async function tiparesteCerere(id, mesaj) {
       const { data: c, error } = await db.rpc("cerere_date_tipar", { p_id: id });
@@ -3664,20 +3664,19 @@
       const perioada = c.de_la === c.pana_la ? "în ziua de " + ziTxt(c.de_la) : "în perioada " + fmtData(c.de_la) + " – " + fmtData(c.pana_la);
       const vechi = document.getElementById("tipar-cerere"); if (vechi) vechi.remove();
       const d = el("div", ""); d.id = "tipar-cerere";
-      const sus = el("div", "tc-sus");
-      sus.append(el("div", "tc-scoala", "LICEUL TEHNOLOGIC „VICTOR MIHĂILESCU CRAIU” BELCEȘTI"),
-        el("div", "tc-nr", c.nr ? "Nr. de înregistrare " + c.nr + " din " + fmtData(c.data_inreg) : "Nr. de înregistrare ……… din ……………"));
-      d.appendChild(sus);
+      const logo = el("img", "tc-logo"); logo.alt = "Sigla școlii"; logo.src = "logo-scoala.jpg";
+      d.appendChild(el("div", "tc-sus")).appendChild(logo);
+      d.appendChild(el("p", "tc-nr", c.nr ? "Nr. de înregistrare " + c.nr + " din " + fmtData(c.data_inreg) : "Nr. de înregistrare ……… din ……………"));
       d.appendChild(el("p", "tc-catre", "Către conducerea Liceului Tehnologic „Victor Mihăilescu Craiu” Belcești"));
-      d.appendChild(el("h1", "", "CERERE"));
-      if (c.tip === "S") d.appendChild(el("p", "tc-sub", "învoire în interes de serviciu"));
+      d.appendChild(el("h1", "", "Cerere de învoire"));
       const subs = c.adresare === "f" ? "Subsemnata" : c.adresare === "m" ? "Subsemnatul" : "Subsemnatul(a)", angj = c.adresare === "f" ? "angajată" : c.adresare === "m" ? "angajat" : "angajat(ă)";
       d.appendChild(el("p", "tc-text", subs + " " + c.solicitant + (c.functie ? ", în calitate de " + c.functie : "") + ", " + angj + " al Liceului Tehnologic „Victor Mihăilescu Craiu” Belcești, vă rog să-mi aprobați " + (c.tip === "S" ? "învoirea în interes de serviciu " : "învoirea ") + perioada + ", pentru următorul motiv:"));
       d.appendChild(el("p", "tc-motiv", c.motiv));
       if (ore.length) {
         d.appendChild(el("p", "tc-text", "Orele din orarul meu din " + (c.de_la === c.pana_la ? "această zi" : "aceste zile") + " se acoperă astfel:"));
         const t = el("table", "");
-        const hr = el("tr", ""); ["Ziua", "Ora", "Clasa", "Cum se acoperă ora"].concat(arePropuneri ? ["Acordul înlocuitorului"] : []).forEach((x) => hr.appendChild(el("th", "", x)));
+        const cgc = document.createElement("colgroup"); (arePropuneri ? [20, 20, 8, 30, 22] : [24, 24, 10, 42]).forEach((w) => { const x = document.createElement("col"); x.style.width = w + "%"; cgc.appendChild(x); }); t.appendChild(cgc);
+        const hr = el("tr", ""); ["Ziua", "Ora", "Clasa", "Cum se acoperă ora"].concat(arePropuneri ? ["Semnătura / Acordul înlocuitorului"] : []).forEach((x) => hr.appendChild(el("th", "", x)));
         t.appendChild(el("thead", "")).appendChild(hr);
         const tb = el("tbody", "");
         ore.forEach((k) => {
@@ -3699,16 +3698,18 @@
       if (c.semnat_la) st.append(el("div", "tc-es", "✓ Semnat electronic în platformă"), el("div", "tc-es-det", (c.semnat_de ? "de " + c.semnat_de + ", " : "") + dataOraEl(c.semnat_la)));
       else st.append(el("div", "tc-gol", ""));
       const dr = el("div", "tc-col");
-      if (c.stare === "aprobata" && c.decis_la) {
-        dr.append(el("div", "", "Aprobat,"), el("div", "tc-gol", ""), el("div", "tc-es", "✓ Aprobat electronic în platformă"), el("div", "tc-es-det", "de " + (c.decis_functie ? c.decis_functie + ", " : "") + (c.decis_de || "") + ", " + dataOraEl(c.decis_la)), el("div", "tc-gol", ""), el("div", "", "Rezoluție: ………………………………………"));
-      } else dr.append(el("div", "", "Aprobat, conducerea școlii"), el("div", "tc-gol", ""), el("div", "", "Rezoluție: ………………………………………"), el("div", "tc-gol", ""), el("div", "", "Data: …………… Semnătura: ……………"));
+      const aprobat = c.stare === "aprobata" && c.decis_la;
+      dr.append(el("div", "", "Aprobat,"), el("div", "", c.aprobat_de_adjunct ? CONDUCERE_TIPAR.adjunct : CONDUCERE_TIPAR.director));
+      if (aprobat) dr.append(el("div", "tc-es", "✓ Aprobat electronic în platformă"), el("div", "tc-es-det", dataOraEl(c.decis_la)));
+      else dr.append(el("div", "tc-gol", ""), el("div", "", "Semnătura: ……………………………"));
       semn.append(st, dr); d.appendChild(semn);
-      if (c.semnat_la || (c.stare === "aprobata" && c.decis_la) || (c.acord_ore && Object.values(c.acord_ore).includes("acceptat"))) d.appendChild(el("p", "tc-nota", "Semnătura electronică internă: o acțiune făcută în platforma școlii, cu contul personal, ține loc de semnătură pe acest document intern (la fel ca „✓ Acord” al înlocuitorului). Data și ora sunt cele înregistrate în platformă." + (cod ? " Cod de verificare în registrul semnăturilor electronice: " + cod + "." : "")));
+      const arataNota = c.semnat_la || aprobat || (c.acord_ore && Object.values(c.acord_ore).includes("acceptat"));
+      if (arataNota) d.appendChild(el("p", "tc-nota", "✓ = acțiune făcută în platforma școlii, cu contul personal; ține loc de semnătură pe acest document intern." + (cod ? " Cod de verificare în registrul semnăturilor electronice: " + cod + "." : "")));
       document.body.appendChild(d);
       const pagina = document.createElement("style"); pagina.id = "tipar-cerere-pagina"; pagina.textContent = "@page { size: A4 portrait; margin: 20mm; }"; document.head.appendChild(pagina);
       document.body.classList.add("tipar-cerere");
       const curata = () => { document.body.classList.remove("tipar-cerere"); const x = document.getElementById("tipar-cerere"); if (x) x.remove(); const y = document.getElementById("tipar-cerere-pagina"); if (y) y.remove(); window.removeEventListener("afterprint", curata); };
-      window.addEventListener("afterprint", curata); window.print(); setTimeout(curata, 1500);
+      window.addEventListener("afterprint", curata); await new Promise((r) => { if (logo.complete) r(); else { logo.onload = r; logo.onerror = r; setTimeout(r, 3000); } }); window.print(); setTimeout(curata, 1500);
     }
 
     async function deschideCereri(optiuni) {
