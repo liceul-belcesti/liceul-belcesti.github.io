@@ -4224,13 +4224,12 @@
           }
           return k;
         };
-        if (!fAct) vizibile.forEach((c) => zona.appendChild(construiesteCard(c)));
-        else {
-          // Cu un cartonaș apăsat: cererile numerotate, restrânse (data, numărul de înregistrare, „Vezi detalii”), cea mai nouă prima
+        {
+          // Cererile sunt numerotate și restrânse (data, numărul de înregistrare, starea, „Vezi detalii”), cea mai nouă prima
           const ordonate = vizibile.slice().sort((a, b) => (a.creat_la < b.creat_la ? 1 : a.creat_la > b.creat_la ? -1 : 0));
           ordonate.forEach((c, i) => {
             const grup = el("div", "cr-rand-grup"), rand = el("div", "cr-rand"), x = numere.get(c.id);
-            rand.append(el("span", "cr-rand-nr", (ordonate.length - i) + "."), el("span", "cr-rand-data", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", "cr-rand-inr", x ? "Nr. " + x.nr + " din " + fd(x.data_inreg) + (x.anulat ? " (anulat)" : "") : "fără număr de înregistrare"));
+            rand.append(el("span", "cr-rand-nr", (ordonate.length - i) + "."), el("span", "cr-rand-data", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), el("span", "cr-rand-inr", x ? "Nr. " + x.nr + " din " + fd(x.data_inreg) + (x.anulat ? " (anulat)" : "") : "fără număr de înregistrare"), el("span", ST[c.stare][1], ST[c.stare][0]));
             const bv = el("button", "secondary cr-rand-b", "Vezi detalii"); bv.type = "button"; let card = null;
             bv.addEventListener("click", () => { if (card) { card.remove(); card = null; bv.textContent = "Vezi detalii"; bv.setAttribute("aria-expanded", "false"); return; } card = construiesteCard(c); grup.appendChild(card); bv.textContent = "Ascunde detalii"; bv.setAttribute("aria-expanded", "true"); });
             bv.setAttribute("aria-expanded", "false"); rand.appendChild(bv); grup.appendChild(rand); zona.appendChild(grup);
