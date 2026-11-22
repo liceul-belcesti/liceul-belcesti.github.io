@@ -3757,6 +3757,15 @@
         Object.keys(o).sort().forEach((k) => { const v = o[k]; ul.appendChild(el("div", "", fOra(k) + " → " + (v.tip === "vine" ? "clasa vine de la ora " : "clasa pleacă acasă de la ora ") + intervalOra(v.ora).split("–")[0])); });
         d.appendChild(ul); return d;
       };
+      // După decizie, un înlocuitor care nu a răspuns nu mai „așteaptă”: cererea a mers mai departe fără el.
+      const stareInlocuitor = (st, stareCerere) => (st === "in_asteptare" && stareCerere !== "in_asteptare") ? ["nu a răspuns", "cr-st nul"] : ACC[st];
+      // Un rând pe oră: ora, clasa, înlocuitorul și răspunsul lui. Întoarce null dacă cererea nu are propuneri pe ore (cereri vechi).
+      const randuriInlocuitori = (c, lista) => {
+        const prop = c.propuneri || {}, dupaId = new Map((lista || []).map((x) => [x.angajat_id, x]));
+        const chei = Object.keys(prop).filter((k) => dupaId.has(prop[k])).sort();
+        if (!chei.length) return null;
+        return chei.map((k) => { const x = dupaId.get(prop[k]), sd = stareInlocuitor(x.stare, c.stare), r = el("div", "cr-acc"); r.append(el("span", "", fOra(k) + " → " + x.nume), el("span", sd[1], sd[0])); return r; });
+      };
       const fDataOra = (t) => !t ? "—" : new Date(t).toLocaleString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
       const zileCerere = (c) => { if (c.ore_alese && c.ore_alese.length && /^\d{4}-/.test(c.ore_alese[0])) return new Set(c.ore_alese.map((k) => k.split("|")[0])).size; let n = 0; for (let d = dinIso(c.de_la); iso(d) <= c.pana_la; d.setDate(d.getDate() + 1)) if (d.getDay() >= 1 && d.getDay() <= 5) n++; return n; };
       const ACTIUNI = { creata: "Cerere trimisă", modificata: "Cerere modificată", anulata: "Cerere retrasă", aprobata: "Cerere aprobată", respinsa: "Cerere respinsă", stearsa: "Cerere ștearsă", retragere_ceruta: "Retragere cerută", retragere_aprobata: "Retragere aprobată", retragere_respinsa: "Retragere refuzată", stearsa_de_profesor: "Ștearsă de profesor" };
@@ -3904,7 +3913,9 @@
           const det = [c.ore_alese ? c.ore_alese.length + (c.ore_alese.length === 1 ? " oră aleasă" : " ore alese") : "Toate orele", ""].filter(Boolean).join(" · ");
           k.appendChild(el("p", "cr-det", det));
           if (c.optiuni_clasa) k.appendChild(optiuniClasa(c.optiuni_clasa, false));
-          (acc.get(c.id) || []).forEach((x) => { const r = el("div", "cr-acc"); r.append(el("span", "", x.nume), el("span", ACC[x.stare][1], ACC[x.stare][0])); k.appendChild(r); });
+          const rI = randuriInlocuitori(c, acc.get(c.id));
+          if (rI) rI.forEach((r) => k.appendChild(r));
+          else (acc.get(c.id) || []).forEach((x) => { const sd = stareInlocuitor(x.stare, c.stare), r = el("div", "cr-acc"); r.append(el("span", "", x.nume), el("span", sd[1], sd[0])); k.appendChild(r); });
           if (c.nota_decizie) k.appendChild(el("p", "cr-nota", "Răspuns: " + c.nota_decizie));
           k.appendChild(el("p", "cr-det", "Trimisă la " + fDataOra(c.creat_la) + " · " + zileCerere(c) + (zileCerere(c) === 1 ? " zi" : " zile")));
           const bara = el("div", "ctl");
@@ -4048,7 +4059,7 @@
             k.appendChild(el("p", "cr-motiv", c.motiv));
             if (c.ore_alese && c.ore_alese.length) k.appendChild(listaOre(c.ore_alese));
             if (c.optiuni_clasa) k.appendChild(optiuniClasa(c.optiuni_clasa, true));
-            (c.acceptari || []).forEach((x) => { const r = el("div", "cr-acc"); r.append(el("span", "", "Înlocuitor: " + x.nume), el("span", ACC[x.stare][1], ACC[x.stare][0])); k.appendChild(r); });
+            (c.acceptari || []).forEach((x) => { const sd = stareInlocuitor(x.stare, c.stare), r = el("div", "cr-acc"); r.append(el("span", "", "Înlocuitor: " + x.nume), el("span", sd[1], sd[0])); k.appendChild(r); });
             if (c.decis_de) k.appendChild(el("p", "cr-det", (c.stare === "aprobata" ? "Aprobată" : c.stare === "respinsa" ? "Respinsă" : "Retrasă") + " de " + c.decis_de + (c.decis_la ? " la " + fDataOra(c.decis_la) : "") + (c.nota_decizie ? " · " + c.nota_decizie : "")));
             if (c.stare === "anulata" && c.retragere_motiv) k.appendChild(el("p", "cr-det", "Motivul retragerii: " + c.retragere_motiv));
             if (c.stare === "aprobata" && !c.retragere_ceruta_la && c.retragere_nota) k.appendChild(el("p", "cr-det", "Retragere refuzată: " + c.retragere_nota));
