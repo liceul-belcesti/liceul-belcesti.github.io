@@ -818,6 +818,7 @@
       #tipar-cerere .tc-gol { height:8mm; }
       #tipar-cerere .tc-es { font-weight:700; margin-top:1mm; }
       #tipar-cerere .tc-es-det { font-size:10pt; line-height:1.3; }
+      #tipar-cerere .tc-nota + .tc-nota { margin-top:3mm; }
       #tipar-cerere .tc-nota { margin-top:10mm; font-size:9.5pt; color:#333; }
     }
     #tipar-orar { display:none; }
@@ -3705,6 +3706,8 @@
       if (aprobat) dr.append(el("div", "tc-es", "✓ Aprobat electronic în platformă"), el("div", "tc-es-det", dataOraEl(c.decis_la)));
       else dr.append(el("div", "tc-gol", ""), el("div", "", "Semnătura: ……………………………"));
       semn.append(st, dr); d.appendChild(semn);
+      // Notă la final: temeiul legal, doar la învoirea obișnuită (nu și la interes de serviciu)
+      if (c.tip === "I") d.appendChild(el("p", "tc-nota", "Notă: Învoirea se solicită în baza art. 29 alin. (4) din Contractul colectiv de muncă unic la nivel de sector de negociere colectivă învățământ preuniversitar nr. 1104/UPDSPS/09.07.2025 (zile libere plătite pe bază de învoire colegială, pentru situații personale deosebite)."));
       const arataNota = c.semnat_la || aprobat || (c.acord_ore && Object.values(c.acord_ore).includes("acceptat"));
       if (arataNota) d.appendChild(el("p", "tc-nota", "✓ = acțiune făcută în platforma școlii, cu contul personal; ține loc de semnătură pe acest document intern." + (cod ? " Cod de verificare în registrul semnăturilor electronice: " + cod + "." : "")));
       document.body.appendChild(d);
