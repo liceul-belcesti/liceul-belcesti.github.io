@@ -687,6 +687,12 @@
     #cereri .gp-acum { border-width:4px; background:color-mix(in srgb, var(--accent) 18%, var(--card)); padding:8px 10px 10px; box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
     #cereri .gp-acum .gp-st { background:var(--accent); color:var(--on-accent); border-radius:999px; padding:3px 12px; }
     #cereri .gp-gata { border-style:dashed; }
+    #cereri .gp-ind { margin:4px 0 0; font-size:.82rem; line-height:1.35; color:var(--text); border-left:4px solid var(--accent); padding-left:8px; }
+    #cereri .cr-form:not(.gp-off) .gp-ind { display:block; }
+    #cereri .gp-off .gp-ind { display:none; }
+    #cereri .gp-leg { margin:10px 0 0; padding:8px 10px 4px; background:var(--card); border:1.5px solid var(--line); border-radius:10px; }
+    #cereri .gp-leg-t { margin:0 0 6px; font-weight:800; }
+    #cereri .gp-leg-r { margin:0 0 7px; font-size:.9rem; line-height:1.4; }
     #cereri .gp-gata .gp-st { color:var(--accent); }
     #cereri .gp-gata .gp-nr { background:var(--muted); }
 
@@ -4226,6 +4232,8 @@
           ["p", "Pentru fiecare oră bifată alegi cum se acoperă ora:"],
           ["ol", ["Înlocuitor propus: platforma îți arată colegii recomandați, cu motivul fiecăruia (au fereastră în acel interval, sunt liberi la acea oră sau sunt liberi pentru că clasa lor este la practică). Dacă niciunul nu se potrivește, apasă pe „Adaugă alt profesor” și alegi orice coleg.", "Clasa vine de la ora…: clasa începe mai târziu, de la ora pe care o alegi.", "Clasa pleacă acasă de la ora…: clasa este lăsată să plece, de la ora pe care o alegi (de obicei ultima oră)."]],
           ["p", "La variantele „clasa vine” și „clasa pleacă acasă” nu e nevoie de înlocuitor, dar cererea o poate aproba numai directorul."],
+          ["p", "Ce înseamnă opțiunile din liste:"],
+          ["ul", ["„Cu înlocuitor”: ora o ține un coleg, pe care îl alegi din lista de sub oră.", "„Fără propunere”: nu propui niciun coleg pentru ora respectivă; ora rămâne neacoperită.", "„Au fereastră în acest interval”: colegi care nu au oră în intervalul orei tale, deci pot prelua ora.", "„Sunt liberi la această oră”: colegi care nu au nicio oră la momentul respectiv.", "„Liberi – clasa lor este la practică”: colegi a căror clasă este la practică în perioada respectivă, deci nu au de predat.", "„Adaugă alt profesor”: alegi tu un coleg care nu apare în listă; el primește cererea și trebuie să accepte.", "„Clasa vine de la ora…”: clasa nu are cursuri până la ora aleasă, deoarece elevii vin mai târziu.", "„Clasa pleacă acasă de la ora…”: elevii pleacă acasă începând cu ora aleasă."]],
           ["p", "Platforma nu te obligă să alegi un înlocuitor la fiecare oră, dar o oră rămasă fără acoperire este văzută ca atare de conducere și apare în statistică la „Fără înlocuitor”."]]],
         ["Trimiți cererea", [
           ["ol", ["Verifică încă o dată zilele, motivul și orele bifate.", "Apasă pe „Trimite cererea”. Apare mesajul „Cererea a fost trimisă. Directorul a fost anunțat.”", "Cererea apare în lista „Cererile mele”, cu numărul de înregistrare și starea „În așteptare”."]],
@@ -4657,6 +4665,7 @@
           sl.addEventListener("change", () => { if (sl.value) { propuneri.set(k, sl.value); ex.value = ""; } else if (!ex.value) propuneri.delete(k); });
           ex.addEventListener("change", () => { if (ex.value) { propuneri.set(k, ex.value); sl.value = ""; } else if (!sl.value) propuneri.delete(k); });
           bloc.append(btn, ex);
+          bloc.appendChild(el("p", "gp-ind", "„Fără propunere” = nu propui niciun coleg, iar ora rămâne neacoperită. Colegii din listă sunt grupați după motiv; „Adaugă alt profesor” te lasă să alegi orice coleg."));
           return bloc;
         };
         const deseneazaZile = () => {
@@ -4677,7 +4686,7 @@
               if (o.practica) rd.appendChild(el("p", "cr-det", "Clasa este la practică – nu este nevoie de suplinire."));
               else if (cb.checked) {
                 const bo = blocOpt(x, o), cur = opt.get(o.k);
-                if (bo) { const w = el("div", "cr-prop"); w.appendChild(el("p", "cr-det", "Cum se acoperă ora")); w.appendChild(bo); rd.appendChild(w); }
+                if (bo) { const w = el("div", "cr-prop"); w.appendChild(el("p", "cr-det", "Cum se acoperă ora")); w.appendChild(bo); w.appendChild(el("p", "gp-ind", "„Cu înlocuitor” = ora o ține un coleg, pe care îl alegi mai jos. „Clasa vine…” sau „Clasa pleacă acasă…” = nu e nevoie de înlocuitor, dar cererea o aprobă doar directorul.")); rd.appendChild(w); }
                 if (cur) rd.appendChild(el("p", "cr-det", textOpt(cur) + ". Nu este nevoie de înlocuitor; cererea o aprobă doar directorul."));
                 else rd.appendChild(blocProp(x.z, o));
               }
@@ -4727,14 +4736,15 @@
             { id: "zile", inainte: gDe, titlu: "Alege zilele", text: "Mai jos, la „De la” alege prima zi, iar la „Până la” ultima zi. Pentru o singură zi lasă aceeași dată la ambele. Implicit este aleasă ziua de azi. Poți alege cel mult 31 de zile.", gata: () => true, cerut: false },
             ...(!ex ? [{ id: "nr", inainte: f.querySelector(".cr-reg"), titlu: "Preia numărul de înregistrare", text: "Apasă pe „Preia număr de înregistrare”. Fără număr, cererea nu se poate trimite.", gata: () => !!reg, cerut: true }] : []),
             { id: "tip", inainte: f.querySelector(".cr-r3"), titlu: "Alege tipul cererii și scrie motivul", text: "Alege „Învoire” sau „Învoire în interes de serviciu”. La învoire scrie motivul în câteva cuvinte. La interes de serviciu bifează un singur motiv din listă (dacă alegi „Altul”, îl scrii tu).", gata: () => (tipCerere === "S" ? !!motivS && (motivS !== "Altul" || altS.value.trim().length >= 3) : motiv.value.trim().length >= 3), cerut: true },
-            { id: "ore", inainte: lT.parentNode, titlu: "Alege orele", text: "„Toate orele din aceste zile” este bifat implicit. Dacă lipsești doar la unele ore, bifează „O parte dintre ore”, apoi bifează mai jos, în fișele zilelor, orele la care lipsești. Trebuie să rămână bifată cel puțin o oră.", gata: () => alesePosibile().length > 0, cerut: true },
-            { id: "inl", inainte: zileBox, titlu: "Alege cine te înlocuiește", text: "La fiecare oră bifată alege un înlocuitor din listă (colegii recomandați) sau apasă pe „Adaugă alt profesor”. Dacă ora se poate acoperi altfel, alege „Clasa vine de la ora…” sau „Clasa pleacă acasă de la ora…”; atunci cererea o aprobă doar directorul. Nu este obligatoriu, dar o oră fără înlocuitor rămâne neacoperită.", gata: () => alesePosibile().length > 0 && faraAcoperire() === 0, cerut: false, stare: () => (alesePosibile().length && faraAcoperire() ? faraAcoperire() + (faraAcoperire() === 1 ? " oră fără înlocuitor" : " ore fără înlocuitor") : "") },
+            { id: "ore", inainte: lT.parentNode, titlu: "Alege orele", text: "„Toate orele din aceste zile” este bifat implicit. Dacă lipsești doar la unele ore, bifează „O parte dintre ore”, apoi bifează mai jos, în fișele zilelor, orele la care lipsești. Trebuie să rămână bifată cel puțin o oră.", gata: () => alesePosibile().length > 0, cerut: true, extra: [["Toate orele din aceste zile", "cererea cuprinde toate orele tale din zilele alese."], ["O parte dintre ore", "bifezi tu, în fișele zilelor de mai jos, doar orele la care lipsești."], ["Clasa este la practică", "ora este dezactivată: clasa nu are curs în acea perioadă, deci nu e nevoie de înlocuitor."]] },
+            { id: "inl", inainte: zileBox, titlu: "Alege cine te înlocuiește", text: "La fiecare oră bifată alege un înlocuitor din listă (colegii recomandați) sau apasă pe „Adaugă alt profesor”. Dacă ora se poate acoperi altfel, alege „Clasa vine de la ora…” sau „Clasa pleacă acasă de la ora…”; atunci cererea o aprobă doar directorul. Nu este obligatoriu, dar o oră fără înlocuitor rămâne neacoperită.", gata: () => alesePosibile().length > 0 && faraAcoperire() === 0, cerut: false, extra: [["Cu înlocuitor", "ora o ține un coleg; îl alegi din lista de sub fiecare oră."], ["Fără propunere", "nu propui niciun coleg pentru ora respectivă; ora rămâne neacoperită."], ["Au fereastră în acest interval", "colegi care nu au oră în intervalul orei tale, deci pot prelua ora."], ["Sunt liberi la această oră", "colegi care nu au nicio oră la momentul respectiv."], ["Liberi – clasa lor este la practică", "colegi a căror clasă este la practică în perioada respectivă, deci nu au de predat."], ["Adaugă alt profesor", "alegi tu un coleg care nu apare în listă; el primește cererea și trebuie să accepte."], ["Clasa vine de la ora…", "clasa nu are cursuri până la ora aleasă (elevii vin mai târziu); nu e nevoie de înlocuitor, iar cererea o aprobă doar directorul."], ["Clasa pleacă acasă de la ora…", "elevii pleacă acasă începând cu ora aleasă; nu e nevoie de înlocuitor, iar cererea o aprobă doar directorul."]], stare: () => (alesePosibile().length && faraAcoperire() ? faraAcoperire() + (faraAcoperire() === 1 ? " oră fără înlocuitor" : " ore fără înlocuitor") : "") },
             { id: "trimite", inainte: ctl, titlu: "Trimite cererea", text: "Verifică zilele, motivul și orele. Apoi apasă pe „Trimite cererea”.", gata: () => false, cerut: false }
           ];
           PASI.forEach((p, i) => {
             const b = el("div", "gp-pas"), cp = el("div", "gp-cap");
             p.st = el("span", "gp-st"); cp.append(el("span", "gp-nr", "Pasul " + (i + 1) + " din " + PASI.length), el("b", "gp-t", p.titlu), p.st);
-            const pp = el("p", "gp-p"); pp.append(el("b", "", "Ce ai de făcut: "), document.createTextNode(p.text)); b.append(cp, pp); p.b = b; p.inainte.parentNode.insertBefore(b, p.inainte);
+            const pp = el("p", "gp-p"); pp.append(el("b", "", "Ce ai de făcut: "), document.createTextNode(p.text)); b.append(cp, pp);
+            if (p.extra) { const lg = el("div", "gp-leg"); lg.appendChild(el("p", "gp-leg-t", "Ce înseamnă:")); p.extra.forEach(([t, m]) => { const r = el("p", "gp-leg-r"); r.append(el("b", "", "„" + t + "”"), document.createTextNode(" — " + m)); lg.appendChild(r); }); b.appendChild(lg); } p.b = b; p.inainte.parentNode.insertBefore(b, p.inainte);
           });
           refreshPasi = () => {
             const cerute = PASI.filter((p) => p.cerut), primulNefacut = cerute.find((p) => !p.gata());
