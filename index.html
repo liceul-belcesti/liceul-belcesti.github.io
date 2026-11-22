@@ -722,6 +722,11 @@
     #cereri summary.si-rand-h .si-rand-r1::before { content:"▸"; }
     #cereri .si-rand[open] > summary .si-rand-r1::before { content:"▾"; }
     #cereri .si-et { flex:1; font-weight:700; }
+    #cereri .si-expl { display:block; margin:0 0 6px; color:var(--muted); font-size:.82rem; font-weight:500; line-height:1.35; }
+    #cereri .si-rand-h .si-expl { margin:0 0 4px; }
+    #cereri .si-tex { display:block; margin-top:4px; color:var(--muted); font-size:.76rem; font-weight:500; line-height:1.3; }
+    #cereri .si-bare .si-expl { margin:0 0 8px; }
+    #cereri .si-r-ex { display:block; margin-top:8px; color:var(--muted); font-size:.8rem; font-weight:500; line-height:1.35; }
     #cereri .si-nr { min-width:2.2ch; text-align:center; font-size:1.15rem; font-weight:800; padding:0 8px; border:2px solid var(--text); border-radius:10px; }
     #cereri .si-copii { margin:6px 0 0 10px; padding-left:10px; border-left:2px solid var(--muted); }
 
@@ -3795,10 +3800,15 @@
       const nelucrata = (z) => libere.has(z) || vac.some((v) => v.de_la <= z && z <= v.pana_la);
       const nume = new Map(rows.map((x) => [x.angajat_id, x.angajat]));
       let mod = modInitial, persoana = "", deschisa = null;
+      // Modulele anului școlar (Modul 1, Modul 2…): perioadele de cursuri dintre vacanțe
+      const MODULE = (o.module || []).slice().sort((a, b) => (a.de_la < b.de_la ? -1 : 1));
+      const modulDe = (z) => MODULE.find((m) => m.de_la <= z && z <= m.pana_la) || null;
+      const etM = (m) => m ? m.denumire + " · " + fd(m.de_la) + " – " + fd(m.pana_la) : "În afara modulelor (vacanțe și zile libere)";
+      const expl = (t) => el("p", "si-expl", t);
 
-      const radacina = (n, et, sub) => { const d = el("div", "si-radacina"); d.append(el("b", "mare", String(n)), el("span", "si-r-et", et)); if (sub) d.appendChild(el("span", "si-r-sub", sub)); return d; };
-      const bare = (titlu, items) => { // listă simplă cu bare proporționale
-        const box = el("div", "si-bare"); box.appendChild(el("h4", "si-h4", titlu));
+      const radacina = (n, et, sub, ex) => { const d = el("div", "si-radacina"); d.append(el("b", "mare", String(n)), el("span", "si-r-et", et)); if (sub) d.appendChild(el("span", "si-r-sub", sub)); if (ex) d.appendChild(el("span", "si-r-ex", ex)); return d; };
+      const bare = (titlu, ex, items) => { // listă simplă cu bare proporționale
+        const box = el("div", "si-bare"); box.appendChild(el("h4", "si-h4", titlu)); box.appendChild(expl(ex));
         const mx = Math.max(1, ...items.map((x) => x[1]));
         items.forEach(([et, n]) => { const r = el("div", "si-bara-rand"); const b = el("span", "si-bara"); const i = el("i", ""); i.style.width = Math.round((n / mx) * 100) + "%"; b.appendChild(i); r.append(el("span", "si-bara-et", et), b, el("b", "si-bara-n", String(n))); box.appendChild(r); });
         return box;
@@ -3818,24 +3828,26 @@
         const urm = (z) => { const d = dinIso(z); do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6 || nelucrata(iso(d))); return iso(d); };
         let best = [], cur = [];
         zileSort.forEach((z) => { if (cur.length && urm(cur[cur.length - 1]) === z) cur.push(z); else cur = [z]; if (cur.length > best.length) best = cur.slice(); });
-        const tile = (n, et, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et)); return t; };
+        const tile = (n, et, ex, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et), el("small", "si-tex", ex)); return t; };
         const st = el("div", "az-stats");
-        st.appendChild(tile(per.length, toata ? "Zile de învoire, însumate pe persoane" : "Zile de învoire", "bun"));
-        if (toata) st.appendChild(tile(new Set(r.map((x) => x.angajat_id)).size, "Persoane care s-au învoit"));
-        st.append(tile(intregi, "Zile întregi"), tile(per.length - intregi, "Zile cu ore alese"));
-        const nS = per.filter((p) => p.s).length; if (nS) st.appendChild(tile(nS, "Zile cu interes de serviciu"));
-        if (!toata) st.appendChild(tile(best.length, "Cea mai lungă perioadă consecutivă" + (best.length ? " (" + fd(best[0]) + (best.length > 1 ? " – " + fd(best[best.length - 1]) : "") + ")" : "")));
+        st.appendChild(tile(per.length, toata ? "Zile de învoire, însumate pe persoane" : "Zile de învoire", toata ? "Dacă două persoane s-au învoit în aceeași zi, se numără două zile. O zi cu o singură oră de învoire se numără ca o zi." : "Câte zile diferite au avut cel puțin o oră de învoire aprobată. O zi cu o singură oră se numără ca o zi.", "bun"));
+        if (toata) st.appendChild(tile(new Set(r.map((x) => x.angajat_id)).size, "Persoane care s-au învoit", "Câte persoane au avut cel puțin o învoire aprobată în anul școlar."));
+        st.append(tile(intregi, "Zile întregi", "Zile în care învoirea a acoperit toate orele din orar."), tile(per.length - intregi, "Zile cu ore alese", "Zile în care învoirea a acoperit doar o parte din orele din orar."));
+        const nS = per.filter((p) => p.s).length; if (nS) st.appendChild(tile(nS, "Zile cu interes de serviciu", "Din zilele de mai sus, câte au fost pentru interes de serviciu. Se numără în același total."));
+        if (!toata) st.appendChild(tile(best.length, "Cea mai lungă perioadă consecutivă", "Cele mai multe zile de școală la rând cu învoire, fără zilele libere și vacanțe" + (best.length ? ": " + fd(best[0]) + (best.length > 1 ? " – " + fd(best[best.length - 1]) : "") + "." : ".")));
         host.appendChild(st);
-        host.appendChild(el("p", "cr-det", "Ultima învoire: " + fd(zileSort[zileSort.length - 1]) + " · Prima învoire: " + fd(zileSort[0]) + "."));
+        host.appendChild(el("p", "cr-det", "Prima învoire din an: " + fd(zileSort[0]) + " · Ultima învoire: " + fd(zileSort[zileSort.length - 1]) + "."));
         // pe luni și pe zilele săptămânii
         const azi = new Date(); let sy = azi.getMonth() >= 8 ? azi.getFullYear() : azi.getFullYear() - 1;
         if (zileSort.length && dinIso(zileSort[0]) < new Date(sy, 8, 1)) sy = Number(zileSort[0].slice(0, 4)) - (Number(zileSort[0].slice(5, 7)) < 9 ? 1 : 0);
         const luniAn = []; for (let i = 0; i < 12; i++) { const m = (8 + i) % 12; luniAn.push({ m, y: m >= 8 ? sy : sy + 1 }); }
         const peLuna = luniAn.map((l) => [cap(LUNI[l.m]), per.filter((p) => Number(p.data.slice(5, 7)) === l.m + 1 && Number(p.data.slice(0, 4)) === l.y).length]);
-        host.appendChild(bare("Zile pe luni", peLuna));
-        host.appendChild(bare("Zile pe zilele săptămânii", NZL.map((n, i) => [n, per.filter((p) => dinIso(p.data).getDay() === i + 1).length])));
+        host.appendChild(bare("Zile pe luni", "Câte zile de învoire au fost în fiecare lună a anului școlar, din septembrie până în august.", peLuna));
+        if (MODULE.length) host.appendChild(bare("Zile pe module ale anului școlar", "Anul școlar este împărțit în module, adică perioadele de cursuri dintre vacanțe. Arată în ce perioadă au fost cele mai multe zile de învoire.", MODULE.map((m) => [m.denumire + " (" + fd(m.de_la).slice(0, 5) + " – " + fd(m.pana_la).slice(0, 5) + ")", [...zi.keys()].filter((z) => m.de_la <= z && z <= m.pana_la).reduce((t, z) => t + new Set(zi.get(z).ore.map((x) => x.angajat_id)).size, 0)])));
+        host.appendChild(bare("Zile pe zilele săptămânii", "În ce zile ale săptămânii s-au făcut cele mai multe învoiri.", NZL.map((n, i) => [n, per.filter((p) => dinIso(p.data).getDay() === i + 1).length])));
         // calendar
         host.appendChild(el("h4", "si-h4", "Calendarul anului școlar"));
+        host.appendChild(expl("Fiecare zi de învoire este marcată în luna ei. Apasă pe o zi marcată ca să vezi cererea, orele, clasele și cine a preluat orele. Sunt afișate doar zilele de luni până vineri."));
         const leg = el("div", "si-leg");
         if (toata) leg.appendChild(el("span", "", "Numărul din colț arată câte persoane s-au învoit în ziua respectivă. Apasă pe o zi ca să vezi detaliile."));
         else [["on", "Toată ziua"], ["on part", "Doar anumite ore"], ["on s", "Interes de serviciu, toată ziua"], ["on part s", "Interes de serviciu, anumite ore"], ["lib", "Zi liberă sau vacanță"]].forEach(([c, t]) => { const s = el("span", "si-leg-i"); s.append(el("span", "si-zi si-mic " + c, ""), document.createTextNode(" " + t)); leg.appendChild(s); });
@@ -3878,38 +3890,44 @@
         const tot = r.length;
         const grup = (lista, f) => { const m = new Map(); lista.forEach((x) => { const k = f(x); if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return m; };
         const sorteaza = (m) => [...m.entries()].sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0]), "ro", { numeric: true }));
-        const rand = (et, lista, copiiFn) => {
-          const n = lista.length, d = el(copiiFn ? "details" : "div", "si-rand"), h = el(copiiFn ? "summary" : "div", "si-rand-h");
+        const rand = (et, lista, copiiFn, ex) => {
+          const n = lista.length, d = el(copiiFn && n ? "details" : "div", "si-rand"), h = el(copiiFn && n ? "summary" : "div", "si-rand-h");
           const r1 = el("div", "si-rand-r1"); r1.append(el("span", "si-et", et), el("b", "si-nr", String(n))); h.appendChild(r1);
-          const b = el("span", "si-bara"), i = el("i", ""); i.style.width = Math.max(2, Math.round((n / tot) * 100)) + "%"; b.appendChild(i); h.appendChild(b); d.appendChild(h);
-          if (copiiFn) { const c = el("div", "si-copii"); copiiFn(lista).forEach((x) => c.appendChild(x)); d.appendChild(c); }
+          if (ex) h.appendChild(el("span", "si-expl", ex));
+          const b = el("span", "si-bara"), i = el("i", ""); i.style.width = (n ? Math.max(2, Math.round((n / tot) * 100)) : 0) + "%"; b.appendChild(i); h.appendChild(b); d.appendChild(h);
+          if (copiiFn && n) { const c = el("div", "si-copii"); copiiFn(lista).forEach((x) => c.appendChild(x)); d.appendChild(c); }
           return d;
         };
-        const peClase = (l) => sorteaza(grup(l, (x) => x.clasa)).map(([k, v]) => rand("Clasa " + k, v, (ll) => sorteaza(grup(ll, (x) => x.disciplina || "Modul nestabilit în orar")).map(([k2, v2]) => rand(k2, v2))));
-        const peModule = (l) => sorteaza(grup(l, (x) => x.disciplina || "Modul nestabilit în orar")).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2))));
-        const ramura = (titlu, lista, copii, nr, deschisa0) => {
+        const OUT = "În afara modulelor (vacanțe și zile libere)";
+        const modulCrono = (l) => { const m = new Map(); l.forEach((x) => { const k = etM(modulDe(x.data)); if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return [...m.entries()].sort((a, b) => { const ia = MODULE.findIndex((q) => etM(q) === a[0]), ib = MODULE.findIndex((q) => etM(q) === b[0]); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }); };
+        const peClaseM = (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2));
+        const peClase = (l) => sorteaza(grup(l, (x) => x.clasa)).map(([k, v]) => rand("Clasa " + k, v, (ll) => modulCrono(ll).map(([k2, v2]) => rand(k2, v2))));
+        const peModule = (l) => { const lista = MODULE.map((m) => [etM(m), l.filter((x) => modulDe(x.data) === m)]); const afara = l.filter((x) => !modulDe(x.data)); if (afara.length) lista.push([OUT, afara]); return lista.map(([k, v]) => rand(k, v, peClaseM)); };
+        const peDiscipline = (l) => sorteaza(grup(l, (x) => x.disciplina || "Disciplină nestabilită în orar")).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2))));
+        const ramura = (titlu, lista, copii, ex, deschisa0) => {
           const d = el("details", "si-ram"); if (deschisa0) d.open = true;
-          const s = el("summary", ""); s.append(el("span", "si-ram-t", titlu), el("b", "si-ram-n", String(lista.length))); d.appendChild(s);
-          if (nr) d.insertBefore(el("p", "si-ram-sub", nr), null);
+          const sm = el("summary", ""); sm.append(el("span", "si-ram-t", titlu), el("b", "si-ram-n", String(lista.length))); d.appendChild(sm);
+          if (ex) d.appendChild(el("p", "si-ram-sub", ex));
           const c = el("div", "si-ramc"); copii.forEach((x) => c.appendChild(x)); d.appendChild(c); return d;
         };
-        const zileDist = new Set(r.map((x) => x.angajat_id + "|" + x.data)).size, clase = new Set(r.map((x) => x.clasa)).size, module = new Set(r.map((x) => x.disciplina || "—")).size;
-        host.appendChild(radacina(tot, "ore de învoire în anul școlar", pl(zileDist, "zi", "zile") + (toata ? " · " + pl(new Set(r.map((x) => x.angajat_id)).size, "persoană", "persoane") : "") + " · " + pl(clase, "clasă", "clase") + " · " + pl(module, "modul", "module")));
-        host.appendChild(el("p", "cr-det", "Apasă pe o ramură sau pe un rând ca să-l desfaci."));
+        const zileDist = new Set(r.map((x) => x.angajat_id + "|" + x.data)).size, clase = new Set(r.map((x) => x.clasa)).size, discipline = new Set(r.map((x) => x.disciplina || "—")).size;
+        host.appendChild(radacina(tot, "ore de învoire în anul școlar", pl(zileDist, "zi", "zile") + (toata ? " · " + pl(new Set(r.map((x) => x.angajat_id)).size, "persoană", "persoane") : "") + " · " + pl(clase, "clasă", "clase") + " · " + pl(discipline, "disciplină", "discipline"), "Totalul orelor de curs pentru care a fost aprobată învoirea în anul școlar, ca învoire obișnuită sau pentru interes de serviciu. De la acest total pornesc toate ramurile de mai jos: fiecare ramură împarte aceleași ore într-un alt fel."));
+        host.appendChild(el("p", "cr-det", "Apasă pe o ramură sau pe un rând ca să-l desfaci. Numărul din dreapta este numărul de ore."));
         const arb = el("div", "si-arbore"); host.appendChild(arb);
-        arb.appendChild(ramura("Ore pe clase", r, peClase(r), clase + " clase, cu modulele din fiecare", true));
-        arb.appendChild(ramura("Ore pe module", r, peModule(r), module + " module, cu clasele din fiecare"));
+        arb.appendChild(ramura("Ore pe clase", r, peClase(r), "Pentru fiecare clasă, câte ore de curs au fost acoperite de învoiri. Apasă pe o clasă ca să vezi în ce module ale anului școlar au fost orele ei.", true));
+        arb.appendChild(ramura("Ore pe module ale anului școlar", r, peModule(r), "Anul școlar este împărțit în module, adică perioadele de cursuri dintre vacanțe (Modul 1, Modul 2…). Se văd toate modulele, chiar și cele fără ore. Apasă pe un modul ca să vezi clasele lui."));
+        arb.appendChild(ramura("Ore pe discipline", r, peDiscipline(r), "Aceleași ore, grupate după disciplina predată în ora respectivă, așa cum apare în orar. Apasă pe o disciplină ca să vezi clasele."));
         const cheieInl = (x) => x.inlocuitor ? x.inlocuitor : x.optiune ? cap(OPT[x.optiune] || x.optiune) : "Fără înlocuitor";
-        arb.appendChild(ramura("Cine a preluat orele", r, sorteaza(grup(r, cheieInl)).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2)))), "înlocuitori, ore cu clasa venită mai târziu sau plecată acasă și ore fără înlocuitor"));
+        arb.appendChild(ramura("Cine a preluat orele", r, sorteaza(grup(r, cheieInl)).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2)))), "Cine a ținut orele în locul profesorului: colegii înlocuitori, orele în care clasa a venit mai târziu sau a plecat acasă și orele rămase fără înlocuitor. Apasă pe un rând ca să vezi clasele."));
         const luniOre = [...grup(r, (x) => x.data.slice(0, 7)).entries()].sort((a, b) => a[0].localeCompare(b[0]));
         arb.appendChild(ramura("Când", r, [
-          rand("Pe luni", r, () => luniOre.map(([k, v]) => rand(cap(LUNI[Number(k.slice(5)) - 1]) + " " + k.slice(0, 4), v))),
-          rand("Pe zilele săptămânii", r, () => NZL.map((n, i) => [n, r.filter((x) => dinIso(x.data).getDay() === i + 1)]).filter((x) => x[1].length).map(([n, v]) => rand(n, v))),
-          rand("Pe ora din zi", r, () => [...grup(r, (x) => x.ora).entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => rand("Ora " + k + " (" + intervalOra(k) + ")", v)))
-        ], "luni, zilele săptămânii, orele din zi"));
+          rand("Pe luni", r, () => luniOre.map(([k, v]) => rand(cap(LUNI[Number(k.slice(5)) - 1]) + " " + k.slice(0, 4), v)), "Orele de învoire împărțite pe luni calendaristice."),
+          rand("Pe zilele săptămânii", r, () => NZL.map((n, i) => [n, r.filter((x) => dinIso(x.data).getDay() === i + 1)]).filter((x) => x[1].length).map(([n, v]) => rand(n, v)), "În ce zile ale săptămânii cad cele mai multe ore de învoire."),
+          rand("Pe ora din zi", r, () => [...grup(r, (x) => x.ora).entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => rand("Ora " + k + " (" + intervalOra(k) + ")", v)), "La ce oră din program au fost orele de învoire. Ora 1 începe la 8:00.")
+        ], "Momentul în care au fost orele de învoire. Apasă pe un rând ca să vezi detaliile lui."));
         const tipuri = grup(r, (x) => x.tip === "S" ? "Interes de serviciu" : "Învoire");
-        arb.appendChild(ramura("Tipul cererii", r, sorteaza(tipuri).map(([k, v]) => rand(k, v)), "învoire și interes de serviciu, în aceleași totaluri"));
-        if (toata) arb.appendChild(ramura("Ore pe persoane", r, sorteaza(grup(r, (x) => x.angajat)).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2)))), "fiecare persoană, cu clasele ei"));
+        arb.appendChild(ramura("Tipul cererii", r, sorteaza(tipuri).map(([k, v]) => rand(k, v)), "Orele aprobate ca învoire obișnuită și cele aprobate pentru interes de serviciu. Ambele intră în același total, dar sunt arătate separat."));
+        if (toata) arb.appendChild(ramura("Ore pe persoane", r, sorteaza(grup(r, (x) => x.angajat)).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2)))), "Pentru fiecare persoană, câte ore de învoire a avut. Apasă pe un nume ca să vezi clasele ei."));
       };
 
       const desen = () => {
@@ -4001,7 +4019,7 @@
         zona.replaceChildren();
         const b = el("button", "secondary", "← Înapoi la cereri"); b.type = "button"; b.addEventListener("click", () => { mesaj(""); inapoi(); }); zona.appendChild(b);
         const host = el("div", "si"); zona.appendChild(host);
-        deseneazaStatInvoiri(host, mod, rows, { toti: !!toti, numere: toti ? null : numere, libere: new Set((cal.libere || []).map((x) => x.data)), vac: (cal.structura || []).filter((x) => /vacanta/.test(x.tip)) });
+        deseneazaStatInvoiri(host, mod, rows, { toti: !!toti, module: (cal.structura || []).filter((x) => x.tip === "cursuri" && x.an_id === an), numere: toti ? null : numere, libere: new Set((cal.libere || []).map((x) => x.data)), vac: (cal.structura || []).filter((x) => /vacanta/.test(x.tip)) });
         window.scrollTo(0, 0);
       };
       const zileCerere = (c) => { if (c.ore_alese && c.ore_alese.length && /^\d{4}-/.test(c.ore_alese[0])) return new Set(c.ore_alese.map((k) => k.split("|")[0])).size; let n = 0; for (let d = dinIso(c.de_la); iso(d) <= c.pana_la; d.setDate(d.getDate() + 1)) if (d.getDay() >= 1 && d.getDay() <= 5) n++; return n; };
