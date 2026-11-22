@@ -670,6 +670,22 @@
     @media (prefers-color-scheme: dark) { #cereri .cr-st.att { color:#fcd34d; } #cereri .cr-st.ok { color:#86efac; } #cereri .cr-st.rau { color:#fca5a5; } }
     /* Azi în școală */
     #cr-lista-mele { scroll-margin-top:76px; }
+    #cereri .cr-dublu { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 10px; }
+    #cereri .cr-dublu button { width:100%; margin:0; }
+    #cereri .gh-intro { background:var(--card); border-radius:16px; padding:12px 14px; margin:0 0 10px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .gh-p { margin:0 0 8px; line-height:1.45; }
+    #cereri .gh-l { margin:0 0 8px; padding-left:1.3em; line-height:1.45; }
+    #cereri .gh-l li { margin:0 0 5px; }
+    #cereri .gh-etape { margin:8px 0 14px; }
+    #cereri .gh-et { background:var(--card); border:2px solid var(--text); border-radius:16px; margin:0 0 10px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .gh-et-s { list-style:none; display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; min-height:52px; }
+    #cereri .gh-et-s::-webkit-details-marker { display:none; }
+    #cereri .gh-nr { flex:none; width:32px; height:32px; border-radius:50%; background:var(--text); color:var(--card); font-weight:800; display:flex; align-items:center; justify-content:center; }
+    #cereri .gh-et-t { flex:1; font-weight:800; line-height:1.3; }
+    #cereri .gh-et-s::after { content:"▸"; font-size:1.1rem; }
+    #cereri .gh-et[open] > .gh-et-s::after { content:"▾"; }
+    #cereri .gh-et-c { padding:0 14px 8px; }
+
     #cereri .si-sw { display:flex; gap:8px; margin:0 0 10px; }
     #cereri .si-sw button { flex:1; margin:0; min-height:46px; padding:0 8px; }
     #cereri .si-lab { display:block; font-weight:700; margin:0 0 10px; }
@@ -4152,10 +4168,86 @@
         if (ultima) sec.appendChild(el("p", "cr-det", "Ultima învoire aprobată se încheie pe " + fd(ultima) + "."));
         return sec;
       };
+      // Ghidul pentru depunerea cererilor de învoire, vizibil fiecărui profesor
+      const GHID_INTRO = [
+        ["p", "Cererea de învoire se depune în platformă, nu pe hârtie. O trimiți din telefon sau de la calculator; colegii care te înlocuiesc o văd, conducerea o aprobă, iar orarul, înlocuirile și pontajul se completează automat."],
+        ["p", "Sunt două feluri de cerere:"],
+        ["ul", ["Învoire: pentru un motiv personal. Intră în pontaj ca învoire și se numără la zilele și orele tale de învoire.", "Învoire în interes de serviciu: lipsești de la ore pentru o activitate cerută sau recunoscută de școală. Nu apare în pontaj și nu se consideră învoire personală, dar intră în același total din statistică, marcată diferit."]],
+        ["p", "Înainte să începi:"],
+        ["ul", ["Contul tău trebuie să fie legat de numele tău din lista de angajați, iar orarul tău pentru anul școlar curent trebuie să fie introdus. Dacă pe ecran apare un mesaj că nu ai orar sau că ai contul nelegat, cere administratorului să rezolve.", "Nu poți alege zile din trecut: prima zi posibilă este azi.", "O cerere poate cuprinde cel mult 31 de zile. Pentru o perioadă mai lungă trimiți cereri separate.", "Zilele libere, vacanțele și zilele în care nu ai ore nu se pot alege."]]
+      ];
+      const GHID = [
+        ["Deschizi cererea nouă și alegi zilele", [
+          ["ol", ["Din ecranul Cereri de învoire apasă pe „+ Cerere nouă”. Se deschide formularul „Cerere nouă de învoire”.", "La „De la” alegi prima zi, iar la „Până la” ultima zi. Pentru o singură zi alegi aceeași dată la ambele."]],
+          ["p", "Dacă zilele alese nu sunt corecte, platforma te anunță înainte să poți merge mai departe."]]],
+        ["Preiei numărul de înregistrare", [
+          ["p", "Cererea de învoire este un document al școlii și primește un număr din registratură."],
+          ["ol", ["Apasă pe „Preia număr de înregistrare”.", "Pe ecran apare „Număr de înregistrare”, cu numărul și data lui. Același număr va fi trecut pe cererea tipărită.", "Fără număr, cererea nu se poate trimite: butonul de trimitere rămâne închis și platforma îți cere să preiei mai întâi numărul."]],
+          ["p", "Dacă numărul nu poate fi preluat, apare un mesaj; încearcă din nou."]]],
+        ["Alegi tipul cererii și scrii motivul", [
+          ["ul", ["Învoire: scrii motivul în câteva cuvinte, în câmpul „Motivul învoirii”. Motivul este obligatoriu.", "Învoire în interes de serviciu: apare o explicație scurtă și o listă de motive din care bifezi unul singur (cerc pedagogic; delegare din partea școlii; curs sau formare; ședință sau întâlnire la inspectoratul școlar; însoțirea elevilor; comisii pentru examene, evaluări sau concursuri; inspecție școlară sau lecție deschisă; probleme ale școlii la o instituție; activitate dintr-un proiect al școlii; Altul). La „Altul” scrii tu motivul."]],
+          ["p", "Un singur tip pe cerere. Dacă ai două situații diferite, trimiți două cereri."]]],
+        ["Alegi orele și cine te înlocuiește", [
+          ["p", "Alegi între două variante:"],
+          ["ul", ["„Toate orele din aceste zile”: cererea cuprinde toate orele din orarul tău din zilele alese.", "„O parte dintre ore”: pentru fiecare zi apare o fișă cu orele tale, iar tu bifezi doar orele la care lipsești. Trebuie să bifezi cel puțin o oră."]],
+          ["p", "Orele claselor aflate la practică sunt dezactivate: la ele nu e nevoie de suplinire."],
+          ["p", "Pentru fiecare oră bifată alegi cum se acoperă ora:"],
+          ["ol", ["Înlocuitor propus: platforma îți arată colegii recomandați, cu motivul fiecăruia (au fereastră în acel interval, sunt liberi la acea oră sau sunt liberi pentru că clasa lor este la practică). Dacă niciunul nu se potrivește, apasă pe „Adaugă alt profesor” și alegi orice coleg.", "Clasa vine de la ora…: clasa începe mai târziu, de la ora pe care o alegi.", "Clasa pleacă acasă de la ora…: clasa este lăsată să plece, de la ora pe care o alegi (de obicei ultima oră)."]],
+          ["p", "La variantele „clasa vine” și „clasa pleacă acasă” nu e nevoie de înlocuitor, dar cererea o poate aproba numai directorul."],
+          ["p", "Platforma nu te obligă să alegi un înlocuitor la fiecare oră, dar o oră rămasă fără acoperire este văzută ca atare de conducere și apare în statistică la „Fără înlocuitor”."]]],
+        ["Trimiți cererea", [
+          ["ol", ["Verifică încă o dată zilele, motivul și orele bifate.", "Apasă pe „Trimite cererea”. Apare mesajul „Cererea a fost trimisă. Directorul a fost anunțat.”", "Cererea apare în lista „Cererile mele”, cu numărul de înregistrare și starea „În așteptare”."]],
+          ["p", "La trimitere sunt anunțați, în clopoțel și prin e-mail, conducerea și fiecare coleg propus ca înlocuitor, cu orele lui. Motivul nu apare în e-mail."]]],
+        ["Colegii propuși răspund", [
+          ["p", "Fiecare coleg propus ca înlocuitor primește notificare și vede cererea în ecranul Cereri de învoire, într-o secțiune cu cererile care așteaptă răspunsul lui. El poate accepta sau refuza."],
+          ["p", "Tu vezi răspunsul fiecăruia pe cardul cererii, la fiecare oră: „așteaptă răspunsul”, „a acceptat” sau „a refuzat”. Apasă pe „Vezi detalii” ca să deschizi cardul."],
+          ["ul", ["Directorul poate aproba cererea chiar dacă nu au acceptat toți înlocuitorii.", "Administratorul o poate aproba doar după ce au acceptat toți.", "După aprobare, răspunsul înlocuitorului nu mai schimbă nimic: ora i se atribuie oricum, iar dacă nu a răspuns apare „nu a răspuns”."]],
+          ["p", "Dacă un coleg refuză înainte de decizie, poți modifica cererea și propune pe altcineva."]]],
+        ["Conducerea decide", [
+          ["p", "Cererea este aprobată sau respinsă de director, de director adjunct sau de administrator. Nimeni nu decide propria cerere, iar prima decizie rămâne definitivă: cererea dispare pentru ceilalți."],
+          ["ul", ["Cererile cu „clasa vine” sau „clasa pleacă acasă” le soluționează doar directorul.", "La respingere, conducerea scrie motivul, iar tu îl vezi pe cardul cererii."]],
+          ["p", "Despre decizie ești anunțat în clopoțel și prin e-mail. În „Cererile mele”, starea devine „Aprobată” sau „Respinsă”. După o respingere, dacă mai ai nevoie de învoire, trimiți o cerere nouă."]]],
+        ["Ce se întâmplă automat după aprobare", [
+          ["p", "Nu mai ai nimic de făcut. După aprobare, platforma face singură:"],
+          ["ul", ["anunță fiecare înlocuitor (notificare și e-mail) că a preluat orele lui;", "pune orele în „Azi în școală” și în „Orarul meu” al înlocuitorilor, în ziua respectivă;", "dacă ai serviciu pe școală în acea zi, îl preia colegul care te înlocuiește și este anunțat;", "trece învoirea în pontaj (doar la învoirea obișnuită; învoirea în interes de serviciu nu intră în pontaj, nici pentru tine, nici pentru înlocuitori)."]]]],
+        ["Tipărirea cererii și semnătura electronică", [
+          ["p", "Pe cardul cererii (după „Vezi detalii”) apasă pe „Tipărește cererea”. Se generează cererea pentru tipărit, cu siglă, număr de înregistrare, tabelul orelor și, la învoirea obișnuită, o notă cu temeiul legal."],
+          ["p", "Nu este nevoie de semnătură de mână: acțiunile făcute în platformă, cu contul personal, țin loc de semnătură pe acest document intern. Pe cererea tipărită apar bifele „✓” ale tale (la trimitere), ale înlocuitorilor care au acceptat și ale celui care a aprobat, plus un cod de verificare din registrul semnăturilor electronice."]]],
+        ["Dacă te răzgândești: modificare, retragere, ștergere", [
+          ["ul", ["„Modifică”: la o cerere în așteptare sau aprobată, dar care nu a început. Cererea modificată revine în așteptare și este trimisă din nou la aprobare, iar înlocuitorii sunt anunțați din nou.", "„Retrage cererea”: la o cerere în așteptare sau aprobată. Până la începutul primei ore a cererii retragerea este directă, cererea devine „Retrasă” și iese din pontaj și din „Azi în școală”. Colegii care primiseră deja notificarea sunt anunțați că nu mai suplinesc.", "„Cere retragerea cererii”: după începerea primei ore, o cerere aprobată nu se mai retrage direct. Trimiți cererea de retragere, cu motiv obligatoriu, iar conducerea o aprobă sau o refuză (cu motiv).", "„Șterge”: cererea dispare din lista ta, dar conducerea o vede în continuare cu eticheta „Ștearsă de profesor”. O cerere activă se retrage întâi, apoi se șterge."]],
+          ["p", "Istoricul fiecărei cereri (trimitere, modificări, decizie, retrageri) îl vezi la „Detalii și istoric”."]]],
+        ["Statistica învoirilor tale", [
+          ["p", "Cartonașele de pe ecranul Cereri de învoire se pot apăsa:"],
+          ["ul", ["„Cereri trimise”, „Aprobate”, „În așteptare”, „Respinse”: deschid lista cererilor din categoria respectivă, numerotate și restrânse.", "„Zile de învoire aprobate”: deschide un calendar al anului școlar cu zilele tale de învoire, plus statistici pe luni, pe module ale anului școlar și pe zilele săptămânii.", "„Ore de învoire aprobate”: deschide o hartă mentală cu orele tale pe clase, pe module ale anului școlar, pe discipline, pe înlocuitori și pe momentul din an."]],
+          ["p", "Fiecare element are sub el o explicație scurtă."]]]
+      ];
+      const desenGhid = () => {
+        zona.replaceChildren(); mesaj("");
+        const sus = el("div", "cr-dublu"), b1 = el("button", "secondary", "← Înapoi"); b1.type = "button"; b1.addEventListener("click", () => desenLista());
+        const b2 = el("button", "", "+ Cerere nouă"); b2.type = "button"; b2.addEventListener("click", () => desenForm()); sus.append(b1, b2); zona.appendChild(sus);
+        zona.appendChild(el("h3", "az-h", "Ghid: cum depui o cerere de învoire"));
+        const randa = (lista, cont) => lista.forEach(([tip, v]) => {
+          if (tip === "p") cont.appendChild(el("p", "gh-p", v));
+          else { const l = document.createElement(tip === "ol" ? "ol" : "ul"); l.className = "gh-l"; v.forEach((t) => l.appendChild(el("li", "", t))); cont.appendChild(l); }
+        });
+        const intro = el("div", "gh-intro"); randa(GHID_INTRO, intro); zona.appendChild(intro);
+        const tot = el("button", "secondary", "Desfă toate etapele"); tot.type = "button"; zona.appendChild(tot);
+        zona.appendChild(el("h3", "az-h", "Etapele"));
+        const lista = el("div", "gh-etape"), toate = [];
+        GHID.forEach(([titlu, corp], i) => {
+          const d = el("details", "gh-et"), s = el("summary", "gh-et-s"); s.append(el("span", "gh-nr", String(i + 1)), el("span", "gh-et-t", titlu)); d.appendChild(s);
+          const c = el("div", "gh-et-c"); randa(corp, c); d.appendChild(c); lista.appendChild(d); toate.push(d);
+        });
+        zona.appendChild(lista);
+        tot.addEventListener("click", () => { const desface = toate.some((d) => !d.open); toate.forEach((d) => { d.open = desface; }); tot.textContent = desface ? "Strânge toate etapele" : "Desfă toate etapele"; });
+        const jos = el("button", "", "+ Cerere nouă"); jos.type = "button"; jos.addEventListener("click", () => desenForm()); zona.appendChild(jos);
+        window.scrollTo(0, 0);
+      };
       const desenLista = () => {
         zona.replaceChildren();
         const nou = el("button", "", "+ Cerere nouă"); nou.type = "button"; nou.addEventListener("click", () => desenForm());
-        zona.appendChild(nou);
+        const gh = el("button", "secondary", "Ghid"); gh.type = "button"; gh.setAttribute("aria-label", "Ghid: cum depui o cerere de învoire"); gh.addEventListener("click", () => desenGhid());
+        const rNou = el("div", "cr-dublu"); rNou.append(nou, gh); zona.appendChild(rNou);
         if (poateInreg) { const ab = el("button", "secondary", "＋ Înregistrează absență"); ab.type = "button"; ab.addEventListener("click", () => desenForm(null, true)); zona.appendChild(ab); }
         if (poateDecide) { const tt = el("button", "secondary", esteAdmin ? "← Toate cererile (panou)" : "Toate cererile, pe persoane"); tt.type = "button"; tt.addEventListener("click", () => desenToate()); zona.appendChild(tt); }
         const sd = sectiuneDeDecis(); if (sd) zona.appendChild(sd);
