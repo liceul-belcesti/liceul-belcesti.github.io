@@ -2409,7 +2409,7 @@
         if (!doarSv) pg.appendChild(grilaOrar(p.celula, p.max, false, p.de));
         const bsv = p.mod === "fara" ? null : blocServiciu(p.sv);
         if (bsv) { pg.classList.add(doarSv ? "doar-sv" : "cu-sv"); if (doarSv) bsv.querySelector(".orar-sv-t").remove(); pg.appendChild(bsv); }
-        else if (doarSv) pg.appendChild(el("p", "po-sub", "Nu ai serviciu pe școală în acest an școlar."));
+        else if (doarSv) pg.appendChild(el("p", "po-sub", "Fără serviciu pe școală în acest an școlar."));
         const lg2 = doarSv ? null : legendaOrar(p.leg); if (lg2) pg.appendChild(lg2);
         cont.appendChild(pg);
       });
@@ -2482,8 +2482,12 @@
       const ctl = el("div", "ctl");
       const bUnu = el("button", "", "🖨 Tipărește"); bUnu.type = "button";
       const bToti = el("button", "secondary", ""); bToti.type = "button";
+      // Ce se tipărește la profesori (și pentru unul, și pentru toți): orarul fără serviciu, orarul cu serviciu sau numai serviciul pe școală
+      const selTip = document.createElement("select"); selTip.setAttribute("aria-label", "Ce se tipărește");
+      [["fara", "Orarul fără serviciul pe școală"], ["cu", "Orarul cu serviciul pe școală"], ["sv", "Numai serviciul pe școală"]].forEach(([v, et]) => selTip.add(new Option(et, v)));
+      selTip.value = "cu";
       ctl.append(bUnu, bToti);
-      bara.append(selAn, comut, selX, ctl);
+      bara.append(selAn, comut, selX, selTip, ctl);
       const zona = el("div", "");
       corp.append(bara, zona);
       let date = null; // { an, rows, nume(Map), profesori[], clase[] }
@@ -2509,12 +2513,15 @@
       };
       const dsc = (r) => date.dm.get(r.disciplina_id);
       const legDe = (ore) => ore.map((r) => { const d = dsc(r); return d ? [d.scurt, d.complet] : null; }).filter(Boolean);
-      const pagProf = (x) => { const ore = date.pe.get(x.id) || []; return { titlu: "Orarul profesorului", sub: x.nume, sv: date.sv.filter((g) => g.angajat_id === x.id), ...(({ de, max }) => ({ de, max }))(limiteOrar(ore)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const d = dsc(r); return d ? [d.scurt, r.clasa] : r.clasa; }) }; };
+      const areSv = (x) => date.sv.some((g) => g.angajat_id === x.id && g.zi >= 1 && g.zi <= 5 && (g.pauza || g.schimb));
+      const profTipar = () => (selTip.value === "sv" ? date.profesori.filter(areSv) : date.profesori); // „numai serviciul”: doar cei care au serviciu
+      const etichetaToti = () => { bToti.textContent = "🖨 Tipărește toți profesorii (" + profTipar().length + ")"; };
+      const pagProf = (x) => { const ore = date.pe.get(x.id) || []; return { titlu: "Orarul profesorului", sub: x.nume, mod: selTip.value, sv: date.sv.filter((g) => g.angajat_id === x.id), ...(({ de, max }) => ({ de, max }))(limiteOrar(ore)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const d = dsc(r); return d ? [d.scurt, r.clasa] : r.clasa; }) }; };
       const pagClasa = (c) => { const ore = date.rows.filter((r) => r.clasa === c); return { titlu: "Orarul clasei " + c, sub: "", ...(({ de, max }) => ({ de, max }))(limiteOrar(ore)), leg: legDe(ore), celula: (z, h) => ore.filter((r) => r.zi === z && r.ora === h).map((r) => { const n = date.nume.get(r.angajat_id) || "?", d = dsc(r); return d ? [d.scurt, n] : n; }).sort((x, y) => String(Array.isArray(x) ? x[1] : x).localeCompare(String(Array.isArray(y) ? y[1] : y), "ro")) }; };
       function umple() {
         bP.setAttribute("aria-pressed", String(mod === "profesori")); bC.setAttribute("aria-pressed", String(mod === "clase"));
-        selX.replaceChildren();
-        if (mod === "profesori") { selX.add(new Option("Alege profesorul", "")); date.profesori.forEach((x) => selX.add(new Option(x.nume + " (" + date.pe.get(x.id).length + " ore)", x.id))); bToti.textContent = "🖨 Tipărește toți profesorii (" + date.profesori.length + ")"; }
+        selX.replaceChildren(); selTip.classList.toggle("hidden", mod !== "profesori");
+        if (mod === "profesori") { selX.add(new Option("Alege profesorul", "")); date.profesori.forEach((x) => selX.add(new Option(x.nume + " (" + date.pe.get(x.id).length + " ore)" + (areSv(x) ? " · serviciu" : ""), x.id))); etichetaToti(); }
         else { selX.add(new Option("Alege clasa", "")); date.clase.forEach((c) => selX.add(new Option("Clasa " + c, c))); bToti.textContent = "🖨 Tipărește toate clasele (" + date.clase.length + ")"; }
         arata();
       }
@@ -2547,7 +2554,8 @@
       bC.addEventListener("click", () => { mod = "clase"; umple(); });
       selX.addEventListener("change", arata); selAn.addEventListener("change", incarca);
       bUnu.addEventListener("click", () => { if (!date || !selX.value) return; tiparesteOrar([mod === "profesori" ? pagProf(date.profesori.find((x) => x.id === selX.value)) : pagClasa(selX.value)], date.an); });
-      bToti.addEventListener("click", () => { if (!date) return; tiparesteOrar(mod === "profesori" ? date.profesori.map(pagProf) : date.clase.map(pagClasa), date.an); });
+      selTip.addEventListener("change", () => { if (date && mod === "profesori") etichetaToti(); });
+      bToti.addEventListener("click", () => { if (!date) return; const lista = mod === "profesori" ? profTipar() : date.clase; if (!lista.length) { msg.textContent = "Niciun profesor nu are serviciu pe școală în acest an școlar."; return; } msg.textContent = ""; tiparesteOrar(mod === "profesori" ? lista.map(pagProf) : lista.map(pagClasa), date.an); });
       incarca();
     }
 
