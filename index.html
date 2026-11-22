@@ -2165,7 +2165,7 @@
     async function incarcaUtilizatori() {
       if (vedere === "copie") return deseneazaCopie();
       const lista = $("lista");
-      const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de, angajat_nume";
+      const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de, angajat_nume, adresare";
       if (vedere === "istoric") {
         const { data, error } = await db.from("istoric_conturi")
           .select("id, la, cine_nume, cont_nume, cont_email, actiune, detalii").order("la", { ascending: false }).limit(150);
@@ -2342,6 +2342,12 @@
       selAng.value = u.angajat_nume || "";
       if (blocat) selAng.disabled = true;
       legAng.appendChild(selAng);
+      const legAdr = document.createElement("label"); legAdr.className = "leg-ang";
+      legAdr.append(document.createTextNode("Cum se adresează în cereri"));
+      const selAdr = document.createElement("select");
+      [["", "— nealeasă (Subsemnatul/Subsemnata) —"], ["m", "Subsemnatul"], ["f", "Subsemnata"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; selAdr.appendChild(o); });
+      selAdr.value = u.adresare || ""; if (blocat) selAdr.disabled = true;
+      legAdr.appendChild(selAdr);
 
       const ctl = document.createElement("div"); ctl.className = "ctl";
       const salvare = document.createElement("button"); salvare.type = "button";
@@ -2352,7 +2358,7 @@
       if (eu || protejat) dezactiv.disabled = true; // conturile protejate și propriul cont nu se dezactivează
 
       async function salveaza(camp) {
-        casete.forEach((c) => (c.disabled = true)); selAng.disabled = true; salvare.disabled = dezactiv.disabled = true;
+        casete.forEach((c) => (c.disabled = true)); selAng.disabled = true; selAdr.disabled = true; salvare.disabled = dezactiv.disabled = true;
         const { error } = await db.from("profiluri").update(camp).eq("id", u.id);
         if (error) {
           const m = error.message || "";
@@ -2367,8 +2373,8 @@
       salvare.addEventListener("click", () => {
         const r = alese();
         if (!r.length) return mesajPanou("Alege cel puțin un rol.");
-        const ang = selAng.value || null;
-        salveaza(u.activ ? { roluri: r, angajat_nume: ang } : { activ: true, roluri: r, angajat_nume: ang });
+        const ang = selAng.value || null, adr = selAdr.value || null;
+        salveaza(u.activ ? { roluri: r, angajat_nume: ang, adresare: adr } : { activ: true, roluri: r, angajat_nume: ang, adresare: adr });
       });
       dezactiv.addEventListener("click", () => salveaza({ activ: false }));
 
@@ -2396,7 +2402,7 @@
       if (u.activ) ctl.append(salvare, dezactiv); else ctl.append(salvare, sterge);
       rand.append(top, em);
       if (info.textContent) rand.append(info);
-      rand.append(grup, legAng, ctl);
+      rand.append(grup, legAng, legAdr, ctl);
       return rand;
     }
 
@@ -3636,7 +3642,8 @@
       d.appendChild(el("p", "tc-catre", "Către conducerea Liceului Tehnologic „Victor Mihăilescu Craiu” Belcești"));
       d.appendChild(el("h1", "", "CERERE"));
       if (c.tip === "S") d.appendChild(el("p", "tc-sub", "învoire în interes de serviciu"));
-      d.appendChild(el("p", "tc-text", "Subsemnatul(a) " + c.solicitant + (c.functie ? ", în calitate de " + c.functie : "") + ", angajat(ă) al Liceului Tehnologic „Victor Mihăilescu Craiu” Belcești, vă rog să-mi aprobați " + (c.tip === "S" ? "învoirea în interes de serviciu " : "învoirea ") + perioada + ", pentru următorul motiv:"));
+      const subs = c.adresare === "f" ? "Subsemnata" : c.adresare === "m" ? "Subsemnatul" : "Subsemnatul(a)", angj = c.adresare === "f" ? "angajată" : c.adresare === "m" ? "angajat" : "angajat(ă)";
+      d.appendChild(el("p", "tc-text", subs + " " + c.solicitant + (c.functie ? ", în calitate de " + c.functie : "") + ", " + angj + " al Liceului Tehnologic „Victor Mihăilescu Craiu” Belcești, vă rog să-mi aprobați " + (c.tip === "S" ? "învoirea în interes de serviciu " : "învoirea ") + perioada + ", pentru următorul motiv:"));
       d.appendChild(el("p", "tc-motiv", c.motiv));
       if (ore.length) {
         d.appendChild(el("p", "tc-text", "Orele din orarul meu din " + (c.de_la === c.pana_la ? "această zi" : "aceste zile") + " se acoperă astfel:"));
