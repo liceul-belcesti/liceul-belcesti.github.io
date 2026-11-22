@@ -89,6 +89,10 @@
     .ang-rand.citire { cursor:default; }
     .ang-rand.citire:hover { border-color:var(--line); }
     .ang-nume { font-weight:700; }
+    .ang-st { display:inline-flex; align-items:center; flex-wrap:wrap; gap:2px 14px; }
+    .ang-mf { display:inline-flex; align-items:center; gap:12px; }
+    .ang-mf label { display:inline-flex; align-items:center; gap:4px; margin:0; font-size:.85rem; font-weight:600; color:var(--muted, #5b6b73); cursor:pointer; }
+    .ang-mf input { width:18px; height:18px; min-height:0; margin:0; padding:0; accent-color:var(--accent); cursor:pointer; }
     .ang-rand.dir { display:grid; grid-template-columns:120px minmax(0,380px); justify-content:start; align-items:center; gap:4px 20px; border-left:6px solid var(--line); }
     .ang-rand.dir.are { border-left-color:var(--accent); }
     .ang-rand.dir.par { background:color-mix(in srgb, var(--teal-100) 55%, var(--card)); }
@@ -4701,7 +4705,9 @@
           pers.forEach((a) => {
             const n = a.norme.find((x) => x.loc === l && x.categorie === c);
             const r = el("div", "ang-rand");
-            r.append(el("span", "ang-nume", a.nume));
+            const st = el("span", "ang-st"); st.appendChild(el("span", "ang-nume", a.nume));
+            if (poateEdita()) st.appendChild(bifaSex(a));
+            r.append(st);
             const alt = a.norme.filter((x) => x !== n && x.loc !== l).map((x) => x.loc);
             const zl = (t) => t.slice(8, 10) + "/" + t.slice(5, 7) + "/" + t.slice(0, 4);
             const per = n.angajat_de_la || n.angajat_pana_la ? (n.angajat_de_la ? "din " + zl(n.angajat_de_la) : "") + (n.angajat_de_la && n.angajat_pana_la ? " " : "") + (n.angajat_pana_la ? "până la " + zl(n.angajat_pana_la) : "") : "";
@@ -4720,6 +4726,28 @@
         });
         lista.appendChild(sec);
       });
+    }
+
+    // Bifă M / F lângă nume: din ea se alege „Subsemnatul” / „Subsemnata” în cererile tipărite. Se salvează imediat.
+    function bifaSex(a) {
+      const g = el("span", "ang-mf"); g.title = "Bărbat sau femeie";
+      const cutii = {};
+      [["m", "M"], ["f", "F"]].forEach(([v, t]) => {
+        const et = document.createElement("label");
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = v; cb.checked = a.sex === v;
+        cb.setAttribute("aria-label", v === "m" ? "Bărbat" : "Femeie");
+        cb.addEventListener("change", async () => {
+          const nou = cb.checked ? v : null;
+          Object.values(cutii).forEach((o) => { if (o !== cb) o.checked = false; });
+          Object.values(cutii).forEach((o) => (o.disabled = true));
+          const { error } = await db.from("angajati").update({ sex: nou }).eq("id", a.id);
+          if (error) { mesajPontaj("Nu s-a putut salva. Încearcă din nou."); Object.values(cutii).forEach((o) => { o.checked = o.value === a.sex; o.disabled = false; }); return; }
+          a.sex = nou; deseneazaAngajati();
+        });
+        et.append(cb, document.createTextNode(t)); g.appendChild(et); cutii[v] = cb;
+      });
+      ["click", "keydown"].forEach((ev) => g.addEventListener(ev, (e) => e.stopPropagation()));
+      return g;
     }
 
     function randSters(a) {
@@ -4814,17 +4842,6 @@
       const lab = el("label", "", "Nume și prenume"); lab.setAttribute("for", "ang-nume");
       const nume = el("input"); nume.id = "ang-nume"; nume.maxLength = 100; nume.value = a ? a.nume : ""; nume.autocomplete = "off";
       f.append(lab, nume);
-      // Bifă M / F: din ea se alege „Subsemnatul” / „Subsemnata” în cererile tipărite.
-      f.appendChild(el("label", "", "Bărbat sau femeie"));
-      const grupMF = el("div", "roluri"); grupMF.style.marginTop = "2px";
-      const cbMF = {};
-      [["m", "M (bărbat)"], ["f", "F (femeie)"]].forEach(([v, t]) => {
-        const et = document.createElement("label");
-        const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = v; cb.checked = !!a && a.sex === v;
-        cb.addEventListener("change", () => { if (cb.checked) Object.values(cbMF).forEach((o) => { if (o !== cb) o.checked = false; }); });
-        et.append(cb, document.createTextNode(t)); grupMF.appendChild(et); cbMF[v] = cb;
-      });
-      f.appendChild(grupMF);
       f.appendChild(el("label", "", "Norme (loc · categorie · funcția, dacă e cazul)"));
       const norme = el("div"); f.appendChild(norme);
       const stare = [];
@@ -4894,10 +4911,9 @@
         try {
           let id = a && a.id;
           if (a) {
-            const sex = cbMF.m.checked ? "m" : cbMF.f.checked ? "f" : null;
-            if (n !== a.nume || sex !== (a.sex || null)) { const { error } = await db.from("angajati").update({ nume: n, sex }).eq("id", id); if (error) throw error; }
+            if (n !== a.nume) { const { error } = await db.from("angajati").update({ nume: n }).eq("id", id); if (error) throw error; }
           } else {
-            const { data, error } = await db.from("angajati").insert({ nume: n, an_id: anId, sex: cbMF.m.checked ? "m" : cbMF.f.checked ? "f" : null }).select("id").single();
+            const { data, error } = await db.from("angajati").insert({ nume: n, an_id: anId }).select("id").single();
             if (error) throw error;
             id = data.id;
           }
