@@ -670,6 +670,61 @@
     @media (prefers-color-scheme: dark) { #cereri .cr-st.att { color:#fcd34d; } #cereri .cr-st.ok { color:#86efac; } #cereri .cr-st.rau { color:#fca5a5; } }
     /* Azi în școală */
     #cr-lista-mele { scroll-margin-top:76px; }
+    #cereri .si-sw { display:flex; gap:8px; margin:0 0 10px; }
+    #cereri .si-sw button { flex:1; margin:0; min-height:46px; padding:0 8px; }
+    #cereri .si-lab { display:block; font-weight:700; margin:0 0 10px; }
+    #cereri .si-sel { display:block; width:100%; margin:4px 0 0; }
+    #cereri .si-h4 { margin:16px 0 8px; font-size:1rem; }
+    #cereri .si-bare { background:var(--card); border-radius:16px; padding:10px 14px 12px; margin:10px 0; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .si-bare .si-h4 { margin:2px 0 8px; }
+    #cereri .si-bara-rand { display:grid; grid-template-columns:7.5em 1fr 2.4em; align-items:center; gap:8px; padding:2px 0; font-size:.9rem; }
+    #cereri .si-bara-n { text-align:right; }
+    #cereri .si-bara { display:block; height:8px; border:1px solid var(--text); border-radius:5px; overflow:hidden; background:transparent; }
+    #cereri .si-bara i { display:block; height:100%; background:var(--text); }
+    #cereri .si-leg { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.85rem; color:var(--muted); margin:0 0 10px; }
+    #cereri .si-leg-i { display:inline-flex; align-items:center; gap:6px; }
+    #cereri .si-luni { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; }
+    #cereri .si-luna { background:var(--card); border-radius:16px; padding:10px 12px 12px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .si-luna-cap { display:flex; justify-content:space-between; align-items:baseline; margin:0 0 8px; }
+    #cereri .si-luna-cap span { color:var(--muted); font-size:.85rem; font-weight:700; }
+    #cereri .si-grila { display:grid; grid-template-columns:repeat(5,1fr); gap:4px 2px; text-align:center; }
+    #cereri .si-zs { font-size:.62rem; font-weight:700; color:var(--muted); }
+    #cereri .si-zi { position:relative; display:flex; align-items:center; justify-content:center; width:38px; height:38px; min-height:0; margin:0 auto; padding:0; border-radius:50%; border:2px solid transparent; background:transparent; color:var(--text); font:inherit; font-size:.9rem; font-weight:700; box-shadow:none; }
+    #cereri .si-zi.lib { color:var(--muted); opacity:.5; }
+    #cereri .si-zi.on { background:var(--text); color:var(--card); border-color:var(--text); opacity:1; }
+    #cereri .si-zi.on.part { background:var(--card); color:var(--text); border-style:solid; }
+    #cereri .si-zi.s { border-radius:8px; }
+    #cereri .si-zi.si-mic { width:22px; height:22px; margin:0; }
+    #cereri .si-zi i.si-n { position:absolute; top:-6px; right:-6px; font-style:normal; font-size:.62rem; line-height:16px; min-width:16px; height:16px; border-radius:8px; background:var(--card); color:var(--text); border:1.5px solid var(--text); }
+    #cereri .si-pan { grid-column:1/-1; margin:10px 0 0; padding:10px 12px; border:2px solid var(--text); border-radius:12px; }
+    #cereri .si-pan-n { margin:8px 0 2px; font-weight:800; }
+    #cereri .si-pan-o { font-size:.9rem; padding:3px 0; }
+    #cereri .si-radacina { background:var(--card); border:3px solid var(--text); border-radius:18px; padding:12px 16px; margin:0 0 6px; text-align:center; }
+    #cereri .si-radacina .mare { display:block; font-size:2.8rem; font-weight:800; line-height:1.05; }
+    #cereri .si-r-et { display:block; font-weight:800; }
+    #cereri .si-r-sub { display:block; color:var(--muted); font-size:.85rem; margin-top:2px; }
+    #cereri .si-arbore { border-left:3px solid var(--text); margin:6px 0 0 18px; padding-top:6px; }
+    #cereri .si-ram { position:relative; background:var(--card); border:2px solid var(--text); border-radius:16px; margin:0 0 10px 16px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+    #cereri .si-ram::before { content:""; position:absolute; left:-19px; top:26px; width:17px; border-top:3px solid var(--text); }
+    #cereri .si-ram > summary { list-style:none; display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; min-height:50px; }
+    #cereri .si-ram > summary::-webkit-details-marker { display:none; }
+    #cereri .si-ram > summary::before { content:"▸"; font-size:1.1rem; }
+    #cereri .si-ram[open] > summary::before { content:"▾"; }
+    #cereri .si-ram-t { flex:1; font-weight:800; font-size:1.05rem; }
+    #cereri .si-ram-n { font-size:1.4rem; font-weight:800; min-width:2ch; text-align:right; }
+    #cereri .si-ram-sub { margin:-6px 14px 8px; color:var(--muted); font-size:.82rem; }
+    #cereri .si-ramc { padding:0 12px 12px; }
+    #cereri .si-rand { margin:0 0 8px; }
+    #cereri .si-rand-h { list-style:none; display:block; padding:7px 10px; border:1.5px solid var(--text); border-radius:12px; cursor:default; }
+    #cereri summary.si-rand-h { cursor:pointer; }
+    #cereri .si-rand-h::-webkit-details-marker { display:none; }
+    #cereri .si-rand-r1 { display:flex; align-items:center; gap:8px; margin:0 0 4px; }
+    #cereri summary.si-rand-h .si-rand-r1::before { content:"▸"; }
+    #cereri .si-rand[open] > summary .si-rand-r1::before { content:"▾"; }
+    #cereri .si-et { flex:1; font-weight:700; }
+    #cereri .si-nr { min-width:2.2ch; text-align:center; font-size:1.15rem; font-weight:800; padding:0 8px; border:2px solid var(--text); border-radius:10px; }
+    #cereri .si-copii { margin:6px 0 0 10px; padding-left:10px; border-left:2px solid var(--muted); }
+
     #cereri .cr-rand { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; background:var(--card); border-radius:14px; padding:10px 14px; margin:0 0 8px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     #cereri .cr-rand-nr { font-weight:800; min-width:2.2ch; }
     #cereri .cr-rand-data { font-weight:700; }
@@ -3725,6 +3780,158 @@
       window.addEventListener("afterprint", curata); await new Promise((r) => { if (logo.complete) r(); else { logo.onload = r; logo.onerror = r; setTimeout(r, 3000); } }); window.print(); setTimeout(curata, 1500);
     }
 
+    // Statistica învoirilor: zilele într-un calendar al anului școlar, orele într-o hartă mentală.
+    // rows = orele aprobate (funcția invoiri_ore_detaliat); o = { toti, numere, libere, vac }
+    function deseneazaStatInvoiri(host, modInitial, rows, o) {
+      const NZL = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"], WK = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+      const LUNI = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+      const fd = (z) => z.split("-").reverse().join("/");
+      const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
+      const iso = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+      const pl = (n, s, p) => n + " " + (n === 1 ? s : p);
+      const OPT = { vine: "clasa vine mai târziu", pleaca: "clasa pleacă acasă" };
+      const libere = o.libere || new Set(), vac = o.vac || [];
+      const nelucrata = (z) => libere.has(z) || vac.some((v) => v.de_la <= z && z <= v.pana_la);
+      const nume = new Map(rows.map((x) => [x.angajat_id, x.angajat]));
+      let mod = modInitial, persoana = "", deschisa = null;
+
+      const radacina = (n, et, sub) => { const d = el("div", "si-radacina"); d.append(el("b", "mare", String(n)), el("span", "si-r-et", et)); if (sub) d.appendChild(el("span", "si-r-sub", sub)); return d; };
+      const bare = (titlu, items) => { // listă simplă cu bare proporționale
+        const box = el("div", "si-bare"); box.appendChild(el("h4", "si-h4", titlu));
+        const mx = Math.max(1, ...items.map((x) => x[1]));
+        items.forEach(([et, n]) => { const r = el("div", "si-bara-rand"); const b = el("span", "si-bara"); const i = el("i", ""); i.style.width = Math.round((n / mx) * 100) + "%"; b.appendChild(i); r.append(el("span", "si-bara-et", et), b, el("b", "si-bara-n", String(n))); box.appendChild(r); });
+        return box;
+      };
+
+      const zile = (r, toata) => {
+        const zi = new Map(), perechi = new Map();
+        r.forEach((x) => {
+          let z = zi.get(x.data); if (!z) { z = { ore: [], pers: new Set(), s: false }; zi.set(x.data, z); }
+          z.ore.push(x); z.pers.add(x.angajat_id); if (x.tip === "S") z.s = true;
+          const pk = x.angajat_id + "|" + x.data; let p = perechi.get(pk); if (!p) { p = { n: 0, tot: x.ore_zi, s: false, data: x.data }; perechi.set(pk, p); }
+          p.n++; if (x.tip === "S") p.s = true;
+        });
+        const per = [...perechi.values()], intregi = per.filter((p) => p.tot > 0 && p.n >= p.tot).length;
+        const zileSort = [...zi.keys()].sort();
+        // Cea mai lungă perioadă consecutivă de zile lucrătoare (fără zile libere și vacanțe)
+        const urm = (z) => { const d = dinIso(z); do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6 || nelucrata(iso(d))); return iso(d); };
+        let best = [], cur = [];
+        zileSort.forEach((z) => { if (cur.length && urm(cur[cur.length - 1]) === z) cur.push(z); else cur = [z]; if (cur.length > best.length) best = cur.slice(); });
+        const tile = (n, et, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et)); return t; };
+        const st = el("div", "az-stats");
+        st.appendChild(tile(per.length, toata ? "Zile de învoire, însumate pe persoane" : "Zile de învoire", "bun"));
+        if (toata) st.appendChild(tile(new Set(r.map((x) => x.angajat_id)).size, "Persoane care s-au învoit"));
+        st.append(tile(intregi, "Zile întregi"), tile(per.length - intregi, "Zile cu ore alese"));
+        const nS = per.filter((p) => p.s).length; if (nS) st.appendChild(tile(nS, "Zile cu interes de serviciu"));
+        if (!toata) st.appendChild(tile(best.length, "Cea mai lungă perioadă consecutivă" + (best.length ? " (" + fd(best[0]) + (best.length > 1 ? " – " + fd(best[best.length - 1]) : "") + ")" : "")));
+        host.appendChild(st);
+        host.appendChild(el("p", "cr-det", "Ultima învoire: " + fd(zileSort[zileSort.length - 1]) + " · Prima învoire: " + fd(zileSort[0]) + "."));
+        // pe luni și pe zilele săptămânii
+        const azi = new Date(); let sy = azi.getMonth() >= 8 ? azi.getFullYear() : azi.getFullYear() - 1;
+        if (zileSort.length && dinIso(zileSort[0]) < new Date(sy, 8, 1)) sy = Number(zileSort[0].slice(0, 4)) - (Number(zileSort[0].slice(5, 7)) < 9 ? 1 : 0);
+        const luniAn = []; for (let i = 0; i < 12; i++) { const m = (8 + i) % 12; luniAn.push({ m, y: m >= 8 ? sy : sy + 1 }); }
+        const peLuna = luniAn.map((l) => [cap(LUNI[l.m]), per.filter((p) => Number(p.data.slice(5, 7)) === l.m + 1 && Number(p.data.slice(0, 4)) === l.y).length]);
+        host.appendChild(bare("Zile pe luni", peLuna));
+        host.appendChild(bare("Zile pe zilele săptămânii", NZL.map((n, i) => [n, per.filter((p) => dinIso(p.data).getDay() === i + 1).length])));
+        // calendar
+        host.appendChild(el("h4", "si-h4", "Calendarul anului școlar"));
+        const leg = el("div", "si-leg");
+        if (toata) leg.appendChild(el("span", "", "Numărul din colț arată câte persoane s-au învoit în ziua respectivă. Apasă pe o zi ca să vezi detaliile."));
+        else [["on", "Toată ziua"], ["on part", "Doar anumite ore"], ["on s", "Interes de serviciu, toată ziua"], ["on part s", "Interes de serviciu, anumite ore"], ["lib", "Zi liberă sau vacanță"]].forEach(([c, t]) => { const s = el("span", "si-leg-i"); s.append(el("span", "si-zi si-mic " + c, ""), document.createTextNode(" " + t)); leg.appendChild(s); });
+        host.appendChild(leg);
+        const luniBox = el("div", "si-luni"); host.appendChild(luniBox);
+        luniAn.forEach(({ m, y }) => {
+          const blk = el("div", "si-luna"), cp = el("div", "si-luna-cap");
+          const nrL = per.filter((p) => Number(p.data.slice(5, 7)) === m + 1 && Number(p.data.slice(0, 4)) === y).length;
+          cp.append(el("b", "", cap(LUNI[m]) + " " + y), el("span", "", pl(nrL, "zi", "zile"))); blk.appendChild(cp);
+          const gr = el("div", "si-grila"); NZL.forEach((n) => gr.appendChild(el("span", "si-zs", n)));
+          const nz = new Date(y, m + 1, 0).getDate();
+          for (let d = 1; d <= nz; d++) {
+            const dt = new Date(y, m, d), w = dt.getDay(); if (w === 0 || w === 6) continue;
+            const z = iso(dt), info = zi.get(z); let c = "si-zi";
+            if (nelucrata(z)) c += " lib";
+            if (info) { const p0 = perechi.get([...info.pers][0] + "|" + z); c += " on" + (!toata && !(p0.tot > 0 && p0.n >= p0.tot) ? " part" : "") + (info.s ? " s" : ""); }
+            const cel = el(info ? "button" : "div", c, String(d)); cel.style.gridColumn = String(w);
+            if (info) {
+              cel.type = "button"; cel.setAttribute("aria-label", WK[w] + " " + fd(z));
+              if (toata) cel.appendChild(el("i", "si-n", String(info.pers.size)));
+              cel.addEventListener("click", () => {
+                const acelasi = deschisa && deschisa.z === z; if (deschisa) { deschisa.pan.remove(); deschisa = null; } if (acelasi) return;
+                const pan = el("div", "si-pan"); pan.appendChild(el("b", "", WK[w] + " " + fd(z)));
+                const grupe = new Map(); info.ore.forEach((x) => { if (!grupe.has(x.angajat_id)) grupe.set(x.angajat_id, []); grupe.get(x.angajat_id).push(x); });
+                [...grupe.entries()].sort((a, b) => a[1][0].angajat.localeCompare(b[1][0].angajat, "ro")).forEach(([, ore]) => {
+                  if (toata) pan.appendChild(el("p", "si-pan-n", ore[0].angajat));
+                  const vazute = new Set(); ore.forEach((x) => { if (o.numere && !vazute.has(x.cerere_id)) { vazute.add(x.cerere_id); const nn = o.numere.get(x.cerere_id); pan.appendChild(el("p", "cr-det", (nn ? "Cererea Nr. " + nn.nr + " din " + fd(nn.data_inreg) : "Cerere fără număr de înregistrare") + (x.tip === "S" ? " · interes de serviciu" : ""))); } });
+                  ore.forEach((x) => pan.appendChild(el("div", "si-pan-o", "ora " + x.ora + " (" + intervalOra(x.ora) + ") · " + x.clasa + " · " + (x.disciplina || "modul nestabilit în orar") + " → " + (x.inlocuitor || OPT[x.optiune] || "fără înlocuitor") + (toata && x.tip === "S" ? " · interes de serviciu" : ""))));
+                });
+                blk.appendChild(pan); deschisa = { z, pan };
+              });
+            }
+            gr.appendChild(cel);
+          }
+          blk.appendChild(gr); luniBox.appendChild(blk);
+        });
+      };
+
+      const ore = (r, toata) => {
+        const tot = r.length;
+        const grup = (lista, f) => { const m = new Map(); lista.forEach((x) => { const k = f(x); if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return m; };
+        const sorteaza = (m) => [...m.entries()].sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0]), "ro", { numeric: true }));
+        const rand = (et, lista, copiiFn) => {
+          const n = lista.length, d = el(copiiFn ? "details" : "div", "si-rand"), h = el(copiiFn ? "summary" : "div", "si-rand-h");
+          const r1 = el("div", "si-rand-r1"); r1.append(el("span", "si-et", et), el("b", "si-nr", String(n))); h.appendChild(r1);
+          const b = el("span", "si-bara"), i = el("i", ""); i.style.width = Math.max(2, Math.round((n / tot) * 100)) + "%"; b.appendChild(i); h.appendChild(b); d.appendChild(h);
+          if (copiiFn) { const c = el("div", "si-copii"); copiiFn(lista).forEach((x) => c.appendChild(x)); d.appendChild(c); }
+          return d;
+        };
+        const peClase = (l) => sorteaza(grup(l, (x) => x.clasa)).map(([k, v]) => rand("Clasa " + k, v, (ll) => sorteaza(grup(ll, (x) => x.disciplina || "Modul nestabilit în orar")).map(([k2, v2]) => rand(k2, v2))));
+        const peModule = (l) => sorteaza(grup(l, (x) => x.disciplina || "Modul nestabilit în orar")).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2))));
+        const ramura = (titlu, lista, copii, nr, deschisa0) => {
+          const d = el("details", "si-ram"); if (deschisa0) d.open = true;
+          const s = el("summary", ""); s.append(el("span", "si-ram-t", titlu), el("b", "si-ram-n", String(lista.length))); d.appendChild(s);
+          if (nr) d.insertBefore(el("p", "si-ram-sub", nr), null);
+          const c = el("div", "si-ramc"); copii.forEach((x) => c.appendChild(x)); d.appendChild(c); return d;
+        };
+        const zileDist = new Set(r.map((x) => x.angajat_id + "|" + x.data)).size, clase = new Set(r.map((x) => x.clasa)).size, module = new Set(r.map((x) => x.disciplina || "—")).size;
+        host.appendChild(radacina(tot, "ore de învoire în anul școlar", pl(zileDist, "zi", "zile") + (toata ? " · " + pl(new Set(r.map((x) => x.angajat_id)).size, "persoană", "persoane") : "") + " · " + pl(clase, "clasă", "clase") + " · " + pl(module, "modul", "module")));
+        host.appendChild(el("p", "cr-det", "Apasă pe o ramură sau pe un rând ca să-l desfaci."));
+        const arb = el("div", "si-arbore"); host.appendChild(arb);
+        arb.appendChild(ramura("Ore pe clase", r, peClase(r), clase + " clase, cu modulele din fiecare", true));
+        arb.appendChild(ramura("Ore pe module", r, peModule(r), module + " module, cu clasele din fiecare"));
+        const cheieInl = (x) => x.inlocuitor ? x.inlocuitor : x.optiune ? cap(OPT[x.optiune] || x.optiune) : "Fără înlocuitor";
+        arb.appendChild(ramura("Cine a preluat orele", r, sorteaza(grup(r, cheieInl)).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2)))), "înlocuitori, ore cu clasa venită mai târziu sau plecată acasă și ore fără înlocuitor"));
+        const luniOre = [...grup(r, (x) => x.data.slice(0, 7)).entries()].sort((a, b) => a[0].localeCompare(b[0]));
+        arb.appendChild(ramura("Când", r, [
+          rand("Pe luni", r, () => luniOre.map(([k, v]) => rand(cap(LUNI[Number(k.slice(5)) - 1]) + " " + k.slice(0, 4), v))),
+          rand("Pe zilele săptămânii", r, () => NZL.map((n, i) => [n, r.filter((x) => dinIso(x.data).getDay() === i + 1)]).filter((x) => x[1].length).map(([n, v]) => rand(n, v))),
+          rand("Pe ora din zi", r, () => [...grup(r, (x) => x.ora).entries()].sort((a, b) => a[0] - b[0]).map(([k, v]) => rand("Ora " + k + " (" + intervalOra(k) + ")", v)))
+        ], "luni, zilele săptămânii, orele din zi"));
+        const tipuri = grup(r, (x) => x.tip === "S" ? "Interes de serviciu" : "Învoire");
+        arb.appendChild(ramura("Tipul cererii", r, sorteaza(tipuri).map(([k, v]) => rand(k, v)), "învoire și interes de serviciu, în aceleași totaluri"));
+        if (toata) arb.appendChild(ramura("Ore pe persoane", r, sorteaza(grup(r, (x) => x.angajat)).map(([k, v]) => rand(k, v, (ll) => sorteaza(grup(ll, (x) => x.clasa)).map(([k2, v2]) => rand("Clasa " + k2, v2)))), "fiecare persoană, cu clasele ei"));
+      };
+
+      const desen = () => {
+        host.replaceChildren(); deschisa = null;
+        const sw = el("div", "si-sw");
+        [["zile", "Zile de învoire"], ["ore", "Ore de învoire"]].forEach(([k, t]) => { const b = el("button", k === mod ? "" : "secondary", t); b.type = "button"; b.setAttribute("aria-pressed", String(k === mod)); b.addEventListener("click", () => { mod = k; desen(); }); sw.appendChild(b); });
+        host.appendChild(sw);
+        if (o.toti) {
+          const lab = el("label", "si-lab", "Persoana"), sel = document.createElement("select"); sel.className = "si-sel";
+          sel.appendChild(new Option("Toată școala", ""));
+          [...nume.entries()].sort((a, b) => a[1].localeCompare(b[1], "ro")).forEach(([id, n]) => sel.appendChild(new Option(n, id)));
+          sel.value = persoana; sel.addEventListener("change", () => { persoana = sel.value; desen(); });
+          lab.appendChild(sel); host.appendChild(lab);
+        }
+        const r = persoana ? rows.filter((x) => x.angajat_id === persoana) : rows, toata = !!o.toti && !persoana;
+        host.appendChild(el("h3", "az-h", (mod === "zile" ? "Zile de învoire" : "Ore de învoire") + " · " + (o.toti ? (persoana ? nume.get(persoana) : "toată școala") : "anul școlar curent")));
+        if (!r.length) { host.appendChild(el("p", "who", "Nu există învoiri aprobate în anul școlar curent.")); return; }
+        (mod === "zile" ? zile : ore)(r, toata);
+      };
+      desen();
+    }
+
     async function deschideCereri(optiuni) {
       memoreazaVedere("cereri");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
@@ -3737,14 +3944,15 @@
       const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
       let filtruCereri = null, FILTRE_CERERI = null;
-      let cereri, orar, colegi, cal = { structura: [], libere: [] }, acc = new Map(), pentruMine = [], deDecis = [], lim = new Map(), numere = new Map();
+      let cereri, orar, colegi, cal = { structura: [], libere: [] }, acc = new Map(), pentruMine = [], deDecis = [], lim = new Map(), numere = new Map(), oreInv = [];
       const poateDecide = ["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r)), esteDirector = (euRoluri.includes("director") || euRoluri.includes("director_adjunct")), esteAdmin = euRoluri.includes("administrator"), poateInreg = ["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r));
       const incarca = async () => {
-        const [c, o, g, k, ac, pm, dd, lm, nrr] = await Promise.all([
+        const [c, o, g, k, ac, pm, dd, lm, nrr, oi] = await Promise.all([
           db.from("cereri_invoire").select("id, an_id, de_la, pana_la, ore_alese, motiv, inlocuitor_propus, propuneri, optiuni_clasa, stare, nota_decizie, decis_la, creat_la, tip, retragere_ceruta_la, retragere_motiv, retragere_nota").eq("cerut_de", euId).is("stearsa_de_profesor_la", null).order("creat_la", { ascending: false }).limit(100),
           db.rpc("orar_propriu_disc"), db.rpc("colegi_invoire"), db.rpc("orar_calendar"),
-          db.rpc("acceptari_cereri_mele"), db.rpc("cereri_pentru_mine"), poateDecide ? db.rpc("cereri_de_decis_v2") : Promise.resolve({ data: [] }), db.rpc("limite_clase_zile"), db.rpc("cereri_numere")
+          db.rpc("acceptari_cereri_mele"), db.rpc("cereri_pentru_mine"), poateDecide ? db.rpc("cereri_de_decis_v2") : Promise.resolve({ data: [] }), db.rpc("limite_clase_zile"), db.rpc("cereri_numere"), db.rpc("invoiri_ore_detaliat", { p_toti: false })
         ]);
+        oreInv = Array.isArray(oi.data) ? oi.data : [];
         numere = new Map((nrr.error ? [] : (nrr.data || [])).map((x) => [x.cerere_id, x]));
         lim = new Map((lm.error ? [] : (lm.data || [])).map((x) => [x.clasa + "|" + x.zi, { p: Number(x.prima), u: Number(x.ultima) }]));
         acc = new Map(); (ac.error ? [] : (ac.data || [])).forEach((x) => { if (!acc.has(x.cerere_id)) acc.set(x.cerere_id, []); acc.get(x.cerere_id).push(x); });
@@ -3781,6 +3989,21 @@
         return chei.map((k) => { const x = dupaId.get(prop[k]), sd = stareInlocuitor(x.stare, c.stare), r = el("div", "cr-acc"); r.append(el("span", "", fOra(k) + " → " + x.nume), el("span", sd[1], sd[0])); return r; });
       };
       const fDataOra = (t) => !t ? "—" : dataOraPlatforma(t);
+      // Se numără ca învoire cererile obișnuite și cele de interes de serviciu (nu și concediile)
+      const numaraInvoire = (c) => c.tip === "I" || c.tip === "S";
+      // Statistica învoirilor aprobate: calendar pentru zile, hartă mentală pentru ore. toti = toată școala (doar conducerea)
+      const deschideStat = async (mod, toti, inapoi) => {
+        zona.replaceChildren(el("p", "who", "Se încarcă…")); mesaj("");
+        const { data, error } = await db.rpc("invoiri_ore_detaliat", { p_toti: !!toti });
+        if (error || !Array.isArray(data)) { mesaj("Statistica nu a putut fi încărcată. Încearcă din nou."); inapoi(); return; }
+        const an = data.length ? data.reduce((m, x) => (x.data > m.data ? x : m), data[0]).an_id : null;
+        const rows = data.filter((x) => x.an_id === an);
+        zona.replaceChildren();
+        const b = el("button", "secondary", "← Înapoi la cereri"); b.type = "button"; b.addEventListener("click", () => { mesaj(""); inapoi(); }); zona.appendChild(b);
+        const host = el("div", "si"); zona.appendChild(host);
+        deseneazaStatInvoiri(host, mod, rows, { toti: !!toti, numere: toti ? null : numere, libere: new Set((cal.libere || []).map((x) => x.data)), vac: (cal.structura || []).filter((x) => /vacanta/.test(x.tip)) });
+        window.scrollTo(0, 0);
+      };
       const zileCerere = (c) => { if (c.ore_alese && c.ore_alese.length && /^\d{4}-/.test(c.ore_alese[0])) return new Set(c.ore_alese.map((k) => k.split("|")[0])).size; let n = 0; for (let d = dinIso(c.de_la); iso(d) <= c.pana_la; d.setDate(d.getDate() + 1)) if (d.getDay() >= 1 && d.getDay() <= 5) n++; return n; };
       const ACTIUNI = { creata: "Cerere trimisă", modificata: "Cerere modificată", anulata: "Cerere retrasă", aprobata: "Cerere aprobată", respinsa: "Cerere respinsă", stearsa: "Cerere ștearsă", retragere_ceruta: "Retragere cerută", retragere_aprobata: "Retragere aprobată", retragere_respinsa: "Retragere refuzată", stearsa_de_profesor: "Ștearsă de profesor" };
       const perDet = (d) => (d.de_la === d.pana_la ? fd(d.de_la) : fd(d.de_la) + " – " + fd(d.pana_la)) + ", " + d.ore + (d.ore === 1 ? " oră" : " ore");
@@ -3886,18 +4109,8 @@
         const nr = (st) => lista.filter((c) => c.stare === st).length;
         const libere = new Set(cal.libere.map((x) => x.data));
         const vac = cal.structura.filter((x) => /vacanta/.test(x.tip));
-        let zile = 0, ore = 0, ultima = "";
-        lista.filter((c) => c.stare === "aprobata" && c.tip !== "S").forEach((c) => {
-          if (c.ore_alese && c.ore_alese.length && /^\d{4}-/.test(c.ore_alese[0])) { zile += new Set(c.ore_alese.map((k) => k.split("|")[0])).size; ore += c.ore_alese.length; if (c.pana_la > ultima) ultima = c.pana_la; return; }
-          for (let d = dinIso(c.de_la); iso(d) <= c.pana_la; d.setDate(d.getDate() + 1)) {
-            const w = d.getDay(), z = iso(d);
-            if (w < 1 || w > 5 || libere.has(z) || vac.some((v) => v.de_la <= z && z <= v.pana_la)) continue;
-            zile++;
-            const deZi = orar.filter((o) => Number(o.zi) === w);
-            ore += c.ore_alese ? deZi.filter((o) => c.ore_alese.includes(w + "|" + o.ora + "|" + o.clasa)).length : deZi.length;
-          }
-          if (c.pana_la > ultima) ultima = c.pana_la;
-        });
+        const randuri = oreInv.filter((x) => !an || x.an_id === an);
+        const zile = new Set(randuri.map((x) => x.data)).size, ore = randuri.length, ultima = randuri.reduce((m, x) => (x.data > m ? x.data : m), "");
         const sec = el("div", "");
         sec.appendChild(el("h3", "az-h", "Statistică · anul școlar curent"));
         const st = el("div", "az-stats");
@@ -3906,15 +4119,16 @@
           aprobata: { et: "Cereri aprobate", f: (c) => c.stare === "aprobata" },
           in_asteptare: { et: "Cereri în așteptare", f: (c) => c.stare === "in_asteptare" },
           respinsa: { et: "Cereri respinse", f: (c) => c.stare === "respinsa" },
-          numarate: { et: "Învoiri aprobate, numărate în zile și ore", f: (c) => c.stare === "aprobata" && c.tip !== "S" }
+          numarate: { et: "Învoiri aprobate", f: (c) => c.stare === "aprobata" && numaraInvoire(c) }
         };
-        const tile = (n, et, cheie, cls) => {
-          const t = el("button", "az-stat " + (cls || "") + (filtruCereri === cheie ? " sel" : "")); t.type = "button"; t.setAttribute("aria-pressed", String(filtruCereri === cheie));
+        const tile = (n, et, cheie, cls, actiune) => {
+          const t = el("button", "az-stat " + (cls || "") + (!actiune && filtruCereri === cheie ? " sel" : "")); t.type = "button"; if (!actiune) t.setAttribute("aria-pressed", String(filtruCereri === cheie));
           t.append(el("b", "", String(n)), el("span", "", et));
+          if (actiune) { t.addEventListener("click", actiune); return t; }
           t.addEventListener("click", () => { filtruCereri = filtruCereri === cheie ? null : cheie; desenLista(); if (filtruCereri) { const h = document.getElementById("cr-lista-mele"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); } });
           return t;
         };
-        st.append(tile(lista.length, "Cereri trimise", "toate"), tile(nr("aprobata"), "Aprobate", "aprobata", "bun"), tile(nr("in_asteptare"), "În așteptare", "in_asteptare", nr("in_asteptare") ? "att" : ""), tile(nr("respinsa"), "Respinse", "respinsa", nr("respinsa") ? "rau" : ""), tile(zile, "Zile de învoire aprobate", "numarate"), tile(ore, "Ore de învoire aprobate", "numarate"));
+        st.append(tile(lista.length, "Cereri trimise", "toate"), tile(nr("aprobata"), "Aprobate", "aprobata", "bun"), tile(nr("in_asteptare"), "În așteptare", "in_asteptare", nr("in_asteptare") ? "att" : ""), tile(nr("respinsa"), "Respinse", "respinsa", nr("respinsa") ? "rau" : ""), tile(zile, "Zile de învoire aprobate", "", "", () => deschideStat("zile", false, () => desenLista())), tile(ore, "Ore de învoire aprobate", "", "", () => deschideStat("ore", false, () => desenLista())));
         sec.appendChild(st);
         FILTRE_CERERI = FILTRE;
         if (ultima) sec.appendChild(el("p", "cr-det", "Ultima învoire aprobată se încheie pe " + fd(ultima) + "."));
@@ -4051,7 +4265,8 @@
       };
       const desenToate = async (txt, ok) => {
         zona.replaceChildren(el("p", "who", "Se încarcă…")); mesaj("");
-        const { data, error } = await db.rpc("cereri_toate");
+        const [{ data, error }, ro] = await Promise.all([db.rpc("cereri_toate"), db.rpc("invoiri_ore_detaliat", { p_toti: true })]);
+        const oreToti = Array.isArray(ro.data) ? ro.data : [];
         if (error || !Array.isArray(data)) { mesaj("Cererile nu au putut fi încărcate."); if (!esteAdmin) desenLista(); else zona.replaceChildren(); return; }
         zona.replaceChildren(); if (txt) mesaj(txt, ok);
         const refa = async (t, o) => { try { await incarca(); } catch (e) { /* rămâne lista veche */ } await desenToate(t, o); actualizeazaClopot(); };
@@ -4061,18 +4276,18 @@
         if (bara.children.length) zona.appendChild(bara);
         const nrOre = (c) => (c.ore_alese ? c.ore_alese.length : 0);
         const fara = (c) => (c.ore_alese || []).filter((k) => !(c.propuneri && c.propuneri[k]) && !(c.optiuni_clasa && c.optiuni_clasa[k])).length;
-        const apr = data.filter((c) => c.stare === "aprobata"), aprI = apr.filter((c) => c.tip !== "S"), aprS = apr.filter((c) => c.tip === "S"), nr = (st) => data.filter((c) => c.stare === st).length;
+        const apr = data.filter((c) => c.stare === "aprobata"), aprI = apr.filter(numaraInvoire), aprS = apr.filter((c) => c.tip === "S"), nr = (st) => data.filter((c) => c.stare === st).length;
         const profesori = new Set(data.map((c) => c.angajat_id));
         // Statistica generală
         zona.appendChild(el("h3", "az-h", "Statistică generală"));
         const st = el("div", "az-stats");
-        const tile = (n, et, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et)); return t; };
+        const tile = (n, et, cls, act) => { const t = el(act ? "button" : "div", "az-stat " + (cls || "")); if (act) { t.type = "button"; t.addEventListener("click", act); } t.append(el("b", "", String(n)), el("span", "", et)); return t; };
         st.append(tile(data.length, "Cereri trimise"), tile(profesori.size, "Profesori care s-au învoit"), tile(nr("in_asteptare"), "În așteptare", nr("in_asteptare") ? "att" : ""), tile(apr.length, "Aprobate", "bun"), tile(nr("respinsa"), "Respinse", nr("respinsa") ? "rau" : ""), tile(nr("anulata"), "Retrase"), tile(data.filter((c) => c.stearsa_de_profesor_la).length, "Șterse de profesor"), tile(aprS.length, "Aprobate în interes de serviciu"),
-          tile(aprI.reduce((t, c) => t + zileCerere(c), 0), "Zile de învoire aprobate"), tile(aprI.reduce((t, c) => t + nrOre(c), 0), "Ore de învoire aprobate"), tile(apr.reduce((t, c) => t + fara(c), 0), "Ore aprobate fără înlocuitor", apr.some((c) => fara(c)) ? "att" : ""),
+          tile(new Set(oreToti.map((x) => x.angajat_id + "|" + x.data)).size, "Zile de învoire aprobate, însumate pe persoane", "", () => deschideStat("zile", true, () => desenToate())), tile(oreToti.length, "Ore de învoire aprobate", "", () => deschideStat("ore", true, () => desenToate())), tile(apr.reduce((t, c) => t + fara(c), 0), "Ore aprobate fără înlocuitor", apr.some((c) => fara(c)) ? "att" : ""),
           tile(apr.reduce((t, c) => t + (c.propuneri ? Object.keys(c.propuneri).length : 0), 0), "Ore cu înlocuitor propus"), tile(apr.reduce((t, c) => t + (c.optiuni_clasa ? Object.keys(c.optiuni_clasa).length : 0), 0), "Ore cu clasa venită mai târziu / plecată acasă"), tile(data.filter((c) => c.modificari > 0).length, "Cereri modificate"));
         zona.appendChild(st);
         // Pe luni
-        const luni = new Map(); data.forEach((c) => { const l = c.de_la.slice(0, 7); if (!luni.has(l)) luni.set(l, { c: 0, a: 0, z: 0, o: 0 }); const x = luni.get(l); x.c++; if (c.stare === "aprobata" && c.tip !== "S") { x.a++; x.z += zileCerere(c); x.o += nrOre(c); } });
+        const luni = new Map(); data.forEach((c) => { const l = c.de_la.slice(0, 7); if (!luni.has(l)) luni.set(l, { c: 0, a: 0, z: 0, o: 0 }); const x = luni.get(l); x.c++; if (c.stare === "aprobata" && numaraInvoire(c)) { x.a++; x.z += zileCerere(c); x.o += nrOre(c); } });
         const LUNI = ["", "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
         zona.appendChild(el("h3", "az-h", "Pe luni"));
         const tb = el("div", "cr-tab");
@@ -4080,7 +4295,7 @@
         zona.appendChild(tb);
         // Cei mai mulți
         const pePers = new Map(); data.forEach((c) => { if (!pePers.has(c.angajat)) pePers.set(c.angajat, []); pePers.get(c.angajat).push(c); });
-        const clasament = [...pePers.entries()].map(([n, l]) => [n, l.filter((c) => c.stare === "aprobata" && c.tip !== "S").reduce((t, c) => t + nrOre(c), 0), l.filter((c) => c.stare === "aprobata" && c.tip !== "S").reduce((t, c) => t + zileCerere(c), 0)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const clasament = [...pePers.entries()].map(([n, l]) => [n, l.filter((c) => c.stare === "aprobata" && numaraInvoire(c)).reduce((t, c) => t + nrOre(c), 0), l.filter((c) => c.stare === "aprobata" && numaraInvoire(c)).reduce((t, c) => t + zileCerere(c), 0)]).filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
         if (clasament.length) { zona.appendChild(el("h3", "az-h", "Cele mai multe ore de învoire aprobate")); const cl = el("div", "cr-tab"); clasament.forEach(([n, o, z], i) => { const r = el("div", "cr-tab-rand"); r.append(el("b", "", (i + 1) + ". " + n), el("span", "", o + " ore · " + z + " zile")); cl.appendChild(r); }); zona.appendChild(cl); }
         // Câte un cartonaș pe profesor
         zona.appendChild(el("h3", "az-h", "Profesori care s-au învoit (" + pePers.size + ")"));
