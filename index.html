@@ -2343,12 +2343,23 @@
       selAng.value = u.angajat_nume || "";
       if (blocat) selAng.disabled = true;
       legAng.appendChild(selAng);
-      const legAdr = document.createElement("label"); legAdr.className = "leg-ang";
-      legAdr.append(document.createTextNode("Cum se adresează în cereri"));
-      const selAdr = document.createElement("select");
-      [["", "— nealeasă (Subsemnatul/Subsemnata) —"], ["m", "Subsemnatul"], ["f", "Subsemnata"]].forEach(([v, t]) => { const o = document.createElement("option"); o.value = v; o.textContent = t; selAdr.appendChild(o); });
-      selAdr.value = u.adresare || ""; if (blocat) selAdr.disabled = true;
-      legAdr.appendChild(selAdr);
+      // Bifă M / F: din ea se alege „Subsemnatul” / „Subsemnata” în cererile tipărite.
+      const legAdr = document.createElement("div"); legAdr.className = "leg-ang";
+      legAdr.append(document.createTextNode("Bărbat sau femeie"));
+      const grupMF = document.createElement("div"); grupMF.className = "roluri"; grupMF.style.marginTop = "2px";
+      const cbMF = {};
+      [["m", "M (bărbat)"], ["f", "F (femeie)"]].forEach(([v, t]) => {
+        const et = document.createElement("label");
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = v; cb.checked = u.adresare === v;
+        cb.addEventListener("change", () => { if (cb.checked) Object.values(cbMF).forEach((o) => { if (o !== cb) o.checked = false; }); });
+        et.append(cb, document.createTextNode(t)); grupMF.appendChild(et); cbMF[v] = cb;
+      });
+      const selAdr = {
+        get value() { return cbMF.m.checked ? "m" : cbMF.f.checked ? "f" : ""; },
+        set disabled(v) { cbMF.m.disabled = cbMF.f.disabled = !!v; }
+      };
+      if (blocat) selAdr.disabled = true;
+      legAdr.appendChild(grupMF);
 
       const ctl = document.createElement("div"); ctl.className = "ctl";
       const salvare = document.createElement("button"); salvare.type = "button";
