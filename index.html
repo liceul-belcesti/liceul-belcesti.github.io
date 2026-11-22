@@ -4007,7 +4007,7 @@
       const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
       const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
-      let filtruCereri = null, FILTRE_CERERI = null; let filtruToate = null;
+      let filtruCereri = null, FILTRE_CERERI = null; let filtruToate = null, cacheToate = null;
       let ghidaj = false; try { ghidaj = localStorage.getItem("ghidaj_cereri") === "1"; } catch (e) { /* preferința nu se păstrează */ }
       const seteazaGhidaj = (v) => { ghidaj = !!v; try { localStorage.setItem("ghidaj_cereri", v ? "1" : "0"); } catch (e) { /* ignorat */ } };
       // Bifa „Ghidaj pas cu pas”: la cerere nouă apare, la fiecare pas, ce are de ales sau de scris
@@ -4420,9 +4420,11 @@
         re.addEventListener("click", () => { nb.classList.toggle("hidden"); nt.focus(); });
         conf.addEventListener("click", () => { if (nt.value.trim().length < 3) return mesaj("Scrie motivul respingerii."); decide(false, nt.value.trim()); });
       };
-      const desenToate = async (txt, ok) => {
-        zona.replaceChildren(el("p", "who", "Se încarcă…")); mesaj("");
-        const [{ data, error }, ro] = await Promise.all([db.rpc("cereri_toate"), db.rpc("invoiri_ore_detaliat", { p_toti: true })]);
+      const desenToate = async (txt, ok, dinCache) => {
+        mesaj("");
+        if (!(dinCache && cacheToate)) zona.replaceChildren(el("p", "who", "Se încarcă…"));
+        const [{ data, error }, ro] = dinCache && cacheToate ? cacheToate : await Promise.all([db.rpc("cereri_toate"), db.rpc("invoiri_ore_detaliat", { p_toti: true })]);
+        cacheToate = [{ data, error }, ro];
         const oreToti = Array.isArray(ro.data) ? ro.data : [];
         if (error || !Array.isArray(data)) { mesaj("Cererile nu au putut fi încărcate."); if (!esteAdmin) desenLista(); else zona.replaceChildren(); return; }
         zona.replaceChildren(); if (txt) mesaj(txt, ok);
@@ -4485,7 +4487,7 @@
           const t = el("button", "az-stat " + (cls || "") + (!act && cheie && filtruToate === cheie ? " sel" : "")); t.type = "button"; if (!act && cheie) t.setAttribute("aria-pressed", String(filtruToate === cheie));
           t.append(el("b", "", String(n)), el("span", "", et));
           if (act) t.addEventListener("click", act);
-          else if (cheie) t.addEventListener("click", () => { filtruToate = filtruToate === cheie ? null : cheie; desenToate(); setTimeout(() => { const h = document.getElementById("cr-lista-toate"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); }, 50); });
+          else if (cheie) t.addEventListener("click", async () => { filtruToate = filtruToate === cheie ? null : cheie; await desenToate(null, null, true); const h = document.getElementById("cr-lista-toate"); if (h) { const bar = document.querySelector(".bar"); window.scrollTo({ top: h.getBoundingClientRect().top + window.scrollY - (bar ? bar.offsetHeight : 0) - 8, behavior: "smooth" }); } });
           return t;
         };
         const catre = (cheie) => data.filter(FILTRE_T[cheie].f).length;
@@ -4497,7 +4499,7 @@
         if (fT) {
           const vizT = data.filter(fT.f).sort((a, b) => (a.creat_la < b.creat_la ? 1 : a.creat_la > b.creat_la ? -1 : 0));
           const hT = el("h3", "az-h", fT.et + " (" + vizT.length + ")"); hT.id = "cr-lista-toate"; zona.appendChild(hT);
-          const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(); }); zona.appendChild(inch);
+          const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(null, null, true); }); zona.appendChild(inch);
           if (!vizT.length) zona.appendChild(el("p", "who", "Nicio cerere în această categorie."));
           vizT.forEach((c, i) => {
             const grup = el("div", "cr-rand-grup"), rand = el("div", "cr-rand"), x = numere.get(c.id);
