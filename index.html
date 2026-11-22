@@ -792,6 +792,28 @@
     .cr-reg { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:8px 0; padding:10px 12px; border:1.5px solid var(--line); border-radius:12px; background:var(--card); }
     .cr-reg .cr-reg-t { flex:1 1 220px; font-size:.92rem; }
     .cr-reg button { width:auto; margin:0; min-height:44px; padding:0 18px; }
+    #tipar-cerere { display:none; }
+    @media print {
+      body.tipar-cerere > :not(#tipar-cerere) { display:none !important; }
+      body.tipar-cerere { background:#fff !important; }
+      body.tipar-cerere #tipar-cerere { display:block; color:#000; font-family:"Times New Roman", Times, serif; font-size:12pt; line-height:1.5; }
+      #tipar-cerere .tc-sus { display:flex; justify-content:space-between; align-items:flex-start; gap:10mm; font-size:10.5pt; }
+      #tipar-cerere .tc-scoala { font-weight:700; max-width:95mm; }
+      #tipar-cerere .tc-nr { text-align:right; white-space:nowrap; }
+      #tipar-cerere .tc-catre { margin:12mm 0 0; text-align:right; font-style:italic; }
+      #tipar-cerere h1 { text-align:center; font-size:18pt; letter-spacing:.2em; margin:10mm 0 0; }
+      #tipar-cerere .tc-sub { text-align:center; margin:0 0 4mm; font-style:italic; }
+      #tipar-cerere .tc-text { margin:5mm 0 0; text-align:justify; text-indent:12mm; }
+      #tipar-cerere .tc-motiv { margin:2mm 0 0; padding:0 0 0 12mm; font-weight:700; white-space:pre-wrap; }
+      #tipar-cerere table { width:100%; border-collapse:collapse; margin:3mm 0 0; font-size:11pt; line-height:1.3; }
+      #tipar-cerere th, #tipar-cerere td { border:.6pt solid #000; padding:1.6mm 2mm; text-align:left; vertical-align:top; color:#000; background:#fff; }
+      #tipar-cerere th { font-weight:700; background:#eee !important; }
+      #tipar-cerere tr { break-inside:avoid; page-break-inside:avoid; }
+      #tipar-cerere .tc-semn { display:flex; justify-content:space-between; gap:12mm; margin-top:14mm; break-inside:avoid; page-break-inside:avoid; }
+      #tipar-cerere .tc-col { flex:1 1 0; font-size:11pt; }
+      #tipar-cerere .tc-gol { height:8mm; }
+      #tipar-cerere .tc-nota { margin-top:10mm; font-size:9.5pt; color:#333; }
+    }
     #tipar-orar { display:none; }
     @media print {
       body.tipar-orar > :not(#tipar-orar) { display:none !important; }
@@ -3589,6 +3611,61 @@
       lista();
     }
     $("inapoi-cereri").addEventListener("click", arataPrincipal);
+    // ===== Cererea de învoire pe hârtie (șablon A4 vertical, cu număr de înregistrare) =====
+    const ZILE_SAPT = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
+    async function tiparesteCerere(id, mesaj) {
+      const { data: c, error } = await db.rpc("cerere_date_tipar", { p_id: id });
+      if (error || !c) { mesaj((error && error.message) || "Cererea nu a putut fi pregătită pentru tipărire."); return; }
+      const dinIsoT = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
+      const ore = (c.ore || []).slice().sort();
+      const arePropuneri = ore.some((k) => c.propuneri && c.propuneri[k]);
+      const ziTxt = (t) => ZILE_SAPT[dinIsoT(t).getDay()] + " " + fmtData(t);
+      const acop = (k) => {
+        const o = c.optiuni && c.optiuni[k];
+        if (o) return o.tip === "vine" ? "Clasa vine de la ora " + o.ora : "Clasa pleacă acasă de la ora " + o.ora;
+        const n = c.propuneri && c.propuneri[k];
+        return n ? "Înlocuit de " + n : "—";
+      };
+      const perioada = c.de_la === c.pana_la ? "în ziua de " + ziTxt(c.de_la) : "în perioada " + fmtData(c.de_la) + " – " + fmtData(c.pana_la);
+      const vechi = document.getElementById("tipar-cerere"); if (vechi) vechi.remove();
+      const d = el("div", ""); d.id = "tipar-cerere";
+      const sus = el("div", "tc-sus");
+      sus.append(el("div", "tc-scoala", "LICEUL TEHNOLOGIC „VICTOR MIHĂILESCU CRAIU” BELCEȘTI"),
+        el("div", "tc-nr", c.nr ? "Nr. de înregistrare " + c.nr + " din " + fmtData(c.data_inreg) : "Nr. de înregistrare ……… din ……………"));
+      d.appendChild(sus);
+      d.appendChild(el("p", "tc-catre", "Către conducerea Liceului Tehnologic „Victor Mihăilescu Craiu” Belcești"));
+      d.appendChild(el("h1", "", "CERERE"));
+      if (c.tip === "S") d.appendChild(el("p", "tc-sub", "învoire în interes de serviciu"));
+      d.appendChild(el("p", "tc-text", "Subsemnatul(a) " + c.solicitant + (c.functie ? ", în calitate de " + c.functie : "") + ", angajat(ă) al Liceului Tehnologic „Victor Mihăilescu Craiu” Belcești, vă rog să-mi aprobați " + (c.tip === "S" ? "învoirea în interes de serviciu " : "învoirea ") + perioada + ", pentru următorul motiv:"));
+      d.appendChild(el("p", "tc-motiv", c.motiv));
+      if (ore.length) {
+        d.appendChild(el("p", "tc-text", "Orele din orarul meu din " + (c.de_la === c.pana_la ? "această zi" : "aceste zile") + " se acoperă astfel:"));
+        const t = el("table", "");
+        const hr = el("tr", ""); ["Ziua", "Ora", "Clasa", "Cum se acoperă ora"].concat(arePropuneri ? ["Semnătura înlocuitorului"] : []).forEach((x) => hr.appendChild(el("th", "", x)));
+        t.appendChild(el("thead", "")).appendChild(hr);
+        const tb = el("tbody", "");
+        ore.forEach((k) => {
+          const p = k.split("|"), tr = el("tr", "");
+          if (/^\d{4}-/.test(k)) [ziTxt(p[0]), p[1] + " (" + intervalOra(Number(p[1])) + ")", p.slice(2).join("|"), acop(k)].forEach((v) => tr.appendChild(el("td", "", v)));
+          else { const td = el("td", "", k); td.colSpan = 4; tr.appendChild(td); }
+          if (arePropuneri) tr.appendChild(el("td", "", ""));
+          tb.appendChild(tr);
+        });
+        t.appendChild(tb); d.appendChild(t);
+      } else d.appendChild(el("p", "tc-text", "Învoirea se referă la toate orele din " + (c.de_la === c.pana_la ? "această zi." : "aceste zile.")));
+      d.appendChild(el("p", "tc-text", "Vă mulțumesc."));
+      const semn = el("div", "tc-semn");
+      const st = el("div", "tc-col"); st.append(el("div", "", "Data: " + fmtData(c.data_inreg || new Date().toISOString().slice(0, 10))), el("div", "tc-gol", ""), el("div", "", "Semnătura solicitantului"), el("div", "tc-gol", ""));
+      const dr = el("div", "tc-col"); dr.append(el("div", "", "Aprobat, conducerea școlii"), el("div", "tc-gol", ""), el("div", "", "Rezoluție: ………………………………………"), el("div", "tc-gol", ""), el("div", "", "Data: …………… Semnătura: ……………"));
+      semn.append(st, dr); d.appendChild(semn);
+      if (c.stare === "aprobata" && c.decis_la) d.appendChild(el("p", "tc-nota", "Cererea a fost aprobată în platformă la " + new Date(c.decis_la).toLocaleDateString("ro-RO") + (c.decis_de ? " de " + c.decis_de : "") + "."));
+      document.body.appendChild(d);
+      const pagina = document.createElement("style"); pagina.id = "tipar-cerere-pagina"; pagina.textContent = "@page { size: A4 portrait; margin: 20mm; }"; document.head.appendChild(pagina);
+      document.body.classList.add("tipar-cerere");
+      const curata = () => { document.body.classList.remove("tipar-cerere"); const x = document.getElementById("tipar-cerere"); if (x) x.remove(); const y = document.getElementById("tipar-cerere-pagina"); if (y) y.remove(); window.removeEventListener("afterprint", curata); };
+      window.addEventListener("afterprint", curata); window.print(); setTimeout(curata, 1500);
+    }
+
     async function deschideCereri(optiuni) {
       memoreazaVedere("cereri");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
@@ -3713,7 +3790,8 @@
           const ctl = el("div", "ctl");
           const ap = el("button", "", "Aprobă"); ap.type = "button"; ap.disabled = asteapta && !esteDirector;
           const re = el("button", "secondary", "Respinge"); re.type = "button";
-          ctl.append(ap, re); k.appendChild(ctl);
+          const btd = el("button", "secondary", "🖨 Tipărește cererea"); btd.type = "button"; btd.addEventListener("click", async () => { btd.disabled = true; await tiparesteCerere(c.id, mesaj); btd.disabled = false; });
+          ctl.append(ap, re, btd); k.appendChild(ctl);
           const nb = el("div", "cr-nota-box hidden"); const nt = document.createElement("textarea"); nt.rows = 2; nt.maxLength = 500; nt.placeholder = "Motivul respingerii (obligatoriu)";
           const conf = el("button", "secondary", "Confirmă respingerea"); conf.type = "button"; nb.append(nt, conf); k.appendChild(nb);
           const decide = async (aproba, nota) => {
@@ -3787,6 +3865,7 @@
           const bd = el("button", "secondary", "Detalii și istoric"); bd.type = "button"; let pd = null;
           bd.addEventListener("click", () => { if (pd) { pd.remove(); pd = null; return; } pd = el("div", "cr-detalii"); if (c.ore_alese && c.ore_alese.length) pd.appendChild(listaOre(c.ore_alese)); pd.appendChild(istoricPanou(c.id)); k.appendChild(pd); });
           bara.appendChild(bd);
+          const bt = el("button", "secondary", "🖨 Tipărește cererea"); bt.type = "button"; bt.addEventListener("click", async () => { bt.disabled = true; await tiparesteCerere(c.id, mesaj); bt.disabled = false; }); bara.appendChild(bt);
           if ((c.stare === "in_asteptare" || c.stare === "aprobata") && c.de_la >= iso(new Date())) { const bm = el("button", "secondary", "Modifică"); bm.type = "button"; bm.addEventListener("click", () => { if (c.stare === "aprobata" && !confirm("Cererea este aprobată. După modificare va trebui aprobată din nou. Continui?")) return; desenForm(c); }); bara.appendChild(bm); }
           k.appendChild(bara);
           const aprobata = c.stare === "aprobata", activa = c.stare === "in_asteptare" || aprobata;
@@ -3932,6 +4011,7 @@
             const bi = el("button", "secondary", "Istoric"); bi.type = "button"; let pi = null;
             bi.addEventListener("click", () => { if (pi) { pi.remove(); pi = null; return; } pi = istoricPanou(c.id); k.appendChild(pi); });
             bb.appendChild(bi);
+            const btp = el("button", "secondary", "🖨 Tipărește cererea"); btp.type = "button"; btp.addEventListener("click", async () => { btp.disabled = true; await tiparesteCerere(c.id, mesaj); btp.disabled = false; }); bb.appendChild(btp);
             if (esteAdmin) { const bs = el("button", "secondary cr-sterge", "Șterge"); bs.type = "button"; bs.addEventListener("click", async () => {
               if (!confirm("Ștergi definitiv cererea lui " + nume + " (" + fd(c.de_la) + (c.de_la === c.pana_la ? "" : " – " + fd(c.pana_la)) + ")?\n\nAcțiunea nu poate fi anulată.")) return;
               bs.disabled = true; const r = await db.rpc("cerere_invoire_sterge", { p_id: c.id });
