@@ -669,6 +669,7 @@
     #cereri .cr-form .cr-ore .n-ora { display:inline-flex; align-items:center; gap:6px; margin:4px 14px 4px 0; font-weight:600; }
     @media (prefers-color-scheme: dark) { #cereri .cr-st.att { color:#fcd34d; } #cereri .cr-st.ok { color:#86efac; } #cereri .cr-st.rau { color:#fca5a5; } }
     /* Azi în școală */
+    #cereri .cr-stat { margin:10px 0 4px; padding:10px 14px; background:var(--card); border-radius:14px; font-size:.92rem; line-height:1.5; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     .orm .az-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:0 0 6px; }
     @media (min-width:640px) { .orm .az-stats { grid-template-columns:repeat(4,1fr); } }
     #cereri .az-stats { grid-template-columns:repeat(2,1fr); } @media (min-width:640px) { #cereri .az-stats { grid-template-columns:repeat(3,1fr); } }
@@ -3887,11 +3888,13 @@
           if (c.pana_la > ultima) ultima = c.pana_la;
         });
         const sec = el("div", "");
-        sec.appendChild(el("h3", "az-h", "Statistică · anul școlar curent"));
-        const st = el("div", "az-stats");
-        const tile = (n, et, cls) => { const t = el("div", "az-stat " + (cls || "")); t.append(el("b", "", String(n)), el("span", "", et)); return t; };
-        st.append(tile(lista.length, "Cereri trimise"), tile(nr("aprobata"), "Aprobate", "bun"), tile(nr("in_asteptare"), "În așteptare", nr("in_asteptare") ? "att" : ""), tile(nr("respinsa"), "Respinse", nr("respinsa") ? "rau" : ""), tile(zile, "Zile de învoire aprobate"), tile(ore, "Ore de învoire aprobate"));
-        sec.appendChild(st);
+        const pl = (n, unu, mai) => n + " " + (n === 1 ? unu : mai);
+        const bucati = [pl(lista.length, "cerere trimisă", "cereri trimise"), pl(nr("aprobata"), "aprobată", "aprobate")];
+        if (nr("in_asteptare")) bucati.push(nr("in_asteptare") + " în așteptare");
+        if (nr("respinsa")) bucati.push(pl(nr("respinsa"), "respinsă", "respinse"));
+        bucati.push(pl(zile, "zi", "zile") + " și " + pl(ore, "oră", "ore") + " de învoire aprobate");
+        const stat = el("p", "cr-stat"); stat.append(el("b", "", "Anul școlar curent: "), document.createTextNode(bucati.join(" · ")));
+        sec.appendChild(stat);
         if (ultima) sec.appendChild(el("p", "cr-det", "Ultima învoire aprobată se încheie pe " + fd(ultima) + "."));
         return sec;
       };
