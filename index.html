@@ -816,6 +816,8 @@
       #tipar-cerere .tc-semn { display:flex; justify-content:space-between; gap:12mm; margin-top:14mm; break-inside:avoid; page-break-inside:avoid; }
       #tipar-cerere .tc-col { flex:1 1 0; font-size:11pt; }
       #tipar-cerere .tc-gol { height:8mm; }
+      #tipar-cerere .tc-es { font-weight:700; margin-top:1mm; }
+      #tipar-cerere .tc-es-det { font-size:10pt; line-height:1.3; }
       #tipar-cerere .tc-nota { margin-top:10mm; font-size:9.5pt; color:#333; }
     }
     #tipar-orar { display:none; }
@@ -3648,6 +3650,7 @@
     async function tiparesteCerere(id, mesaj) {
       const { data: c, error } = await db.rpc("cerere_date_tipar", { p_id: id });
       if (error || !c) { mesaj((error && error.message) || "Cererea nu a putut fi pregătită pentru tipărire."); return; }
+      const rcod = await db.rpc("cerere_cod_semnatura", { p_id: id }); const cod = !rcod.error && typeof rcod.data === "string" && /^[0-9a-f]{12}$/.test(rcod.data) ? rcod.data : null;
       const dinIsoT = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
       const ore = (c.ore || []).slice().sort();
       const arePropuneri = ore.some((k) => c.propuneri && c.propuneri[k]);
@@ -3674,24 +3677,33 @@
       if (ore.length) {
         d.appendChild(el("p", "tc-text", "Orele din orarul meu din " + (c.de_la === c.pana_la ? "această zi" : "aceste zile") + " se acoperă astfel:"));
         const t = el("table", "");
-        const hr = el("tr", ""); ["Ziua", "Ora", "Clasa", "Cum se acoperă ora"].concat(arePropuneri ? ["Semnătura înlocuitorului"] : []).forEach((x) => hr.appendChild(el("th", "", x)));
+        const hr = el("tr", ""); ["Ziua", "Ora", "Clasa", "Cum se acoperă ora"].concat(arePropuneri ? ["Acordul înlocuitorului"] : []).forEach((x) => hr.appendChild(el("th", "", x)));
         t.appendChild(el("thead", "")).appendChild(hr);
         const tb = el("tbody", "");
         ore.forEach((k) => {
           const p = k.split("|"), tr = el("tr", "");
           if (/^\d{4}-/.test(k)) [ziTxt(p[0]), p[1] + " (" + intervalOra(Number(p[1])) + ")", p.slice(2).join("|"), acop(k)].forEach((v) => tr.appendChild(el("td", "", v)));
           else { const td = el("td", "", k); td.colSpan = 4; tr.appendChild(td); }
-          if (arePropuneri) tr.appendChild(el("td", "", ""));
+          if (arePropuneri) {
+            const ac = c.acord_ore && c.acord_ore[k];
+            tr.appendChild(el("td", "", !(c.propuneri && c.propuneri[k]) ? "" : ac === "acceptat" ? "✓ Acord" : ac === "refuzat" ? "A refuzat. Înlocuitor nou (nume și semnătura): ……………………" : ""));
+          }
           tb.appendChild(tr);
         });
         t.appendChild(tb); d.appendChild(t);
       } else d.appendChild(el("p", "tc-text", "Învoirea se referă la toate orele din " + (c.de_la === c.pana_la ? "această zi." : "aceste zile.")));
       d.appendChild(el("p", "tc-text", "Vă mulțumesc."));
+      const dataOraEl = (t) => { const p = {}; new Intl.DateTimeFormat("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(t)).forEach((x) => { p[x.type] = x.value; }); return "la data " + p.day + "/" + p.month + "/" + p.year + ", ora " + p.hour + ":" + p.minute; };
       const semn = el("div", "tc-semn");
-      const st = el("div", "tc-col"); st.append(el("div", "", "Data: " + fmtData(c.data_inreg || new Date().toISOString().slice(0, 10))), el("div", "tc-gol", ""), el("div", "", "Semnătura solicitantului"), el("div", "tc-gol", ""));
-      const dr = el("div", "tc-col"); dr.append(el("div", "", "Aprobat, conducerea școlii"), el("div", "tc-gol", ""), el("div", "", "Rezoluție: ………………………………………"), el("div", "tc-gol", ""), el("div", "", "Data: …………… Semnătura: ……………"));
+      const st = el("div", "tc-col"); st.append(el("div", "", "Data: " + fmtData(c.data_inreg || new Date().toISOString().slice(0, 10))), el("div", "tc-gol", ""), el("div", "", "Semnătura solicitantului"));
+      if (c.semnat_la) st.append(el("div", "tc-es", "✓ Semnat electronic în platformă"), el("div", "tc-es-det", (c.semnat_de ? "de " + c.semnat_de + ", " : "") + dataOraEl(c.semnat_la)));
+      else st.append(el("div", "tc-gol", ""));
+      const dr = el("div", "tc-col");
+      if (c.stare === "aprobata" && c.decis_la) {
+        dr.append(el("div", "", "Aprobat,"), el("div", "tc-gol", ""), el("div", "tc-es", "✓ Aprobat electronic în platformă"), el("div", "tc-es-det", "de " + (c.decis_functie ? c.decis_functie + ", " : "") + (c.decis_de || "") + ", " + dataOraEl(c.decis_la)), el("div", "tc-gol", ""), el("div", "", "Rezoluție: ………………………………………"));
+      } else dr.append(el("div", "", "Aprobat, conducerea școlii"), el("div", "tc-gol", ""), el("div", "", "Rezoluție: ………………………………………"), el("div", "tc-gol", ""), el("div", "", "Data: …………… Semnătura: ……………"));
       semn.append(st, dr); d.appendChild(semn);
-      if (c.stare === "aprobata" && c.decis_la) d.appendChild(el("p", "tc-nota", "Cererea a fost aprobată în platformă la " + new Date(c.decis_la).toLocaleDateString("ro-RO") + (c.decis_de ? " de " + c.decis_de : "") + "."));
+      if (c.semnat_la || (c.stare === "aprobata" && c.decis_la) || (c.acord_ore && Object.values(c.acord_ore).includes("acceptat"))) d.appendChild(el("p", "tc-nota", "Semnătura electronică internă: o acțiune făcută în platforma școlii, cu contul personal, ține loc de semnătură pe acest document intern (la fel ca „✓ Acord” al înlocuitorului). Data și ora sunt cele înregistrate în platformă." + (cod ? " Cod de verificare în registrul semnăturilor electronice: " + cod + "." : "")));
       document.body.appendChild(d);
       const pagina = document.createElement("style"); pagina.id = "tipar-cerere-pagina"; pagina.textContent = "@page { size: A4 portrait; margin: 20mm; }"; document.head.appendChild(pagina);
       document.body.classList.add("tipar-cerere");
@@ -9178,6 +9190,71 @@
       return esuate;
     }
 
+    // ===== Registrul semnăturilor electronice (nu se modifică și nu se șterge; fiecare rând e legat de precedentul prin amprentă) =====
+    const ACT_SEM = { semnat: "Semnat de solicitant", acord: "Acord al înlocuitorului", refuz: "Refuz al înlocuitorului", aprobat: "Aprobat", respins: "Respins", retras: "Retras" };
+    const DOC_SEM = { cerere_invoire: "Cerere de învoire" };
+    const STARE_DOC_SEM = { neschimbat: "Neschimbat de atunci", modificat: "Modificat ulterior", sters: "Documentul a fost șters" };
+    const fDataOraSem = (t) => { const p = {}; new Intl.DateTimeFormat("ro-RO", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(new Date(t)).forEach((x) => { p[x.type] = x.value; }); return p.day + "/" + p.month + "/" + p.year + ", " + p.hour + ":" + p.minute + ":" + p.second; };
+    async function deschideSemnaturi() {
+      if (!["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r))) return;
+      mesajRegistru("");
+      const corp = $("registru-corp"); corp.replaceChildren(el("p", "who", "Se încarcă…"));
+      const [rl, rv] = await Promise.all([db.rpc("semnaturi_lista", { p_text: null, p_limita: 2000 }), db.rpc("semnaturi_verifica")]);
+      corp.replaceChildren();
+      if (rl.error || !Array.isArray(rl.data)) { const b = el("button", "secondary", "← Registrul de documente"); b.type = "button"; b.addEventListener("click", deschideRegistru); corp.appendChild(b); return mesajRegistru("Registrul semnăturilor nu a putut fi încărcat. Încearcă din nou."); }
+      const rows = rl.data, deschise = new Set(); let q = "";
+      const sus = el("div", "rg-sus");
+      const bIn = el("button", "secondary", "← Registrul de documente"); bIn.type = "button"; bIn.addEventListener("click", deschideRegistru);
+      const bCsv = el("button", "secondary", "⬇ Descarcă CSV"); bCsv.type = "button";
+      sus.append(bIn, bCsv);
+      corp.appendChild(sus);
+      corp.appendChild(el("h2", "", "Registrul semnăturilor electronice"));
+      corp.appendChild(el("p", "rg-linie", "Fiecare acțiune făcută în platformă care ține loc de semnătură (trimiterea cererii, acordul înlocuitorului, aprobarea, respingerea, retragerea) se scrie aici automat, cu persoana, data și ora, dispozitivul și o copie a textului semnat. Rândurile nu se pot modifica sau șterge, iar fiecare este legat de cel dinainte printr-o amprentă, ca orice schimbare ulterioară să se vadă."));
+      const v = rv.error ? null : rv.data;
+      const verif = el("p", "rg-linie");
+      if (!v) verif.textContent = "Verificarea integrității nu a putut fi făcută acum.";
+      else if (v.corect) verif.textContent = "✓ Integritatea registrului este verificată: " + v.verificate + (v.verificate === 1 ? " semnătură, nicio nepotrivire." : " semnături, nicio nepotrivire.");
+      else verif.textContent = "ATENȚIE: registrul nu se potrivește la semnătura cu numărul " + v.primul_eronat + ". Anunță de urgență administratorul bazei de date.";
+      if (v && !v.corect) verif.style.fontWeight = "700";
+      corp.appendChild(verif);
+      const filtre = el("div", "rg-filtre"); const inp = document.createElement("input"); inp.type = "search"; inp.placeholder = "Caută după nume, număr de înregistrare sau cod…"; inp.setAttribute("aria-label", "Căutare"); inp.autocomplete = "off"; filtre.appendChild(inp);
+      const sumar = el("p", "rg-sumar"), lista = el("div", "rg-tabwrap");
+      corp.append(filtre, sumar, lista);
+      const cine = (r) => r.nume + ((r.roluri || []).length ? " (" + r.roluri.map((x) => ETICHETE[x] || x).join(", ") + ")" : "");
+      const docul = (r) => (DOC_SEM[r.tip_document] || r.tip_document) + (r.document_nr ? ", nr. " + r.document_nr : "");
+      const filtrate = () => { const t = faraDiacritice(q).trim(); return rows.filter((r) => !t || faraDiacritice([r.nume, r.document_nr, r.amprenta, ACT_SEM[r.actiune]].join(" ")).includes(t)); };
+      const deseneaza = () => {
+        const f = filtrate();
+        sumar.textContent = rows.length ? (f.length === rows.length ? rows.length + (rows.length === 1 ? " semnătură" : " semnături") : f.length + " din " + rows.length + " semnături") : "Nu există încă nicio semnătură electronică.";
+        lista.replaceChildren(); if (!f.length) return;
+        const t = el("table", "rg-tab"); const hr = el("tr", ""); ["Data și ora", "Document", "Acțiunea", "Cine", "Cod"].forEach((x) => hr.appendChild(el("th", "", x)));
+        t.appendChild(el("thead", "")).appendChild(hr); const tb = el("tbody", ""); t.appendChild(tb);
+        f.forEach((r) => {
+          const tr = el("tr", "rg-r"); tr.tabIndex = 0; tr.setAttribute("role", "button"); tr.setAttribute("aria-expanded", String(deschise.has(r.id)));
+          [fDataOraSem(r.la), docul(r), ACT_SEM[r.actiune] || r.actiune, cine(r), r.amprenta.slice(0, 12)].forEach((x) => tr.appendChild(el("td", "", x)));
+          const comuta = () => { if (deschise.has(r.id)) deschise.delete(r.id); else deschise.add(r.id); deseneaza(); };
+          tr.addEventListener("click", comuta); tr.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); comuta(); } });
+          tb.appendChild(tr);
+          if (deschise.has(r.id)) {
+            const trd = el("tr", ""); const td = el("td", "rg-act"); td.colSpan = 5;
+            [["Starea documentului", STARE_DOC_SEM[r.document_actual] || r.document_actual], ["E-mail al contului", r.email], ["Adresa de rețea (IP)", r.ip], ["Dispozitiv", r.dispozitiv], ["Amprenta textului semnat", r.amprenta], ["Amprenta rândului din registru", r.hash]].forEach(([e, val]) => { const l = linieReg(e, val); if (l) td.appendChild(l); });
+            trd.appendChild(td); tb.appendChild(trd);
+          }
+        });
+        lista.appendChild(t);
+      };
+      inp.addEventListener("input", () => { q = inp.value; deseneaza(); });
+      bCsv.addEventListener("click", () => {
+        if (!rows.length) return mesajRegistru("Nu există semnături de descărcat.");
+        const csv = [["Nr.", "Data și ora", "Document", "Număr de înregistrare", "Acțiunea", "Cine", "Funcții", "E-mail", "IP", "Dispozitiv", "Starea documentului", "Amprenta textului", "Amprenta rândului"]]
+          .concat(rows.slice().sort((a, b) => a.id - b.id).map((r) => [r.id, fDataOraSem(r.la), DOC_SEM[r.tip_document] || r.tip_document, r.document_nr || "", ACT_SEM[r.actiune] || r.actiune, r.nume, (r.roluri || []).map((x) => ETICHETE[x] || x).join(", "), r.email || "", r.ip || "", r.dispozitiv || "", STARE_DOC_SEM[r.document_actual] || "", r.amprenta, r.hash]));
+        const cmp = (x) => { const t = String(x).replace(/"/g, '""'); return /[;"\n]/.test(t) ? '"' + t + '"' : t; };
+        const blob = new Blob(["\ufeff" + csv.map((x) => x.map(cmp).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = url; a.download = "registru-semnaturi-electronice.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+      });
+      deseneaza();
+    }
+
     async function deschideRegistru() {
       if (!["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r))) return;
       memoreazaVedere("registru");
@@ -9200,6 +9277,7 @@
       const bTipar = el("button", "secondary", "🖨 Tipărește registrul"); bTipar.type = "button";
       const bCsv = el("button", "secondary", "⬇ Descarcă CSV"); bCsv.type = "button";
       sus.append(bNou, selAn, bTipar, bCsv);
+      if (poateAnula) { const bSem = el("button", "secondary", "Registrul semnăturilor electronice"); bSem.type = "button"; bSem.addEventListener("click", deschideSemnaturi); sus.appendChild(bSem); }
       // Doar administratorul: șterge tot registrul, din toți anii, iar numerotarea reîncepe de la 1.
       if (eAdmin) {
         const bZero = el("button", "off", "Începe registrul de la zero"); bZero.type = "button";
