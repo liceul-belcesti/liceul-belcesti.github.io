@@ -280,7 +280,10 @@
     .card .panel-msg { margin:0 0 14px; }
 
     /* ---------- Panou utilizatori ---------- */
-    .switch { margin-top:14px; max-width:320px; }
+    .switch { margin-top:14px; max-width:none; }
+    .switch .ca-chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .switch .ca-chips button { width:auto; margin:0; min-height:40px; padding:0 18px; border-radius:999px; background:transparent; color:var(--accent); border:1.5px solid var(--accent); font-weight:700; cursor:pointer; }
+    .switch .ca-chips button[aria-pressed="true"] { background:var(--accent); color:var(--on-accent); }
     .switch label { margin:0 0 6px; font-size:.85rem; color:var(--muted); font-weight:600; }
     .switch select { width:100%; min-height:44px; padding:8px 12px; font:inherit; color:var(--text); background:var(--card);
                      border:1.5px solid var(--line); border-radius:10px; }
@@ -1397,8 +1400,9 @@
       <h1 class="hello">Bun venit, <span id="prenume"></span>!</h1>
       <div class="hello-rand"><span class="role" id="rol"></span><p class="who"><span id="cine"></span></p></div>
       <div id="comutator" class="switch hidden">
-        <label for="activ-ca">Vezi platforma ca:</label>
-        <select id="activ-ca"></select>
+        <label id="ca-eticheta">Vezi platforma ca:</label>
+        <div id="ca-chips" class="ca-chips" role="group" aria-labelledby="ca-eticheta"></div>
+        <select id="activ-ca" class="hidden" aria-hidden="true" tabindex="-1"></select>
       </div>
 
       <section id="notif-tel" class="notif-tel hidden" aria-live="polite">
@@ -1837,15 +1841,27 @@
     }
     function pregatesteComutator() {
       const sel = $("activ-ca");
-      let salvat = "";
-      try { salvat = localStorage.getItem("rolActiv") || ""; } catch (e) {}
-      if (!euRoluri.includes(salvat)) salvat = "";
+      // Alegerea de pe un dispozitiv se păstrează („Toate” este tot o alegere). Fără nicio alegere, cine este director începe ca director.
+      const implicit = euRoluri.includes("director") ? "director" : "";
+      let salvat = null;
+      try { salvat = localStorage.getItem("rolActiv"); } catch (e) {}
+      if (salvat === null || (salvat !== "" && !euRoluri.includes(salvat))) salvat = implicit;
       sel.replaceChildren();
-      sel.add(new Option("Toate rolurile mele", ""));
+      sel.add(new Option("Toate funcțiile mele", ""));
       euRoluri.forEach((r) => sel.add(new Option(ETICHETE[r] || r, r)));
       sel.value = salvat;
       $("comutator").classList.toggle("hidden", euRoluri.length < 2);
+      deseneazaChipuriCa();
       deseneazaModule(salvat ? [salvat] : euRoluri);
+    }
+    // Funcțiile contului, ca butoane sus în pagină (select-ul ascuns păstrează valoarea folosită în restul codului)
+    function deseneazaChipuriCa() {
+      const sel = $("activ-ca"), zona = $("ca-chips"); zona.replaceChildren();
+      [...sel.options].forEach((o) => {
+        const b = document.createElement("button"); b.type = "button"; b.textContent = o.value ? o.textContent : "Toate"; b.setAttribute("aria-pressed", String(sel.value === o.value));
+        b.addEventListener("click", () => { if (sel.value === o.value) return; sel.value = o.value; sel.dispatchEvent(new Event("change")); });
+        zona.appendChild(b);
+      });
     }
 
     function aplicaRoluri(r) {
@@ -8950,6 +8966,7 @@
     $("activ-ca").addEventListener("change", () => {
       const v = $("activ-ca").value;
       try { localStorage.setItem("rolActiv", v); } catch (e) {}
+      deseneazaChipuriCa();
       deseneazaModule(v ? [v] : euRoluri);
       arataPrincipal();
     });
