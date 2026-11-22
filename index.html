@@ -669,6 +669,8 @@
     #cereri .cr-form .cr-ore .n-ora { display:inline-flex; align-items:center; gap:6px; margin:4px 14px 4px 0; font-weight:600; }
     @media (prefers-color-scheme: dark) { #cereri .cr-st.att { color:#fcd34d; } #cereri .cr-st.ok { color:#86efac; } #cereri .cr-st.rau { color:#fca5a5; } }
     /* Azi în școală */
+    #cr-lista-mele { scroll-margin-top:76px; }
+    #cereri .az-stat.sel { outline:3px solid var(--accent); outline-offset:-3px; }
     #cereri .cr-stat { margin:10px 0 4px; padding:10px 14px; background:var(--card); border-radius:14px; font-size:.92rem; line-height:1.5; box-shadow:0 1px 3px rgba(0,0,0,.08); }
     .orm .az-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:0 0 6px; }
     @media (min-width:640px) { .orm .az-stats { grid-template-columns:repeat(4,1fr); } }
@@ -3728,6 +3730,7 @@
       const dinIso = (t) => { const [y, m, z] = t.split("-").map(Number); return new Date(y, m - 1, z); };
       const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
+      let filtruCereri = null, FILTRE_CERERI = null;
       let cereri, orar, colegi, cal = { structura: [], libere: [] }, acc = new Map(), pentruMine = [], deDecis = [], lim = new Map(), numere = new Map();
       const poateDecide = ["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r)), esteDirector = (euRoluri.includes("director") || euRoluri.includes("director_adjunct")), esteAdmin = euRoluri.includes("administrator"), poateInreg = ["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r));
       const incarca = async () => {
@@ -3890,13 +3893,24 @@
           if (c.pana_la > ultima) ultima = c.pana_la;
         });
         const sec = el("div", "");
-        const pl = (n, unu, mai) => n + " " + (n === 1 ? unu : mai);
-        const bucati = [pl(lista.length, "cerere trimisă", "cereri trimise"), pl(nr("aprobata"), "aprobată", "aprobate")];
-        if (nr("in_asteptare")) bucati.push(nr("in_asteptare") + " în așteptare");
-        if (nr("respinsa")) bucati.push(pl(nr("respinsa"), "respinsă", "respinse"));
-        bucati.push(pl(zile, "zi", "zile") + " și " + pl(ore, "oră", "ore") + " de învoire aprobate");
-        const stat = el("p", "cr-stat"); stat.append(el("b", "", "Anul școlar curent: "), document.createTextNode(bucati.join(" · ")));
-        sec.appendChild(stat);
+        sec.appendChild(el("h3", "az-h", "Statistică · anul școlar curent"));
+        const st = el("div", "az-stats");
+        const FILTRE = {
+          toate: { et: "Toate cererile", f: () => true },
+          aprobata: { et: "Aprobate", f: (c) => c.stare === "aprobata" },
+          in_asteptare: { et: "În așteptare", f: (c) => c.stare === "in_asteptare" },
+          respinsa: { et: "Respinse", f: (c) => c.stare === "respinsa" },
+          numarate: { et: "Învoiri aprobate (cele numărate în zile și ore)", f: (c) => c.stare === "aprobata" && c.tip !== "S" }
+        };
+        const tile = (n, et, cheie, cls) => {
+          const t = el("button", "az-stat " + (cls || "") + (filtruCereri === cheie ? " sel" : "")); t.type = "button"; t.setAttribute("aria-pressed", String(filtruCereri === cheie));
+          t.append(el("b", "", String(n)), el("span", "", et));
+          t.addEventListener("click", () => { filtruCereri = filtruCereri === cheie ? null : cheie; desenLista(); if (filtruCereri) { const h = document.getElementById("cr-lista-mele"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" }); } });
+          return t;
+        };
+        st.append(tile(lista.length, "Cereri trimise", "toate"), tile(nr("aprobata"), "Aprobate", "aprobata", "bun"), tile(nr("in_asteptare"), "În așteptare", "in_asteptare", nr("in_asteptare") ? "att" : ""), tile(nr("respinsa"), "Respinse", "respinsa", nr("respinsa") ? "rau" : ""), tile(zile, "Zile de învoire aprobate", "numarate"), tile(ore, "Ore de învoire aprobate", "numarate"));
+        sec.appendChild(st);
+        FILTRE_CERERI = FILTRE;
         if (ultima) sec.appendChild(el("p", "cr-det", "Ultima învoire aprobată se încheie pe " + fd(ultima) + "."));
         return sec;
       };
@@ -3910,9 +3924,13 @@
         const sp = sectiunePentruMine(); if (sp) zona.appendChild(sp);
         const stat = statistica(); if (stat) zona.appendChild(stat);
         if (!orar.length) zona.appendChild(el("p", "who", "Contul tău nu este legat încă de numele tău din lista de angajați sau nu ai orar. Cere administratorului să îl lege, ca să poți trimite cereri."));
-        zona.appendChild(el("h3", "az-h", "Cererile mele"));
+        const fAct = filtruCereri && FILTRE_CERERI ? FILTRE_CERERI[filtruCereri] : null;
+        const hMele = el("h3", "az-h", "Cererile mele" + (fAct ? " · " + fAct.et : "")); hMele.id = "cr-lista-mele"; zona.appendChild(hMele);
+        if (fAct) { const tot = el("button", "secondary", "Arată toate cererile"); tot.type = "button"; tot.addEventListener("click", () => { filtruCereri = null; desenLista(); }); zona.appendChild(tot); }
         if (!cereri.length) zona.appendChild(el("p", "who", "Nu ai trimis nicio cerere."));
-        cereri.forEach((c) => {
+        const vizibile = fAct ? cereri.filter(fAct.f) : cereri;
+        if (cereri.length && !vizibile.length) zona.appendChild(el("p", "who", "Nicio cerere în această categorie."));
+        vizibile.forEach((c) => {
           const k = el("div", "cr-card"); const cp = el("div", "cr-cap");
           cp.append(el("b", "", c.de_la === c.pana_la ? fd(c.de_la) : fd(c.de_la) + " – " + fd(c.pana_la)), ...etTip(c), el("span", ST[c.stare][1], ST[c.stare][0]));
           k.appendChild(cp);
