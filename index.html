@@ -674,18 +674,21 @@
     #cereri .cr-ghidaj input { flex:none; width:24px; height:24px; margin:2px 0 0; }
     #cereri .cr-ghidaj-t { display:block; }
     #cereri .cr-ghidaj-t b { display:block; }
-    #cereri .cr-ghidaj-t small { display:block; color:var(--muted); font-size:.82rem; line-height:1.35; margin-top:2px; }
+    #cereri .cr-ghidaj-t small { font-weight:500; display:block; color:var(--muted); font-size:.82rem; line-height:1.35; margin-top:2px; }
     #cereri .gp-off .gp-pas { display:none; }
-    #cereri .gp-pas { background:var(--card); border:2px solid var(--line); border-radius:14px; padding:8px 12px 10px; margin:12px 0 6px; }
-    #cereri .gp-cap { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; }
-    #cereri .gp-nr { flex:none; color:var(--muted); font-size:.78rem; font-weight:700; }
-    #cereri .gp-t { flex:1; min-width:10em; }
-    #cereri .gp-st { flex:none; font-size:.82rem; font-weight:800; margin-left:auto; }
-    #cereri .gp-p { margin:4px 0 0; color:var(--muted); font-size:.88rem; line-height:1.4; }
-    #cereri .gp-acum { border:3px solid var(--accent); background:var(--card); padding:7px 11px 9px; }
-    #cereri .gp-acum .gp-st { color:var(--accent); }
-    #cereri .gp-acum .gp-p { color:var(--text); }
-    #cereri .gp-gata { opacity:.7; }
+    #cereri .cr-r1 > .cr-ghidaj, #cereri .cr-r1 > .gp-pas { flex:1 1 100%; margin:0; }
+    #cereri .gp-pas { background:color-mix(in srgb, var(--accent) 9%, var(--card)); border:2px solid var(--accent); border-radius:14px; padding:10px 12px 12px; margin:14px 0 8px; }
+    #cereri .gp-cap { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+    #cereri .gp-nr { flex:none; background:var(--accent); color:var(--on-accent); border-radius:999px; padding:3px 11px; font-size:.82rem; font-weight:800; }
+    #cereri .gp-t { flex:1; min-width:10em; font-size:1.08rem; line-height:1.25; }
+    #cereri .gp-st { flex:none; font-size:.85rem; font-weight:800; margin-left:auto; }
+    #cereri .gp-p { margin:8px 0 0; color:var(--text); font-size:.97rem; line-height:1.45; }
+    #cereri .gp-p b { color:var(--accent); }
+    #cereri .gp-acum { border-width:4px; background:color-mix(in srgb, var(--accent) 18%, var(--card)); padding:8px 10px 10px; box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+    #cereri .gp-acum .gp-st { background:var(--accent); color:var(--on-accent); border-radius:999px; padding:3px 12px; }
+    #cereri .gp-gata { border-style:dashed; }
+    #cereri .gp-gata .gp-st { color:var(--accent); }
+    #cereri .gp-gata .gp-nr { background:var(--muted); }
 
     #cereri .cr-dublu { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0 0 10px; }
     #cereri .cr-dublu button { width:100%; margin:0; }
@@ -4716,12 +4719,12 @@
         f.appendChild(indiciu); zona.appendChild(f); sincReg();
         // Ghidaj pas cu pas: un chenar pe fiecare pas, cu ce are de ales sau de scris; pasul curent este evidențiat
         if (!pt) {
-          const lGh = bifaGhidaj((v) => { f.classList.toggle("gp-off", !v); refreshPasi(); }); lGh.classList.add("cr-ghidaj-f"); f.insertBefore(lGh, r1.nextSibling);
+          const lGh = bifaGhidaj((v) => { f.classList.toggle("gp-off", !v); refreshPasi(); }); lGh.classList.add("cr-ghidaj-f"); r1.insertBefore(lGh, gDe);
           f.classList.toggle("gp-off", !ghidaj);
           const alesePosibile = () => toateCheile().filter((k) => alese.has(k));
           const faraAcoperire = () => alesePosibile().filter((k) => !propuneri.has(k) && !opt.has(k)).length;
           const PASI = [
-            { id: "zile", inainte: lGh.nextSibling, titlu: "Alege zilele", text: "În rândul de mai sus, la „De la” alege prima zi, iar la „Până la” ultima zi. Pentru o singură zi lasă aceeași dată la ambele. Implicit este aleasă ziua de azi. Poți alege cel mult 31 de zile.", gata: () => true, cerut: false },
+            { id: "zile", inainte: gDe, titlu: "Alege zilele", text: "Mai jos, la „De la” alege prima zi, iar la „Până la” ultima zi. Pentru o singură zi lasă aceeași dată la ambele. Implicit este aleasă ziua de azi. Poți alege cel mult 31 de zile.", gata: () => true, cerut: false },
             ...(!ex ? [{ id: "nr", inainte: f.querySelector(".cr-reg"), titlu: "Preia numărul de înregistrare", text: "Apasă pe „Preia număr de înregistrare”. Fără număr, cererea nu se poate trimite.", gata: () => !!reg, cerut: true }] : []),
             { id: "tip", inainte: f.querySelector(".cr-r3"), titlu: "Alege tipul cererii și scrie motivul", text: "Alege „Învoire” sau „Învoire în interes de serviciu”. La învoire scrie motivul în câteva cuvinte. La interes de serviciu bifează un singur motiv din listă (dacă alegi „Altul”, îl scrii tu).", gata: () => (tipCerere === "S" ? !!motivS && (motivS !== "Altul" || altS.value.trim().length >= 3) : motiv.value.trim().length >= 3), cerut: true },
             { id: "ore", inainte: lT.parentNode, titlu: "Alege orele", text: "„Toate orele din aceste zile” este bifat implicit. Dacă lipsești doar la unele ore, bifează „O parte dintre ore”, apoi bifează mai jos, în fișele zilelor, orele la care lipsești. Trebuie să rămână bifată cel puțin o oră.", gata: () => alesePosibile().length > 0, cerut: true },
@@ -4731,7 +4734,7 @@
           PASI.forEach((p, i) => {
             const b = el("div", "gp-pas"), cp = el("div", "gp-cap");
             p.st = el("span", "gp-st"); cp.append(el("span", "gp-nr", "Pasul " + (i + 1) + " din " + PASI.length), el("b", "gp-t", p.titlu), p.st);
-            b.append(cp, el("p", "gp-p", p.text)); p.b = b; f.insertBefore(b, p.inainte);
+            const pp = el("p", "gp-p"); pp.append(el("b", "", "Ce ai de făcut: "), document.createTextNode(p.text)); b.append(cp, pp); p.b = b; p.inainte.parentNode.insertBefore(b, p.inainte);
           });
           refreshPasi = () => {
             const cerute = PASI.filter((p) => p.cerut), primulNefacut = cerute.find((p) => !p.gata());
