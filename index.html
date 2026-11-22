@@ -2166,7 +2166,7 @@
     async function incarcaUtilizatori() {
       if (vedere === "copie") return deseneazaCopie();
       const lista = $("lista");
-      const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de, angajat_nume, adresare";
+      const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de, angajat_nume";
       if (vedere === "istoric") {
         const { data, error } = await db.from("istoric_conturi")
           .select("id, la, cine_nume, cont_nume, cont_email, actiune, detalii").order("la", { ascending: false }).limit(150);
@@ -2343,23 +2343,6 @@
       selAng.value = u.angajat_nume || "";
       if (blocat) selAng.disabled = true;
       legAng.appendChild(selAng);
-      // Bifă M / F: din ea se alege „Subsemnatul” / „Subsemnata” în cererile tipărite.
-      const legAdr = document.createElement("div"); legAdr.className = "leg-ang";
-      legAdr.append(document.createTextNode("Bărbat sau femeie"));
-      const grupMF = document.createElement("div"); grupMF.className = "roluri"; grupMF.style.marginTop = "2px";
-      const cbMF = {};
-      [["m", "M (bărbat)"], ["f", "F (femeie)"]].forEach(([v, t]) => {
-        const et = document.createElement("label");
-        const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = v; cb.checked = u.adresare === v;
-        cb.addEventListener("change", () => { if (cb.checked) Object.values(cbMF).forEach((o) => { if (o !== cb) o.checked = false; }); });
-        et.append(cb, document.createTextNode(t)); grupMF.appendChild(et); cbMF[v] = cb;
-      });
-      const selAdr = {
-        get value() { return cbMF.m.checked ? "m" : cbMF.f.checked ? "f" : ""; },
-        set disabled(v) { cbMF.m.disabled = cbMF.f.disabled = !!v; }
-      };
-      if (blocat) selAdr.disabled = true;
-      legAdr.appendChild(grupMF);
 
       const ctl = document.createElement("div"); ctl.className = "ctl";
       const salvare = document.createElement("button"); salvare.type = "button";
@@ -2370,7 +2353,7 @@
       if (eu || protejat) dezactiv.disabled = true; // conturile protejate și propriul cont nu se dezactivează
 
       async function salveaza(camp) {
-        casete.forEach((c) => (c.disabled = true)); selAng.disabled = true; selAdr.disabled = true; salvare.disabled = dezactiv.disabled = true;
+        casete.forEach((c) => (c.disabled = true)); selAng.disabled = true; salvare.disabled = dezactiv.disabled = true;
         const { error } = await db.from("profiluri").update(camp).eq("id", u.id);
         if (error) {
           const m = error.message || "";
@@ -2385,8 +2368,8 @@
       salvare.addEventListener("click", () => {
         const r = alese();
         if (!r.length) return mesajPanou("Alege cel puțin un rol.");
-        const ang = selAng.value || null, adr = selAdr.value || null;
-        salveaza(u.activ ? { roluri: r, angajat_nume: ang, adresare: adr } : { activ: true, roluri: r, angajat_nume: ang, adresare: adr });
+        const ang = selAng.value || null;
+        salveaza(u.activ ? { roluri: r, angajat_nume: ang } : { activ: true, roluri: r, angajat_nume: ang });
       });
       dezactiv.addEventListener("click", () => salveaza({ activ: false }));
 
@@ -2414,7 +2397,7 @@
       if (u.activ) ctl.append(salvare, dezactiv); else ctl.append(salvare, sterge);
       rand.append(top, em);
       if (info.textContent) rand.append(info);
-      rand.append(grup, legAng, legAdr, ctl);
+      rand.append(grup, legAng, ctl);
       return rand;
     }
 
@@ -4685,7 +4668,7 @@
     async function incarcaAngajati() {
       if (!anId) { $("ang-lista").replaceChildren(); $("ang-numar").textContent = ""; return; }
       const { data, error } = await db.from("angajati")
-        .select("id, nume, sters_la, norme(id, loc, categorie, functie, ordine, doar_pco, angajat_de_la, angajat_pana_la, ore_lu, ore_ma, ore_mi, ore_jo, ore_vi)").eq("an_id", anId).order("nume");
+        .select("id, nume, sex, sters_la, norme(id, loc, categorie, functie, ordine, doar_pco, angajat_de_la, angajat_pana_la, ore_lu, ore_ma, ore_mi, ore_jo, ore_vi)").eq("an_id", anId).order("nume");
       if (error) return mesajPontaj("Nu s-a putut încărca lista. Încearcă din nou.");
       angajati = data.sort((a, b) => colator.compare(a.nume, b.nume));
       deseneazaAngajati();
@@ -4831,6 +4814,17 @@
       const lab = el("label", "", "Nume și prenume"); lab.setAttribute("for", "ang-nume");
       const nume = el("input"); nume.id = "ang-nume"; nume.maxLength = 100; nume.value = a ? a.nume : ""; nume.autocomplete = "off";
       f.append(lab, nume);
+      // Bifă M / F: din ea se alege „Subsemnatul” / „Subsemnata” în cererile tipărite.
+      f.appendChild(el("label", "", "Bărbat sau femeie"));
+      const grupMF = el("div", "roluri"); grupMF.style.marginTop = "2px";
+      const cbMF = {};
+      [["m", "M (bărbat)"], ["f", "F (femeie)"]].forEach(([v, t]) => {
+        const et = document.createElement("label");
+        const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = v; cb.checked = !!a && a.sex === v;
+        cb.addEventListener("change", () => { if (cb.checked) Object.values(cbMF).forEach((o) => { if (o !== cb) o.checked = false; }); });
+        et.append(cb, document.createTextNode(t)); grupMF.appendChild(et); cbMF[v] = cb;
+      });
+      f.appendChild(grupMF);
       f.appendChild(el("label", "", "Norme (loc · categorie · funcția, dacă e cazul)"));
       const norme = el("div"); f.appendChild(norme);
       const stare = [];
@@ -4900,9 +4894,10 @@
         try {
           let id = a && a.id;
           if (a) {
-            if (n !== a.nume) { const { error } = await db.from("angajati").update({ nume: n }).eq("id", id); if (error) throw error; }
+            const sex = cbMF.m.checked ? "m" : cbMF.f.checked ? "f" : null;
+            if (n !== a.nume || sex !== (a.sex || null)) { const { error } = await db.from("angajati").update({ nume: n, sex }).eq("id", id); if (error) throw error; }
           } else {
-            const { data, error } = await db.from("angajati").insert({ nume: n, an_id: anId }).select("id").single();
+            const { data, error } = await db.from("angajati").insert({ nume: n, an_id: anId, sex: cbMF.m.checked ? "m" : cbMF.f.checked ? "f" : null }).select("id").single();
             if (error) throw error;
             id = data.id;
           }
