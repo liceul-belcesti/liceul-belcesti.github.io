@@ -1770,7 +1770,7 @@
     const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
     const $ = (id) => document.getElementById(id);
     const ETICHETE = {
-      administrator: "Administrator", director: "Director", secretariat: "Secretariat", contabilitate: "Contabilitate",
+      administrator: "Administrator", director: "Director", director_adjunct: "Director adjunct", secretariat: "Secretariat", contabilitate: "Contabilitate",
       profesor: "Profesor", parinte: "Părinte", elev: "Elev"
     };
     const MESAJ_ASTEPTARE = "Contul tău a fost creat și așteaptă aprobarea administratorului. Vei putea intra după aprobare.";
@@ -1801,6 +1801,7 @@
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
       director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru"],
+      director_adjunct: ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru"],
       secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "serviciu", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
       profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi"],
@@ -1818,7 +1819,7 @@
     // Centralizare: conturile care au completat datele și așteaptă aprobarea (vizibil doar pentru cine gestionează utilizatori).
     let inAsteptare = 0;
     async function actualizeazaNotificari() {
-      const poate = euRoluri.includes("administrator") || euRoluri.includes("director");
+      const poate = euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct"));
       let n = 0;
       if (poate) {
         const { count, error } = await db.from("profiluri").select("id", { count: "exact", head: true })
@@ -1941,7 +1942,7 @@
     function pregatesteComutator() {
       const sel = $("activ-ca");
       // Alegerea de pe un dispozitiv se păstrează („Toate” este tot o alegere). Fără nicio alegere, cine este director începe ca director.
-      const implicit = euRoluri.includes("director") ? "director" : "";
+      const implicit = euRoluri.includes("director") ? "director" : euRoluri.includes("director_adjunct") ? "director_adjunct" : "";
       let salvat = null;
       try { salvat = localStorage.getItem("rolActiv"); } catch (e) {}
       if (salvat === null || (salvat !== "" && !euRoluri.includes(salvat))) salvat = implicit;
@@ -1973,7 +1974,7 @@
     function deseneazaModule(roluri) {
       const zona = $("module");
       zona.replaceChildren();
-      $("btn-admin").classList.toggle("hidden", !roluri.some((r) => ["administrator", "director", "secretariat", "contabilitate"].includes(r)));
+      $("btn-admin").classList.toggle("hidden", !roluri.some((r) => ["administrator", "director", "director_adjunct", "secretariat", "contabilitate"].includes(r)));
       $("btn-ajutor").classList.toggle("hidden", !euRoluri.includes("administrator"));
       if (!euRoluri.includes("administrator")) $("ajutor").hidden = true;
       moduleleMele(roluri).forEach((cheie) => {
@@ -1991,8 +1992,8 @@
         const text = document.createElement("div"); text.className = "txt";
         const t = document.createElement("div"); t.className = "t"; t.textContent = m.t; text.appendChild(t);
         (m.sub || [m.d]).forEach((x) => { const d = document.createElement("div"); d.className = "d"; d.textContent = x; text.appendChild(d); });
-        if (cheie === "pontaj" && !roluri.some((r) => ["administrator", "director", "secretariat", "contabilitate"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Pontajele închise ale tale" })); }
-        if (cheie === "altfel" && !roluri.some((r) => ["administrator", "director", "secretariat"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Activitățile tale" })); }
+        if (cheie === "pontaj" && !roluri.some((r) => ["administrator", "director", "director_adjunct", "secretariat", "contabilitate"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Pontajele închise ale tale" })); }
+        if (cheie === "altfel" && !roluri.some((r) => ["administrator", "director", "director_adjunct", "secretariat"].includes(r))) { text.replaceChildren(t, Object.assign(document.createElement("div"), { className: "d", textContent: "Activitățile tale" })); }
         if (m.activ) c.append(ico, text); else c.append(soon, ico, text);
         if (cheie === "anunturi" && anunturiNoi > 0) {
           const k = document.createElement("span"); k.className = "cnt"; k.textContent = anunturiNoi;
@@ -2172,7 +2173,7 @@
         if (error) return mesajPanou("Nu s-a putut încărca istoricul. Încearcă din nou.");
         lista.replaceChildren();
         if (!data.length) { const p = document.createElement("p"); p.className = "who"; p.textContent = "Nu există nicio înregistrare."; lista.appendChild(p); }
-        else if (euRoluri.includes("administrator") || euRoluri.includes("director")) {
+        else if (euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct"))) {
           const gol = document.createElement("button"); gol.type = "button"; gol.className = "off golire";
           gol.textContent = "Șterge tot istoricul";
           let armat = false, timer = null;
@@ -2222,7 +2223,7 @@
       const sub = document.createElement("div"); sub.className = "sub";
       sub.textContent = (h.cine_nume ? "De către: " + h.cine_nume : "De către: sistem / cont nou") + (h.detalii ? " · " + h.detalii : "");
       r.append(top, em, sub);
-      if (euRoluri.includes("administrator") || euRoluri.includes("director")) {
+      if (euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct"))) {
         const x = document.createElement("button"); x.type = "button"; x.className = "sterge-rand"; x.textContent = "Șterge";
         x.addEventListener("click", async () => {
           x.disabled = true;
@@ -2235,7 +2236,7 @@
     }
 
     function randSters(u) {
-      const euAdmin = euRoluri.includes("administrator") || euRoluri.includes("director"); // directorul are aceleași drepturi asupra conturilor
+      const euAdmin = euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct")); // directorul are aceleași drepturi asupra conturilor
       const blocat = !euAdmin && (u.roluri || []).includes("administrator");
       const r = document.createElement("div"); r.className = "user";
       const top = document.createElement("div"); top.className = "top";
@@ -2296,7 +2297,7 @@
     let numeAngajati = [];
     function randUtilizator(u, luate) {
       const eu = u.id === euId;
-      const euAdmin = euRoluri.includes("administrator") || euRoluri.includes("director"); // directorul are aceleași drepturi asupra conturilor
+      const euAdmin = euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct")); // directorul are aceleași drepturi asupra conturilor
       const roluriU = u.roluri || [];
       const protejat = !!u.protejat && roluriU.includes("administrator"); // cont de administrator protejat
       const blocat = (eu && !euAdmin) || (!euAdmin && roluriU.includes("administrator")); // conturile fără drepturi depline nu gestionează administratori
@@ -2411,7 +2412,7 @@
     const PENTRU = { toti: "Toți", profesor: "Profesori", parinte: "Părinți", elev: "Elevi", contabilitate: "Contabilitate" };
     const FISIERE_OK = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
     const MAX_FISIER = 10 * 1024 * 1024;
-    const poatePublica = () => ["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r));
+    const poatePublica = () => ["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r));
     const mesajAnunt = (t, ok) => { $("anunt-msg").textContent = t || ""; $("anunt-msg").className = "panel-msg" + (ok ? " ok" : ""); };
     const marimeText = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
     const dataAnunt = (t) => { const d = new Date(t); return p2(d.getDate()) + "/" + p2(d.getMonth() + 1) + "/" + d.getFullYear(); };
@@ -2429,7 +2430,7 @@
       const b = $("clopot");
       if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); return; }
       const azi = new Date().toISOString().slice(0, 10);
-      const decide = ["administrator", "director"].some((r) => euRoluri.includes(r)) && moduleleMele(euRoluri).includes("cereri");
+      const decide = ["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r)) && moduleleMele(euRoluri).includes("cereri");
       const areCereri = moduleleMele(euRoluri).includes("cereri");
       const areDoc = moduleleMele(euRoluri).includes("documente");
       const [a, c, cd, cm, cn, dn] = await Promise.all([db.from("anunturi").select("id, creat_de, expira_la").is("sters_la", null), db.from("anunturi_citite").select("anunt_id, necitit"),
@@ -3149,7 +3150,7 @@
           comut.appendChild(bt);
         });
         const randComut = el("div", "oz-rand"); randComut.appendChild(comut);
-        if (["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r))) {
+        if (["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r))) {
           const bAbs = el("button", "oz-abs", "＋ Absență"); bAbs.type = "button"; bAbs.setAttribute("aria-label", "Înregistrează o absență");
           bAbs.addEventListener("click", () => deschideCereri({ absenta: true })); randComut.appendChild(bAbs);
         }
@@ -3685,7 +3686,7 @@
       const NZ = ["", "Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const mesaj = (t, ok) => { msg.textContent = t || ""; msg.className = "panel-msg" + (ok ? " ok" : ""); };
       let cereri, orar, colegi, cal = { structura: [], libere: [] }, acc = new Map(), pentruMine = [], deDecis = [], lim = new Map(), numere = new Map();
-      const poateDecide = ["administrator", "director"].some((r) => euRoluri.includes(r)), esteDirector = euRoluri.includes("director"), esteAdmin = euRoluri.includes("administrator"), poateInreg = ["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r));
+      const poateDecide = ["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r)), esteDirector = (euRoluri.includes("director") || euRoluri.includes("director_adjunct")), esteAdmin = euRoluri.includes("administrator"), poateInreg = ["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r));
       const incarca = async () => {
         const [c, o, g, k, ac, pm, dd, lm, nrr] = await Promise.all([
           db.from("cereri_invoire").select("id, an_id, de_la, pana_la, ore_alese, motiv, inlocuitor_propus, propuneri, optiuni_clasa, stare, nota_decizie, decis_la, creat_la, tip, retragere_ceruta_la, retragere_motiv, retragere_nota").eq("cerut_de", euId).is("stearsa_de_profesor_la", null).order("creat_la", { ascending: false }).limit(100),
@@ -4512,8 +4513,8 @@
       Munteni: ["Educatoare", "Învățători", "Profesori", "Didactic auxiliar", "Nedidactic"]
     };
     let aniScolari = [], anId = null, angajati = [], tabP = "angajati";
-    const poateModificaAng = () => ["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r));
-    const poateAni = () => ["administrator", "director"].some((r) => euRoluri.includes(r));
+    const poateModificaAng = () => ["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r));
+    const poateAni = () => ["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r));
     const anCurent = () => aniScolari.find((x) => x.id === anId) || null;
     const poateEdita = () => poateModificaAng() && anCurent() && !anCurent().inchis;
     const colator = new Intl.Collator("ro");
@@ -5349,7 +5350,7 @@
     const COD_ABSENTA = ["CO", "CM", "BP", "AM", "M", "CCC", "I", "O", "N"];
     const LIT_ZI = ["D", "L", "M", "M", "J", "V", "S"];
     let lunaSel = null, foaie = null;
-    const poatePontaj = () => ["administrator", "director", "secretariat", "contabilitate"].some((r) => euRoluri.includes(r));
+    const poatePontaj = () => ["administrator", "director", "director_adjunct", "secretariat", "contabilitate"].some((r) => euRoluri.includes(r));
     const foaieDeschisa = () => !!(foaie && poatePontaj() && anCurent() && !anCurent().inchis && foaie.stare !== "inchis");
     const numeLuna = (t) => LUNI_RO[Number(t.slice(5, 7)) - 1] + " " + t.slice(0, 4);
     const luniaPlatii = (t) => { const m = Number(t.slice(5, 7)), y = Number(t.slice(0, 4)); return m === 12 ? LUNI_RO[0] + " " + (y + 1) : LUNI_RO[m] + " " + y; };
@@ -6292,7 +6293,7 @@
     $("inreg-nr").addEventListener("change", salveazaInregistrare);
     $("inreg-data").addEventListener("change", salveazaInregistrare);
     // Secretariatul și contabilitatea (fără rol de administrator sau director) poate tipări și exporta doar după închiderea lunii.
-    const tiparBlocat = () => !!foaie && (euRoluri.includes("secretariat") || euRoluri.includes("contabilitate")) && !euRoluri.includes("administrator") && !euRoluri.includes("director") && foaie.stare !== "inchis";
+    const tiparBlocat = () => !!foaie && (euRoluri.includes("secretariat") || euRoluri.includes("contabilitate")) && !euRoluri.includes("administrator") && !(euRoluri.includes("director") || euRoluri.includes("director_adjunct")) && foaie.stare !== "inchis";
     function aplicaBlocareTipar() {
       const b = tiparBlocat();
       document.body.classList.toggle("fara-tipar", b);
@@ -7820,7 +7821,7 @@
         if (data.length < 1000) break;
       }
       const dir = new Set();
-      const { data: pf } = await db.from("profiluri").select("angajat_nume, roluri").contains("roluri", ["director"]).is("sters_la", null);
+      const { data: pf } = await db.from("profiluri").select("angajat_nume, roluri").overlaps("roluri", ["director", "director_adjunct"]).is("sters_la", null);
       (pf || []).forEach((x) => x.angajat_nume && dir.add(x.angajat_nume));
       const deja = new Set(c.scutiti.map((x) => x.angajat_id));
       const prop = c.angs.filter((x) => !deja.has(x.id) && (dir.has(x.nume) || (ore.get(x.id) || 0) <= 4 && ore.has(x.id)))
@@ -8409,7 +8410,7 @@
     const mesajEcrane = (text, ok) => { $("ecrane-msg").textContent = text || ""; $("ecrane-msg").className = "panel-msg" + (ok ? " ok" : ""); };
     const ADRESA_ECRAN = "https://liceul-belcesti.org/ecran.html#";
     async function deschideEcrane() {
-      if (!(euRoluri.includes("administrator") || euRoluri.includes("director"))) return;
+      if (!(euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct")))) return;
       memoreazaVedere("ecrane");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("ecrane").classList.remove("hidden");
@@ -9129,7 +9130,7 @@
     }
 
     async function deschideRegistru() {
-      if (!["administrator", "director", "secretariat"].some((r) => euRoluri.includes(r))) return;
+      if (!["administrator", "director", "director_adjunct", "secretariat"].some((r) => euRoluri.includes(r))) return;
       memoreazaVedere("registru");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("registru").classList.remove("hidden");
@@ -9138,7 +9139,7 @@
       const ra = await db.rpc("registru_ani");
       if (ra.error || !Array.isArray(ra.data)) { corp.replaceChildren(); return mesajRegistru("Registrul nu a putut fi încărcat. Încearcă din nou."); }
       const ani = ra.data.length ? ra.data : [new Date().getFullYear()];
-      const poateAnula = euRoluri.includes("administrator") || euRoluri.includes("director");
+      const poateAnula = euRoluri.includes("administrator") || (euRoluri.includes("director") || euRoluri.includes("director_adjunct"));
       const st = { an: ani[0], rows: [], q: "", ascunde: false };
       const deschise = new Set();
       corp.replaceChildren();
