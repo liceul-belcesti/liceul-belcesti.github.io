@@ -752,6 +752,15 @@
     :is(#registru,#documente) .rg-chip { display:inline-block; padding:2px 10px; border-radius:999px; background:var(--card); border:1px solid var(--line); font-size:.82rem; font-weight:600; }
     :is(#registru,#documente) .rg-chip-a { border-color:var(--err); color:var(--err); }
     :is(#registru,#documente) .rg-rez { margin:6px 0 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    #registru .rg-tabwrap { overflow-x:auto; }
+    #registru .rg-tab { width:100%; border-collapse:collapse; font-size:.92rem; background:var(--card); }
+    #registru .rg-tab th, #registru .rg-tab td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+    #registru .rg-tab th { background:var(--bg); font-weight:700; white-space:nowrap; }
+    #registru .rg-tab .rg-c-nr { font-weight:800; text-align:center; width:1%; white-space:nowrap; }
+    #registru .rg-tab tr.rg-r { cursor:pointer; }
+    #registru .rg-tab tr.rg-r:hover td { background:var(--bg); }
+    #registru .rg-tab .rg-act { background:var(--bg); }
+    #registru .rg-tab .rg-chip { margin-left:8px; }
     #registru .rg-anulat { opacity:.7; }
     #registru .rg-anulat .rg-rez { text-decoration:line-through; }
     :is(#registru,#documente) .rg-corp { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; }
@@ -1705,7 +1714,7 @@
     <main id="registru" class="wrap hidden">
       <button id="inapoi-registru" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Registratură</h1>
-      <p class="who">Registrul general de intrare-ieșire: o singură serie de numere pe an, pentru documentele de intrare și de ieșire.</p>
+      <p class="who">Registrul documentelor: numărul se dă automat, în ordine, și începe de la 1 în fiecare an.</p>
       <div id="registru-msg" class="panel-msg" role="status"></div>
       <div id="registru-corp"></div>
     </main>
@@ -1763,16 +1772,16 @@
       altfel:   { ico: "🎨", t: "Școala Altfel și Săptămâna Verde", d: "Programul celor două săptămâni", sub: ["Școala Altfel", "Săptămâna Verde"], activ: true },
       serviciu: { ico: "🛎️", t: "Serviciu pe școală", d: "Zone, clase și scutiri pentru serviciul din pauze", sub: ["Zone și clase", "Scutiri"], activ: true },
       ecrane:   { ico: "📺", t: "Ecrane pentru cancelarie", d: "Linkuri pentru televizoarele din cancelarii", sub: ["Un ecran pe sediu"], activ: true },
-      registru: { ico: "📁", t: "Registratură", d: "Registrul de intrare-ieșire", sub: ["Registrul de intrare-ieșire", "Numere de înregistrare automate"], activ: true },
+      registru: { ico: "📁", t: "Registratură", d: "Registrul documentelor", sub: ["Registrul documentelor", "Numere de înregistrare automate"], activ: true },
       catalog:  { ico: "📘", t: "Situație școlară", d: "Note și absențe", sub: ["Note", "Absențe"] }
     };
     // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "documente", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru"],
-      secretariat:   ["azi", "pontaj", "structura", "anunturi", "documente", "orar", "altfel", "serviciu", "registru"],
-      contabilitate: ["pontaj", "structura", "anunturi", "documente"],
-      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi", "documente"],
+      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru"],
+      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "serviciu", "registru"],
+      contabilitate: ["pontaj", "structura", "anunturi"],
+      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -9039,43 +9048,33 @@
       $("registru").classList.remove("hidden");
       mesajRegistru("");
       const corp = $("registru-corp"); corp.replaceChildren(el("p", "who", "Se încarcă…"));
-      const [ra, rd] = await Promise.all([db.rpc("registru_ani"), db.rpc("registru_destinatari")]);
+      const ra = await db.rpc("registru_ani");
       if (ra.error || !Array.isArray(ra.data)) { corp.replaceChildren(); return mesajRegistru("Registrul nu a putut fi încărcat. Încearcă din nou."); }
       const ani = ra.data.length ? ra.data : [new Date().getFullYear()];
-      const dest = rd.error || !Array.isArray(rd.data) ? [] : rd.data.map((x) => x.nume);
       const poateAnula = euRoluri.includes("administrator") || euRoluri.includes("director");
-      const st = { an: ani[0], rows: [], q: "", dir: "", rep: "", ascunde: false };
+      const st = { an: ani[0], rows: [], q: "", ascunde: false };
       const deschise = new Set();
       corp.replaceChildren();
 
-      // ---- Bara de sus: înregistrare nouă, anul, tipărire, CSV
       const sus = el("div", "rg-sus");
       const bNou = el("button", "", "+ Înregistrare nouă"); bNou.type = "button";
       const selAn = document.createElement("select"); selAn.setAttribute("aria-label", "Anul registrului"); ani.forEach((a) => selAn.add(new Option("Anul " + a, a)));
       const bTipar = el("button", "secondary", "🖨 Tipărește registrul"); bTipar.type = "button";
       const bCsv = el("button", "secondary", "⬇ Descarcă CSV"); bCsv.type = "button";
       sus.append(bNou, selAn, bTipar, bCsv);
-      // ---- Filtre
       const filtre = el("div", "rg-filtre");
-      const q = document.createElement("input"); q.type = "search"; q.placeholder = "Caută după număr, emitent, conținut, rezoluție…"; q.setAttribute("aria-label", "Căutare"); q.autocomplete = "off";
-      const randF = el("div", "rg-rand");
-      const chD = el("div", "rg-ch"); chD.setAttribute("role", "group"); chD.setAttribute("aria-label", "Direcția");
-      [["", "Toate"], ["intrare", "Intrare"], ["iesire", "Ieșire"]].forEach(([v, et]) => { const b = el("button", "", et); b.type = "button"; b.dataset.v = v; b.addEventListener("click", () => { st.dir = v; deseneazaLista(); }); chD.appendChild(b); });
-      const selRep = document.createElement("select"); selRep.setAttribute("aria-label", "Repartizat către");
-      selRep.add(new Option("Toate repartizările", "")); selRep.add(new Option("Fără repartizare", "__fara")); dest.forEach((n) => selRep.add(new Option(n, n)));
+      const q = document.createElement("input"); q.type = "search"; q.placeholder = "Caută după număr, emitent, conținut…"; q.setAttribute("aria-label", "Căutare"); q.autocomplete = "off";
       const lAn = el("label", "rg-bifa"); const cbAn = document.createElement("input"); cbAn.type = "checkbox"; lAn.append(cbAn, document.createTextNode("Ascunde înregistrările anulate"));
-      randF.append(chD, selRep, lAn);
-      filtre.append(q, randF);
+      filtre.append(q, lAn);
       const sumar = el("p", "rg-sumar");
       const formLoc = el("div", "");
-      const lista = el("div", "");
+      const lista = el("div", "rg-tabwrap");
       corp.append(sus, filtre, formLoc, sumar, lista);
 
+      const docText = (r) => [r.nr_document ? "nr. " + r.nr_document : "", r.data_document ? "din " + fmtData(r.data_document) : ""].filter(Boolean).join(" ");
       const filtrate = () => {
         const t = faraDiacritice(st.q).trim();
-        return st.rows.filter((r) => (!st.ascunde || !r.anulat_la) && (!st.dir || r.directie === st.dir)
-          && (!st.rep || (st.rep === "__fara" ? !r.repartizat_nume : r.repartizat_nume === st.rep))
-          && (!t || faraDiacritice([r.nr, r.partener, r.nr_document, r.continut, r.repartizat_nume, r.rezolutie, r.observatii].join(" ")).includes(t)));
+        return st.rows.filter((r) => (!st.ascunde || !r.anulat_la) && (!t || faraDiacritice([r.nr, r.partener, r.nr_document, r.continut].join(" ")).includes(t)));
       };
       const incarca = async () => {
         const r = await db.rpc("registru_lista", { p_an: st.an });
@@ -9083,176 +9082,107 @@
         st.rows = r.data.slice().sort((a, b) => b.nr - a.nr); deseneazaLista(); return true;
       };
 
-      // ---- Cardul unei înregistrări
-      const card = (r) => {
-        const k = el("div", "user rg-card" + (r.anulat_la ? " rg-anulat" : ""));
-        const cap = el("div", "top rg-cap"); cap.tabIndex = 0; cap.setAttribute("role", "button");
-        const nm = el("div", "nm"); nm.append(el("b", "rg-nr", "Nr. " + r.nr), el("span", "rg-det", " · " + fmtData(r.data_inreg) + " · " + DIR_REG[r.directie]));
-        const ch = el("div", "rg-chips");
-        if (r.anulat_la) ch.appendChild(el("span", "rg-chip rg-chip-a", "Anulat"));
-        if (r.repartizat_nume) ch.appendChild(el("span", "rg-chip", "→ " + r.repartizat_nume));
-        if ((r.fisiere || []).length) ch.appendChild(el("span", "rg-chip", "📎 " + r.fisiere.length));
-        cap.append(nm, ch); k.appendChild(cap);
-        k.appendChild(el("p", "rg-rez", (r.directie === "intrare" ? "De la " : "Către ") + r.partener + " — " + r.continut));
-        const deschis = deschise.has(r.id); cap.setAttribute("aria-expanded", String(deschis));
-        if (deschis) k.appendChild(detaliu(r));
-        const comuta = () => { if (deschise.has(r.id)) deschise.delete(r.id); else deschise.add(r.id); deseneazaLista(); };
-        cap.addEventListener("click", comuta); cap.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); comuta(); } });
-        return k;
-      };
-      const detaliu = (r) => {
-        const d = el("div", "rg-corp");
-        const adauga = (x) => { if (x) d.appendChild(x); };
-        adauga(linieReg(r.directie === "intrare" ? "Emitent" : "Destinatar", r.partener));
-        adauga(linieReg("Documentul", [r.nr_document ? "nr. " + r.nr_document : "", r.data_document ? "din " + fmtData(r.data_document) : ""].filter(Boolean).join(" ")));
-        adauga(linieReg("Conținut", r.continut));
-        adauga(linieReg("Număr de file / anexe", r.nr_file));
-        if (r.repartizat_nume) adauga(linieReg("Repartizat către", r.repartizat_nume + " · " + (r.vazut_la ? "văzut la " + dataRo(r.vazut_la) : r.repartizat_cont ? "nu l-a văzut încă" : "nu are cont legat în platformă, deci nu primește notificare")));
-        adauga(linieReg("Rezoluție", r.rezolutie));
-        adauga(linieReg("Observații (interne)", r.observatii));
-        adauga(linieReg("Înregistrat de", (r.creat_de_nume || "—") + " la " + dataRo(r.creat_la)));
-        if (r.modificat_la && !r.anulat_la) adauga(linieReg("Ultima modificare", dataRo(r.modificat_la)));
-        if (r.anulat_la) adauga(linieReg("Anulat", dataRo(r.anulat_la) + (r.anulat_de_nume ? " de " + r.anulat_de_nume : "") + ". Motiv: " + r.anulat_motiv));
-        if ((r.fisiere || []).length) d.appendChild(butoaneFisiereReg(r.fisiere, mesajRegistru));
-        const ctl = el("div", "ctl");
-        const bIst = el("button", "secondary", "Istoric"); bIst.type = "button";
-        if (!r.anulat_la) {
-          const bEd = el("button", "", "Editează"); bEd.type = "button"; bEd.addEventListener("click", () => { formDoc(r); formLoc.scrollIntoView({ behavior: "smooth", block: "start" }); });
-          ctl.appendChild(bEd);
-          if (poateAnula) {
-            const bAn = el("button", "off", "Anulează înregistrarea"); bAn.type = "button";
-            const nb = el("div", "rg-nota-box hidden"); const nt = document.createElement("textarea"); nt.rows = 2; nt.maxLength = 500; nt.placeholder = "Motivul anulării (obligatoriu)";
-            const conf = el("button", "off", "Confirmă anularea"); conf.type = "button"; nb.append(nt, conf);
-            bAn.addEventListener("click", () => { nb.classList.toggle("hidden"); nt.focus(); });
-            conf.addEventListener("click", async () => {
-              if (nt.value.trim().length < 3) return mesajRegistru("Scrie motivul anulării.");
-              conf.disabled = true;
-              const { error } = await db.rpc("registru_anuleaza", { p_id: r.id, p_motiv: nt.value.trim() });
-              if (error) { conf.disabled = false; return mesajRegistru(error.message || "Anularea nu a reușit."); }
-              mesajRegistru("Înregistrarea nr. " + r.nr + " a fost anulată. Numărul rămâne în registru.", true); await incarca();
-            });
-            ctl.appendChild(bAn); d.append(ctl, nb);
-          } else d.appendChild(ctl);
-        } else d.appendChild(ctl);
-        ctl.appendChild(bIst);
-        const zIst = el("div", ""); d.appendChild(zIst);
-        bIst.addEventListener("click", async () => {
-          if (zIst.firstChild) { zIst.replaceChildren(); return; }
-          const { data, error } = await db.rpc("registru_istoric_doc", { p_id: r.id });
-          if (error || !Array.isArray(data)) return mesajRegistru("Istoricul nu a putut fi încărcat.");
-          const ul = el("ul", "rg-ist");
-          data.forEach((h) => { const t = textIstoricReg(h); if (t) ul.appendChild(el("li", "", dataRo(h.la) + " · " + (h.de_catre || "—") + " · " + t)); });
-          zIst.appendChild(ul);
-        });
-        return d;
-      };
       function deseneazaLista() {
-        chD.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === st.dir)));
         const f = filtrate();
-        const ultimul = st.rows.length ? Math.max(...st.rows.map((r) => r.nr)) : 0;
-        sumar.textContent = st.rows.length ? (f.length === st.rows.length ? st.rows.length + (st.rows.length === 1 ? " înregistrare" : " înregistrări") : f.length + " din " + st.rows.length + " înregistrări") + " în anul " + st.an + " · ultimul număr: " + ultimul : "Nu există înregistrări în anul " + st.an + ".";
+        sumar.textContent = st.rows.length ? (f.length === st.rows.length ? st.rows.length + (st.rows.length === 1 ? " înregistrare" : " înregistrări") : f.length + " din " + st.rows.length + " înregistrări") + " în anul " + st.an : "Nu există înregistrări în anul " + st.an + ".";
         lista.replaceChildren();
-        if (st.rows.length && !f.length) lista.appendChild(el("p", "who", "Nicio înregistrare nu se potrivește filtrelor."));
-        f.forEach((r) => lista.appendChild(card(r)));
+        if (!f.length) { if (st.rows.length) lista.appendChild(el("p", "who", "Nicio înregistrare nu se potrivește căutării.")); return; }
+        const t = el("table", "rg-tab");
+        const hr = el("tr", ""); ["Nr. crt.", "Data", "De la cine provine", "Nr. și data documentului", "Conținut"].forEach((x) => hr.appendChild(el("th", "", x)));
+        t.appendChild(el("thead", "")).appendChild(hr);
+        const tb = el("tbody", ""); t.appendChild(tb);
+        f.forEach((r) => {
+          const tr = el("tr", "rg-r" + (r.anulat_la ? " rg-anulat" : "")); tr.tabIndex = 0; tr.setAttribute("role", "button"); tr.setAttribute("aria-expanded", String(deschise.has(r.id)));
+          const cont = el("td", ""); cont.textContent = r.continut; if (r.anulat_la) cont.appendChild(el("span", "rg-chip rg-chip-a", "Anulat"));
+          [el("td", "rg-c-nr", String(r.nr)), el("td", "", fmtData(r.data_inreg)), el("td", "", r.partener), el("td", "", docText(r)), cont].forEach((x) => tr.appendChild(x));
+          const comuta = () => { if (deschise.has(r.id)) deschise.delete(r.id); else deschise.add(r.id); deseneazaLista(); };
+          tr.addEventListener("click", comuta); tr.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); comuta(); } });
+          tb.appendChild(tr);
+          if (deschise.has(r.id)) {
+            const td = el("td", "rg-act"); td.colSpan = 5;
+            if (r.anulat_la) td.appendChild(el("p", "rg-linie", "Anulat la " + dataRo(r.anulat_la) + (r.anulat_de_nume ? " de " + r.anulat_de_nume : "") + ". Motiv: " + r.anulat_motiv + ". Numărul rămâne în registru."));
+            else {
+              const ctl = el("div", "ctl");
+              const bEd = el("button", "", "Editează"); bEd.type = "button"; bEd.addEventListener("click", () => { formDoc(r); formLoc.scrollIntoView({ behavior: "smooth", block: "start" }); });
+              ctl.appendChild(bEd);
+              if (poateAnula) {
+                const bAn = el("button", "off", "Anulează înregistrarea"); bAn.type = "button";
+                const nb = el("div", "rg-nota-box hidden"); const nt = document.createElement("textarea"); nt.rows = 2; nt.maxLength = 500; nt.placeholder = "Motivul anulării (obligatoriu)";
+                const conf = el("button", "off", "Confirmă anularea"); conf.type = "button"; nb.append(nt, conf);
+                bAn.addEventListener("click", () => { nb.classList.toggle("hidden"); nt.focus(); });
+                conf.addEventListener("click", async () => {
+                  if (nt.value.trim().length < 3) return mesajRegistru("Scrie motivul anulării.");
+                  conf.disabled = true;
+                  const { error } = await db.rpc("registru_anuleaza", { p_id: r.id, p_motiv: nt.value.trim() });
+                  if (error) { conf.disabled = false; return mesajRegistru(error.message || "Anularea nu a reușit."); }
+                  mesajRegistru("Înregistrarea nr. " + r.nr + " a fost anulată. Numărul rămâne în registru.", true); await incarca();
+                });
+                ctl.appendChild(bAn); td.append(ctl, nb);
+              } else td.appendChild(ctl);
+            }
+            const ra2 = el("tr", "rg-r-act"); ra2.appendChild(td); tb.appendChild(ra2);
+          }
+        });
+        lista.appendChild(t);
       }
 
-      // ---- Formular: înregistrare nouă sau editare
+      // ---- Formular: înregistrare nouă sau editare (de la cine provine, numărul și data documentului, conținutul)
       function formDoc(r) {
         formLoc.replaceChildren();
         const f = el("div", "ang-form");
         f.appendChild(el("h3", "", r ? "Modifică înregistrarea nr. " + r.nr : "Înregistrare nouă"));
         const camp = (et, nod) => { const l = document.createElement("label"); l.textContent = et; f.append(l, nod); return nod; };
-        let dir = r ? r.directie : "intrare", lPart = null;
-        if (!r) {
-          const g = el("div", "rg-dir");
-          [["intrare", "Intrare"], ["iesire", "Ieșire"]].forEach(([v, et]) => {
-            const l = el("label", ""); const i = document.createElement("input"); i.type = "radio"; i.name = "rg-dir"; i.value = v; i.checked = v === dir;
-            i.addEventListener("change", () => { dir = v; if (lPart) lPart.textContent = v === "intrare" ? "De la cine vine (emitent)" : "Către cine merge (destinatar)"; });
-            l.append(i, document.createTextNode(et)); g.appendChild(l);
-          });
-          f.appendChild(g);
-        }
-        const partener = Object.assign(document.createElement("input"), { maxLength: 200, autocomplete: "off", value: r ? r.partener : "" });
-        lPart = document.createElement("label"); lPart.textContent = dir === "intrare" ? "De la cine vine (emitent)" : "Către cine merge (destinatar)"; f.append(lPart, partener);
-        const rand2 = el("div", "rg-form2");
-        const c1 = el("div", ""), c2 = el("div", "");
+        const partener = camp("De la cine provine documentul", Object.assign(document.createElement("input"), { maxLength: 200, autocomplete: "off", value: r ? r.partener : "" }));
+        const rand2 = el("div", "rg-form2"); const c1 = el("div", ""), c2 = el("div", "");
         const nrDoc = Object.assign(document.createElement("input"), { maxLength: 60, autocomplete: "off", value: r && r.nr_document ? r.nr_document : "" });
         const dataDoc = Object.assign(document.createElement("input"), { type: "date", value: r && r.data_document ? r.data_document : "" });
         const l1 = document.createElement("label"); l1.textContent = "Numărul documentului (dacă are)"; c1.append(l1, nrDoc);
-        const l2 = document.createElement("label"); l2.textContent = "Data documentului"; c2.append(l2, dataDoc);
+        const l2 = document.createElement("label"); l2.textContent = "Data documentului (dacă are)"; c2.append(l2, dataDoc);
         rand2.append(c1, c2); f.appendChild(rand2);
-        const continut = camp("Conținut pe scurt", Object.assign(document.createElement("textarea"), { rows: 3, maxLength: 1000, value: r ? r.continut : "" }));
-        const nrFile = camp("Număr de file / anexe", Object.assign(document.createElement("input"), { type: "number", min: 0, max: 9999, inputMode: "numeric", value: r && r.nr_file !== null ? r.nr_file : "" }));
-        const rep = document.createElement("select"); rep.add(new Option("— nerepartizat —", ""));
-        const numeRep = [...dest]; if (r && r.repartizat_nume && !numeRep.includes(r.repartizat_nume)) numeRep.unshift(r.repartizat_nume);
-        numeRep.forEach((n) => rep.add(new Option(n, n))); rep.value = r && r.repartizat_nume ? r.repartizat_nume : "";
-        camp("Repartizat către (primește documentul în „Documentele mele” și o notificare în clopoțel)", rep);
-        const rez = camp("Rezoluție", Object.assign(document.createElement("textarea"), { rows: 2, maxLength: 1000, value: r && r.rezolutie ? r.rezolutie : "" }));
-        const obs = camp("Observații interne (nu le vede cel căruia i s-a repartizat documentul)", Object.assign(document.createElement("textarea"), { rows: 2, maxLength: 1000, value: r && r.observatii ? r.observatii : "" }));
-        const sterse = new Set();
-        if (r && (r.fisiere || []).length) {
-          const lf = document.createElement("label"); lf.textContent = "Fișiere atașate (bifează pentru a le elimina)"; f.appendChild(lf);
-          r.fisiere.forEach((x) => { const et = el("label", "rg-bifa"); const c = Object.assign(document.createElement("input"), { type: "checkbox" }); c.addEventListener("change", () => (c.checked ? sterse.add(x) : sterse.delete(x))); et.append(c, document.createTextNode(x.nume)); f.appendChild(et); });
-        }
-        const fis = camp("Atașează documentul scanat (PDF, PNG, JPG, DOCX, XLSX; cel mult 10 MB fiecare)", Object.assign(document.createElement("input"), { type: "file", multiple: true, accept: ".pdf,.png,.jpg,.jpeg,.docx,.xlsx" }));
+        const continut = camp("Conținut", Object.assign(document.createElement("textarea"), { rows: 3, maxLength: 1000, value: r ? r.continut : "" }));
         const ctl = el("div", "ctl");
         const salv = el("button", "", r ? "Salvează" : "Înregistrează"); salv.type = "button";
         const nu = el("button", "secondary", "Renunță"); nu.type = "button"; nu.addEventListener("click", () => formLoc.replaceChildren());
         salv.addEventListener("click", async () => {
-          if (!partener.value.trim()) return mesajRegistru("Scrie " + (dir === "intrare" ? "de la cine vine" : "către cine merge") + " documentul.");
-          if (!continut.value.trim()) return mesajRegistru("Scrie pe scurt conținutul documentului.");
-          const noi = [...fis.files];
-          for (const x of noi) {
-            if (!FISIERE_OK[extensia(x.name)]) return mesajRegistru("Fișierul „" + x.name + "” nu are un tip permis.");
-            if (x.size > MAX_FISIER) return mesajRegistru("Fișierul „" + x.name + "” depășește 10 MB.");
-          }
+          if (!partener.value.trim()) return mesajRegistru("Scrie de la cine provine documentul.");
+          if (!continut.value.trim()) return mesajRegistru("Scrie conținutul documentului.");
           salv.disabled = true; mesajRegistru("Se salvează…");
-          const arg = { p_partener: partener.value, p_nr_document: nrDoc.value || null, p_data_document: dataDoc.value || null, p_continut: continut.value, p_nr_file: nrFile.value === "" ? null : Number(nrFile.value), p_repartizat: rep.value || null, p_rezolutie: rez.value || null, p_observatii: obs.value || null };
-          let id = r && r.id, nr = r && r.nr, esuate = 0;
+          let nr = r && r.nr, id = r && r.id;
           if (r) {
-            const { error } = await db.rpc("registru_modifica", { p_id: r.id, ...arg });
+            const { error } = await db.rpc("registru_corecteaza", { p_id: r.id, p_partener: partener.value, p_nr_document: nrDoc.value || null, p_data_document: dataDoc.value || null, p_continut: continut.value });
             if (error) { salv.disabled = false; return mesajRegistru(error.message || "Salvarea nu a reușit."); }
           } else {
-            const { data, error } = await db.rpc("registru_inregistreaza", { p_directie: dir, ...arg });
+            const { data, error } = await db.rpc("registru_adauga", { p_partener: partener.value, p_nr_document: nrDoc.value || null, p_data_document: dataDoc.value || null, p_continut: continut.value });
             if (error || !data) { salv.disabled = false; return mesajRegistru((error && error.message) || "Înregistrarea nu a reușit."); }
-            id = data.id; nr = data.nr;
+            nr = data.nr; id = data.id;
+            if (ani.includes(data.an)) { st.an = data.an; selAn.value = String(data.an); }
           }
-          for (const x of [...sterse]) {
-            const { data: cale, error } = await db.rpc("registru_fisier_sterge", { p_fisier: x.id });
-            if (error) { esuate++; continue; }
-            if (cale) await db.storage.from("registru").remove([cale]);
-          }
-          esuate += await atasazaFisiereReg(id, noi);
           formLoc.replaceChildren();
-          if (!r) { st.an = ani.includes(new Date().getFullYear()) ? new Date().getFullYear() : st.an; selAn.value = st.an; }
-          deschise.add(id);
-          mesajRegistru((r ? "Înregistrarea nr. " + nr + " a fost modificată." : "Documentul a fost înregistrat cu numărul " + nr + ".") + (esuate ? " " + esuate + (esuate === 1 ? " fișier nu a putut fi procesat." : " fișiere nu au putut fi procesate.") : ""), !esuate);
+          mesajRegistru(r ? "Înregistrarea nr. " + nr + " a fost modificată." : "Documentul a fost înregistrat cu numărul " + nr + ".", true);
           await incarca();
         });
         ctl.append(salv, nu); f.appendChild(ctl); formLoc.appendChild(f);
       }
 
-      // ---- Tipărire și CSV (după filtrele de pe ecran, în ordinea numerelor)
-      const textCel = (r) => (r.anulat_la ? "ANULAT (" + r.anulat_motiv + "). " : "") + r.continut;
+      // ---- Tipărire și CSV (după căutarea de pe ecran, în ordinea numerelor)
       const randuriExport = () => filtrate().slice().sort((a, b) => a.nr - b.nr);
-      const textFiltre = () => [st.dir ? DIR_REG[st.dir] : "", st.rep ? (st.rep === "__fara" ? "fără repartizare" : "repartizat: " + st.rep) : "", st.ascunde ? "fără cele anulate" : "", st.q.trim() ? "căutare: „" + st.q.trim() + "”" : ""].filter(Boolean).join(" · ");
       bTipar.addEventListener("click", () => {
         const rows = randuriExport(); if (!rows.length) return mesajRegistru("Nu există înregistrări de tipărit.");
         const vechi = document.getElementById("tipar-registru"); if (vechi) vechi.remove();
         const c = el("div", ""); c.id = "tipar-registru";
         c.appendChild(el("p", "tr-scoala", "LICEUL TEHNOLOGIC „VICTOR MIHĂILESCU CRAIU” BELCEȘTI"));
-        c.appendChild(el("h1", "", "Registru de intrare-ieșire a documentelor"));
-        c.appendChild(el("p", "tr-sub", "Anul " + st.an + (textFiltre() ? " · " + textFiltre() : "")));
+        c.appendChild(el("h1", "", "Registru de documente"));
+        c.appendChild(el("p", "tr-sub", "Anul " + st.an + (st.q.trim() ? " · căutare: „" + st.q.trim() + "”" : "")));
         const t = el("table", ""); const cg = document.createElement("colgroup");
-        [5, 8, 6, 14, 10, 24, 4, 10, 10, 9].forEach((w) => { const x = document.createElement("col"); x.style.width = w + "%"; cg.appendChild(x); });
+        [7, 11, 22, 17, 43].forEach((w) => { const x = document.createElement("col"); x.style.width = w + "%"; cg.appendChild(x); });
         t.appendChild(cg);
-        const th = el("tr", ""); ["Nr.", "Data", "Intrare / ieșire", "Emitent / destinatar", "Nr. și data documentului", "Conținut", "File", "Repartizat către", "Rezoluție", "Observații"].forEach((x) => th.appendChild(el("th", "", x)));
+        const th = el("tr", ""); ["Nr. crt.", "Data", "De la cine provine", "Nr. și data documentului", "Conținut"].forEach((x) => th.appendChild(el("th", "", x)));
         t.appendChild(el("thead", "")).appendChild(th);
         const tb = el("tbody", "");
         rows.forEach((r) => {
           const tr = el("tr", r.anulat_la ? "tr-anulat" : "");
-          [r.nr, fmtData(r.data_inreg), DIR_REG[r.directie], r.partener, [r.nr_document, r.data_document ? "din " + fmtData(r.data_document) : ""].filter(Boolean).join(" "), textCel(r), r.nr_file === null ? "" : r.nr_file, r.repartizat_nume || "", r.rezolutie || "", r.observatii || ""]
-            .forEach((v, i) => { const td = el("td", ""); if (r.anulat_la && (i === 3 || i === 5)) td.appendChild(el("span", "tr-bara", String(v))); else td.textContent = String(v); tr.appendChild(td); });
+          [r.nr, fmtData(r.data_inreg), r.partener, docText(r), (r.anulat_la ? "ANULAT (" + r.anulat_motiv + "). " : "") + r.continut]
+            .forEach((v, i) => { const td = el("td", ""); if (r.anulat_la && i >= 2) td.appendChild(el("span", "tr-bara", String(v))); else td.textContent = String(v); tr.appendChild(td); });
           tb.appendChild(tr);
         });
         t.appendChild(tb); c.appendChild(t);
@@ -9262,8 +9192,8 @@
       });
       bCsv.addEventListener("click", () => {
         const rows = randuriExport(); if (!rows.length) return mesajRegistru("Nu există înregistrări de descărcat.");
-        const csv = [["Nr.", "Data înregistrării", "Intrare / ieșire", "Emitent / destinatar", "Nr. document", "Data documentului", "Conținut", "File", "Repartizat către", "Rezoluție", "Observații", "Anulat"]]
-          .concat(rows.map((r) => [r.nr, fmtData(r.data_inreg), DIR_REG[r.directie], r.partener, r.nr_document || "", fmtData(r.data_document), r.continut, r.nr_file === null ? "" : r.nr_file, r.repartizat_nume || "", r.rezolutie || "", r.observatii || "", r.anulat_la ? "da: " + r.anulat_motiv : ""]));
+        const csv = [["Nr. crt.", "Data", "De la cine provine", "Nr. document", "Data documentului", "Conținut", "Anulat"]]
+          .concat(rows.map((r) => [r.nr, fmtData(r.data_inreg), r.partener, r.nr_document || "", fmtData(r.data_document), r.continut, r.anulat_la ? "da: " + r.anulat_motiv : ""]));
         const cmp = (v) => { const t = String(v).replace(/"/g, '""'); return /[;"\n]/.test(t) ? '"' + t + '"' : t; };
         const blob = new Blob(["﻿" + csv.map((x) => x.map(cmp).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob);
         const a = document.createElement("a"); a.href = url; a.download = "registru-" + st.an + ".csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
@@ -9271,7 +9201,6 @@
       bNou.addEventListener("click", () => { formDoc(null); formLoc.scrollIntoView({ behavior: "smooth", block: "start" }); });
       selAn.addEventListener("change", async () => { st.an = Number(selAn.value); deschise.clear(); await incarca(); });
       q.addEventListener("input", () => { st.q = q.value; deseneazaLista(); });
-      selRep.addEventListener("change", () => { st.rep = selRep.value; deseneazaLista(); });
       cbAn.addEventListener("change", () => { st.ascunde = cbAn.checked; deseneazaLista(); });
       await incarca();
     }
