@@ -1408,6 +1408,32 @@
       </form>
     </main>
 
+    <main id="uitat-card" class="card hidden">
+      <h2>Ai uitat parola?</h2>
+      <p class="sub">Scrie adresa de e-mail a contului. Îți trimitem un link pentru a alege o parolă nouă.</p>
+      <div id="u-msg" class="panel-msg" role="alert"></div>
+      <form id="form-uitat">
+        <label for="u-email">E-mail</label>
+        <input id="u-email" type="email" autocomplete="username" inputmode="email" required>
+        <button id="u-btn" type="submit">Trimite linkul</button>
+        <button id="u-inapoi" class="secondary" type="button">Înapoi</button>
+      </form>
+    </main>
+
+    <main id="parola-noua" class="card hidden">
+      <h2>Alege parola nouă</h2>
+      <p class="sub">Parola trebuie să aibă cel puțin 8 caractere.</p>
+      <div id="pn-msg" class="panel-msg" role="alert"></div>
+      <form id="form-parola-noua">
+        <label for="pn-parola">Parola nouă (minimum 8 caractere)</label>
+        <input id="pn-parola" type="password" autocomplete="new-password" minlength="8" required>
+        <label for="pn-parola2">Repetă parola</label>
+        <input id="pn-parola2" type="password" autocomplete="new-password" minlength="8" required>
+        <button id="pn-btn" type="submit">Salvează parola și intră</button>
+        <button id="pn-renunt" class="secondary" type="button">Renunț</button>
+      </form>
+    </main>
+
     <main id="card-login" class="card">
       <div id="msg" class="msg" role="alert"></div>
       <div class="tabs" role="tablist">
@@ -1427,6 +1453,7 @@
           <label for="parola">Parolă</label>
           <input id="parola" type="password" autocomplete="current-password" required>
           <button id="btn" type="submit">Intră în cont</button>
+          <button id="uitat" class="secondary" type="button">Am uitat parola</button>
         </form>
       </section>
 
@@ -9527,7 +9554,7 @@
     function arataCompletare(data) {
       $("login").classList.remove("hidden");
       $("acasa").classList.add("hidden");
-      $("card-login").classList.add("hidden");
+      $("card-login").classList.add("hidden"); $("uitat-card").classList.add("hidden"); $("parola-noua").classList.add("hidden");
       if ($("completare").classList.contains("hidden")) {
         $("completare").classList.remove("hidden");
         $("c-nume").value = (data.nume || "").includes("@") ? "" : (data.nume || "");
@@ -9538,7 +9565,7 @@
       $("login").classList.remove("hidden");
       $("acasa").classList.add("hidden");
       $("card-login").classList.remove("hidden");
-      $("completare").classList.add("hidden");
+      $("completare").classList.add("hidden"); $("uitat-card").classList.add("hidden"); $("parola-noua").classList.add("hidden");
       const m = mesaj || mesajRamas || "";
       $("msg").textContent = m;
       $("msg").className = "msg" + (m === MESAJ_ASTEPTARE ? " info" : "");
@@ -9711,6 +9738,69 @@
 
     $("iesire").addEventListener("click", () => { mesajRamas = ""; memoreazaVedere(""); euId = null; db.auth.signOut(); });
 
+    // ===== Parola uitată: cerem linkul pe e-mail, apoi alegem parola nouă =====
+    let recuperare = false; // linkul de resetare a deschis o sesiune: întâi se alege parola nouă, abia apoi se intră
+    function arataUitat() {
+      $("login").classList.remove("hidden"); $("acasa").classList.add("hidden");
+      $("card-login").classList.add("hidden"); $("completare").classList.add("hidden"); $("parola-noua").classList.add("hidden");
+      $("uitat-card").classList.remove("hidden");
+      $("u-msg").textContent = ""; $("u-msg").className = "panel-msg";
+      $("u-email").value = $("email").value.trim(); $("u-email").focus();
+    }
+    function arataParolaNoua() {
+      $("login").classList.remove("hidden"); $("acasa").classList.add("hidden");
+      $("card-login").classList.add("hidden"); $("completare").classList.add("hidden"); $("uitat-card").classList.add("hidden");
+      $("parola-noua").classList.remove("hidden");
+      $("pn-msg").textContent = ""; $("pn-msg").className = "panel-msg";
+    }
+    $("uitat").addEventListener("click", arataUitat);
+    $("u-inapoi").addEventListener("click", () => { mesajRamas = ""; arataLogin(); });
+    $("form-uitat").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const m = $("u-msg"); m.className = "panel-msg"; m.textContent = "";
+      $("u-btn").disabled = true;
+      const { error } = await db.auth.resetPasswordForEmail($("u-email").value.trim());
+      $("u-btn").disabled = false;
+      if (error) {
+        m.textContent = error.status === 429 || /rate|limit|seconds/i.test(error.message || "")
+          ? "Prea multe încercări. Încearcă din nou peste puțin timp."
+          : "Nu s-a putut trimite acum. Încearcă din nou.";
+        return;
+      }
+      // același mesaj indiferent dacă adresa are cont, ca să nu se poată afla cine are cont
+      m.className = "panel-msg ok";
+      m.textContent = "Dacă există un cont cu această adresă, ți-am trimis un e-mail cu linkul pentru parola nouă. Dacă nu îl găsești, verifică și dosarul Spam.";
+    });
+    $("form-parola-noua").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const m = $("pn-msg"); m.className = "panel-msg"; m.textContent = "";
+      const p1 = $("pn-parola").value, p2 = $("pn-parola2").value;
+      if (p1.length < 8) { m.textContent = "Parola trebuie să aibă cel puțin 8 caractere."; return; }
+      if (p1 !== p2) { m.textContent = "Parolele nu coincid."; return; }
+      $("pn-btn").disabled = true;
+      recuperare = false; // evenimentul de după schimbare trebuie să ducă în aplicație, nu înapoi pe acest ecran
+      const { error } = await db.auth.updateUser({ password: p1 });
+      $("pn-btn").disabled = false;
+      if (error) {
+        recuperare = true;
+        m.textContent = /same|different/i.test(error.message || "")
+          ? "Alege o parolă diferită de cea veche."
+          : /weak|short|least/i.test(error.message || "")
+            ? "Parola este prea slabă. Alege una mai lungă sau mai variată."
+            : "Parola nu a putut fi schimbată. Linkul poate fi expirat; cere alt link de la „Am uitat parola”.";
+        return;
+      }
+      $("pn-parola").value = ""; $("pn-parola2").value = "";
+      recuperare = false; mesajRamas = "";
+      const { data } = await db.auth.getSession();
+      verificaAcces(data && data.session);
+    });
+    $("pn-renunt").addEventListener("click", async () => {
+      recuperare = false; mesajRamas = "";
+      $("pn-parola").value = ""; $("pn-parola2").value = "";
+      await db.auth.signOut(); arataLogin();
+    });
+
     // Dacă Google/Supabase întorc o eroare în adresă, o arătăm clar și curățăm adresa.
     (function () {
       const text = location.search + "&" + location.hash.replace(/^#/, "");
@@ -9728,16 +9818,24 @@
       const th = q.get("token_hash"), tip = q.get("type");
       if (!th || !/^(signup|recovery|magiclink|magic_link|invite|email_change|email)$/.test(tip || "")) return;
       history.replaceState(null, "", location.pathname);
+      if (tip === "recovery") recuperare = true;
       db.auth.verifyOtp({ token_hash: th, type: tip === "magic_link" ? "magiclink" : tip }).then(({ error }) => {
         if (error) {
-          mesajRamas = "Linkul din e-mail a expirat sau a fost deja folosit. Intră cu e-mail și parolă sau cere alt link.";
+          recuperare = false;
+          mesajRamas = tip === "recovery"
+            ? "Linkul pentru parola nouă a expirat sau a fost deja folosit. Apasă „Am uitat parola” și cere alt link."
+            : "Linkul din e-mail a expirat sau a fost deja folosit. Intră cu e-mail și parolă sau cere alt link.";
           arataLogin(mesajRamas);
-        }
+        } else if (tip === "recovery") arataParolaNoua();
       });
     })();
 
     // setTimeout: evită apelurile către Supabase direct în callback-ul de autentificare
-    db.auth.onAuthStateChange((_event, sesiune) => setTimeout(() => verificaAcces(sesiune), 0));
+    db.auth.onAuthStateChange((_event, sesiune) => setTimeout(() => {
+      // cât timp se alege parola nouă, nu intrăm în aplicație
+      if (recuperare) { if (sesiune) arataParolaNoua(); return; }
+      verificaAcces(sesiune);
+    }, 0));
   </script>
 </body>
 </html>
