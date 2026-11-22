@@ -1738,7 +1738,7 @@
         const cal = r3 && !r3.error && r3.data && r3.data.structura ? r3.data : { structura: [], libere: [], practica: [] };
         const ani = []; data.forEach((r) => { if (!ani.find((x) => x.id === r.an_id)) ani.push({ id: r.an_id, den: r.denumire }); });
         corp.replaceChildren();
-        randeazaOrarModern({ zona: corp, data, numeProf: r4 && r4.data, cal, ani, tipar: false, sv, compact: true });
+        randeazaOrarModern({ zona: corp, data, numeProf: r4 && r4.data, cal, ani, tipar: false, sv, compact: true, plan: true });
         sec.classList.remove("hidden");
       } catch (e) { /* rămâne ce se vedea sau ascuns */ }
     }
@@ -2525,7 +2525,7 @@
       const ani = []; data.forEach((r) => { if (!ani.find((x) => x.id === r.an_id)) ani.push({ id: r.an_id, den: r.denumire }); });
       const zona = el("div", "");
       corp.appendChild(zona);
-      const upd = randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar: true, sv });
+      const upd = randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar: true, sv, plan: true });
       let sD = JSON.stringify(data), sC = JSON.stringify(cal);
       window.__ozRef = async () => {
         if (!zona.isConnected || zona.offsetParent === null) return;
@@ -2540,7 +2540,7 @@
     }
     // Vedere modernă (zi / săptămână, calendar, practică): folosită la „Orarul meu” și la ecranul de orar al administratorului.
     // data: rânduri { an_id, zi, ora, clasa, scurt, complet, eticheta?, text?, grup? }
-    function randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar, etGrup, sv, compact }) {
+    function randeazaOrarModern({ zona, data, numeProf, cal, ani, tipar, etGrup, sv, compact, plan }) {
       const ZL = ["Luni", "Marți", "Miercuri", "Joi", "Vineri"];
       const ZL7 = [...ZL, "Sâmbătă", "Duminică"];
       const LUNI_RO = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
@@ -2569,6 +2569,21 @@
         const card = el("div", "oz-card"); const r1 = el("div", "oz-rand"); r1.append(el("span", "oz-clasa", "🛎️"), el("span", "oz-disc", textSv(g))); card.appendChild(r1);
         const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-nr", "pauza " + g.pauza + "–" + (g.pauza + 1))); if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); card.appendChild(mt);
         o.append(t, el("div", "oz-nod"), card); return o;
+      };
+      // Suplinirile contului meu (din cererile aprobate): ora mea preluată de un coleg sau o oră pe care o suplinesc eu
+      const textPlan = (p) => p.mod === "inlocuitor" ? "Ora ta este preluată de " + p.inlocuitor : p.mod === "neacoperita" ? "Ora ta nu are încă suplinitor" : p.mod === "pleaca" ? "Clasa pleacă acasă" + (p.de_la_ora ? " de la ora " + p.de_la_ora : "") : "Clasa vine" + (p.de_la_ora ? " de la ora " + p.de_la_ora : " mai târziu");
+      const planC = new Map(), planT = new Map();
+      const incarcaPlan = (lu) => {
+        if (!plan) return;
+        const k = iso(lu), t = planT.get(k); if (t && Date.now() - t < 90000) return;
+        planT.set(k, Date.now());
+        const zileS = Array.from({ length: 5 }, (_, i) => iso(adauga(lu, i)));
+        db.rpc("plan_propriu", { p_de: k, p_pana: zileS[4] }).then(({ data: rez, error }) => {
+          if (error || !Array.isArray(rez)) return;
+          const inainte = JSON.stringify(zileS.map((f) => planC.get(f) || []));
+          zileS.forEach((f) => planC.set(f, rez.filter((x) => x.data === f)));
+          if (JSON.stringify(zileS.map((f) => planC.get(f) || [])) !== inainte && zona.isConnected) deseneaza();
+        }).catch(() => {});
       };
       const randClasa = (r, cls) => { const d = el("div", cls); d.appendChild(el("span", "oz-clasa", r.eticheta || r.clasa)); const tx = r.text || r.complet; if (tx) d.appendChild(el("span", "oz-disc", tx)); return d; };
       const anPentru = (f) => {
@@ -2607,12 +2622,19 @@
         const an = ani.find((x) => x.id === id);
         const ore = data.filter((r) => r.an_id === id);
         const claseMele = new Set(ore.map((r) => r.clasa));
-        const oreZi = (d) => { const w = ziSapt(d); return w > 4 ? [] : ore.filter((r) => r.zi === w + 1).sort((x, y) => x.ora - y.ora); };
+        incarcaPlan(luSapt(dataSel));
+        const oreZi = (d) => {
+          const w = ziSapt(d); if (w > 4) return [];
+          const pl = planC.get(iso(d)) || [];
+          const baza = ore.filter((r) => r.zi === w + 1).map((r) => { const p = pl.find((x) => x.eu_absent && x.ora === r.ora && x.clasa === r.clasa); return p ? { ...r, plan: p } : r; });
+          const sup = pl.filter((x) => x.eu_inlocuitor && x.mod === "inlocuitor").map((x) => ({ an_id: id, zi: w + 1, ora: x.ora, clasa: x.clasa, text: "Suplinire · în locul lui " + x.absent, sup: true }));
+          return [...baza, ...sup].sort((x, y) => x.ora - y.ora || String(x.clasa).localeCompare(String(y.clasa), "ro"));
+        };
         const tit = (r) => r.complet || "Ora " + r.ora;
         // ---- Rezumat scurt al zilei (pagina principală): fără navigare, fără linia timpului
         if (compact) {
           const info = infoZi(dataSel, claseMele), prac = new Set(info.practica.map((x) => x.clasa));
-          const lista = info.suspendat ? [] : oreZi(dataSel), active = lista.filter((r) => !prac.has(r.clasa));
+          const lista = info.suspendat ? [] : oreZi(dataSel), active = lista.filter((r) => !prac.has(r.clasa) && !r.plan);
           const svR = svZi(dataSel, info), svP = svPauze(svR), svS = svSchimburi(svR);
           const cur = active.find((r) => mN >= stOra(r) && mN < stOra(r) + 50), urm = cur ? null : active.find((r) => stOra(r) > mN);
           const cd = el("div", "zm-card"), cp = el("div", "zm-cap");
@@ -2628,6 +2650,8 @@
             else if (urm) li("⏭️", "Urmează: ora " + urm.ora + ", la " + hm(stOra(urm)) + " · " + detOra(urm));
             else li("✅", "Orele de azi s-au încheiat");
           }
+          const preluate = lista.filter((r) => r.plan);
+          if (preluate.length) li("🔁", (preluate.length === 1 ? "Ora " : "Orele ") + preluate.map((r) => r.ora + " · " + (r.eticheta || r.clasa)).join(", ") + ": " + [...new Set(preluate.map((r) => textPlan(r.plan).replace(/^Ora ta (este )?/, "")))].join("; "));
           svS.forEach((x) => li("🛎️", "Serviciu pe școală · " + x.text + (x.loc ? " · " + x.loc : "")));
           if (svP.length) li("🛎️", "Serviciu pe școală · " + (svP.length === 1 ? "pauza " : "pauzele ") + svP.map((g) => g.pauza + "–" + (g.pauza + 1) + " (" + hm(stPauza(g.pauza)) + ")").join(", ") + (svP.some((g) => g.locuri.length) ? " · " + [...new Set(svP.flatMap((g) => g.locuri))].join(", ") : ""));
           const prAz = info.practica.filter((x) => lista.some((r) => r.clasa === x.clasa) || x.al_meu);
@@ -2666,7 +2690,7 @@
           const prac = new Set(info.practica.map((x) => x.clasa));
           const lista = info.suspendat ? [] : oreZi(dataSel);
           const svR = svZi(dataSel, info), svP = svPauze(svR), svS = svSchimburi(svR);
-          const active = lista.filter((r) => !prac.has(r.clasa));
+          const active = lista.filter((r) => !prac.has(r.clasa) && !r.plan);
           // ---- Cartea de vizită a zilei
           const cur = eAzi ? active.find((r) => mN >= stOra(r) && mN < stOra(r) + 50) : null;
           const urm = eAzi && !cur ? active.find((r) => stOra(r) > mN) : null;
@@ -2712,11 +2736,12 @@
           lista.forEach((r, k) => {
             verso(r.ora);
             if (k && r.ora - lista[k - 1].ora > 1) { const g = r.ora - lista[k - 1].ora - 1; { const fz = el("div", "oz-pauza"); fz.append(el("b", "", "Fereastră"), el("span", "", oraS(g) + " · " + interval(lista[k - 1].ora + 1).split("–")[0] + "–" + interval(r.ora - 1).split("–")[1])); tl.appendChild(fz); } }
-            const lp = prac.has(r.clasa), eCur = r === cur, eUrm = r === urm, eTrecut = eAzi && !lp && !eCur && stOra(r) + 50 <= mN;
+            const lp = prac.has(r.clasa) || !!r.plan, eCur = r === cur, eUrm = r === urm, eTrecut = eAzi && !lp && !eCur && stOra(r) + 50 <= mN;
             const o = el("div", "oz-ora" + (eCur ? " acum" : "") + (eUrm ? " urm" : "") + (eTrecut ? " trecut" : "") + (lp ? " lapr" : "")); o.style.setProperty("--k", k);
             const t = el("div", "oz-t"); t.append(el("b", "", interval(r.ora).split("–")[0]), el("span", "", interval(r.ora).split("–")[1]));
             const card = el("div", "oz-card"); card.appendChild(randClasa(r, "oz-rand"));
-            const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (lp) mt.appendChild(el("span", "oz-cl oz-pr", "clasa este la practică")); else if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
+            const mt = el("div", "oz-meta2"); mt.appendChild(el("span", "oz-nr", "ora " + r.ora)); if (lp) mt.appendChild(el("span", "oz-cl oz-pr", r.plan ? textPlan(r.plan) : "clasa este la practică")); else if (eCur) mt.appendChild(el("span", "oz-cl oz-ac", "acum")); else if (eUrm) mt.appendChild(el("span", "oz-cl oz-ac", "urmează"));
+            if (r.sup) mt.appendChild(el("span", "oz-cl", "suplinire"));
             card.appendChild(mt); o.append(t, el("div", "oz-nod"), card); tl.appendChild(o);
           });
           verso(99);
@@ -2725,7 +2750,7 @@
           // ---- Săptămâna ca agendă: o carte pentru fiecare zi
           const lu = luS, vi = adauga(lu, 4);
           const cap = el("div", "oz-sapt-cap"); cap.append(el("b", "", lu.getDate() + (lu.getMonth() !== vi.getMonth() ? " " + LUNI_RO[lu.getMonth()] : "") + " – " + vi.getDate() + " " + LUNI_RO[vi.getMonth()] + " " + vi.getFullYear()));
-          const totS = Array.from({ length: 5 }, (_, k) => { const d = adauga(lu, k), inf = infoZi(d, claseMele), p = new Set(inf.practica.map((x) => x.clasa)); return inf.suspendat ? 0 : oreZi(d).filter((r) => !p.has(r.clasa)).length; }).reduce((x, y) => x + y, 0);
+          const totS = Array.from({ length: 5 }, (_, k) => { const d = adauga(lu, k), inf = infoZi(d, claseMele), p = new Set(inf.practica.map((x) => x.clasa)); return inf.suspendat ? 0 : oreZi(d).filter((r) => !p.has(r.clasa) && !r.plan).length; }).reduce((x, y) => x + y, 0);
           cap.appendChild(el("span", "", oraS(totS) + (etGrup ? " în program în această săptămână" : " de predat în această săptămână"))); zona.appendChild(cap);
           for (let k = 0; k < 5; k++) {
             const d = adauga(lu, k), info = infoZi(d, claseMele), prac = new Set(info.practica.map((x) => x.clasa));
@@ -2741,7 +2766,7 @@
             const intrari = [...lista.map((r) => ({ t: stOra(r), r })), ...svP.map((g) => ({ t: stPauza(g.pauza) - 1, g }))].sort((a, b) => a.t - b.t);
             intrari.forEach((x) => {
               if (x.g) { const rd = el("div", "oz-sr oz-sr-sv"); rd.append(el("span", "oz-sr-t", intervalP(x.g.pauza).split("–")[0]), el("span", "oz-clasa mic", "🛎️"), el("span", "oz-disc", textSv(x.g) + " · pauza " + x.g.pauza + "–" + (x.g.pauza + 1))); card.appendChild(rd); return; }
-              const r = x.r; const lp = prac.has(r.clasa); const rd = el("div", "oz-sr" + (lp ? " lapr" : "")); rd.append(el("span", "oz-sr-t", interval(r.ora).split("–")[0]), el("span", "oz-clasa mic", r.eticheta || r.clasa), el("span", "oz-disc", lp ? "este la practică" : (r.text || r.complet || "Ora " + r.ora))); card.appendChild(rd);
+              const r = x.r; const lp = prac.has(r.clasa) || !!r.plan; const rd = el("div", "oz-sr" + (lp ? " lapr" : "")); rd.append(el("span", "oz-sr-t", interval(r.ora).split("–")[0]), el("span", "oz-clasa mic", r.eticheta || r.clasa), el("span", "oz-disc", lp ? (r.plan ? textPlan(r.plan) : "este la practică") : (r.text || r.complet || "Ora " + r.ora))); card.appendChild(rd);
             });
             card.addEventListener("click", (e) => { if (e.target.closest("button")) return; });
             const bz = el("button", "oz-vezi", "Deschide ziua ›"); bz.type = "button"; bz.addEventListener("click", () => { dataSel = d; mod = "zile"; deseneaza(); window.scrollTo({ top: 0, behavior: "smooth" }); }); card.appendChild(bz);
