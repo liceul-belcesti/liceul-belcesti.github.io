@@ -9173,6 +9173,34 @@
       const bTipar = el("button", "secondary", "🖨 Tipărește registrul"); bTipar.type = "button";
       const bCsv = el("button", "secondary", "⬇ Descarcă CSV"); bCsv.type = "button";
       sus.append(bNou, selAn, bTipar, bCsv);
+      // Doar administratorul: șterge tot registrul, din toți anii, iar numerotarea reîncepe de la 1.
+      if (eAdmin) {
+        const bZero = el("button", "off", "Începe registrul de la zero"); bZero.type = "button";
+        bZero.addEventListener("click", async () => {
+          formLoc.replaceChildren();
+          let total = 0;
+          for (const an of ani) { const x = await db.rpc("registru_lista", { p_an: an }); if (Array.isArray(x.data)) total += x.data.length; }
+          const f = el("div", "ang-form");
+          f.appendChild(el("h3", "", "Începe registrul de la zero"));
+          f.appendChild(el("p", "rg-linie", "Se șterg definitiv toate înregistrările registrului" + (total ? " (" + total + (total === 1 ? " înregistrare" : " înregistrări") + ", din toți anii)" : "") + ", împreună cu istoricul lor. Următorul număr va fi 1. Cererile de învoire legate de aceste numere rămân fără număr. Nu se poate anula."));
+          const l = document.createElement("label"); l.textContent = "Ca să confirmi, scrie cuvântul ȘTERGE";
+          const inp = document.createElement("input"); inp.type = "text"; inp.autocomplete = "off"; inp.maxLength = 20;
+          const ctl = el("div", "ctl");
+          const ok = el("button", "off", "Șterge tot registrul"); ok.type = "button"; ok.disabled = true;
+          const nu = el("button", "secondary", "Renunță"); nu.type = "button"; nu.addEventListener("click", () => formLoc.replaceChildren());
+          inp.addEventListener("input", () => { ok.disabled = faraDiacritice(inp.value).trim().toLowerCase() !== "sterge"; });
+          ok.addEventListener("click", async () => {
+            ok.disabled = nu.disabled = true; mesajRegistru("Se șterge…");
+            const { data, error } = await db.rpc("registru_de_la_zero");
+            if (error) { nu.disabled = false; ok.disabled = false; return mesajRegistru(error.message || "Nu a reușit. Încearcă din nou."); }
+            await deschideRegistru();
+            mesajRegistru("Registrul a fost șters" + (data && data.sterse ? " (" + data.sterse + (data.sterse === 1 ? " înregistrare" : " înregistrări") + ")" : "") + ". Următorul număr este 1.", true);
+          });
+          ctl.append(ok, nu); f.append(l, inp, ctl); formLoc.appendChild(f); inp.focus();
+          formLoc.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        sus.appendChild(bZero);
+      }
       const filtre = el("div", "rg-filtre");
       const q = document.createElement("input"); q.type = "search"; q.placeholder = "Caută după număr, emitent, conținut…"; q.setAttribute("aria-label", "Căutare"); q.autocomplete = "off";
       const lAn = el("label", "rg-bifa"); const cbAn = document.createElement("input"); cbAn.type = "checkbox"; lAn.append(cbAn, document.createTextNode("Ascunde înregistrările anulate"));
