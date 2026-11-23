@@ -4513,7 +4513,6 @@
           anulata: { et: "Cereri retrase", f: (c) => c.stare === "anulata" },
           stearsa: { et: "Cereri șterse de profesor", f: (c) => !!c.stearsa_de_profesor_la },
           serviciu: { et: "Cereri aprobate în interes de serviciu", f: (c) => c.stare === "aprobata" && c.tip === "S" },
-          clasa: { et: "Cereri aprobate cu clasa venită mai târziu sau plecată acasă", f: (c) => c.stare === "aprobata" && nrCl(c) > 0 },
           modificata: { et: "Cereri modificate", f: (c) => c.modificari > 0 }
         };
         const tile = (n, et, cls, act, cheie) => {
@@ -4547,32 +4546,32 @@
           const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(null, null, true); }); zona.appendChild(inch);
           if (!vizT.length) zona.appendChild(el("p", "who", "Nicio cerere în această categorie."));
           vizT.forEach((c, i) => zona.appendChild(randToate(c, vizT.length - i, true, filtruToate === "in_asteptare" || filtruToate === "aprobata")));
-        } else if (filtruToate === "fara" || filtruToate === "inlocuitor") {
+        } else if (filtruToate === "fara" || filtruToate === "inlocuitor" || filtruToate === "clasa") {
           // „fara”: orele aprobate rămase fără înlocuitor și fără altă soluție (clasa vine mai târziu / pleacă acasă); „inlocuitor”: orele cu înlocuitor propus și răspunsul lui
-          const cuIn = filtruToate === "inlocuitor";
+          const cuIn = filtruToate === "inlocuitor", cuCl = filtruToate === "clasa";
           const azi = iso(new Date()), ZSAPT = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
           const detOra = new Map(oreToti.map((x) => [x.cerere_id + "|" + x.data + "|" + x.ora, x]));
           const ore = [];
           apr.forEach((c) => (c.ore_alese || []).forEach((k) => {
-            const prop = c.propuneri && c.propuneri[k];
-            if (cuIn ? !prop : (prop || (c.optiuni_clasa && c.optiuni_clasa[k]))) return;
+            const prop = c.propuneri && c.propuneri[k], opt = c.optiuni_clasa && c.optiuni_clasa[k];
+            if (cuCl ? !opt : cuIn ? !prop : (prop || opt)) return;
             const p = k.split("|"), d = detOra.get(c.id + "|" + p[0] + "|" + p[1]), ac = prop ? (c.acceptari || []).find((a) => a.id === prop) : null;
-            ore.push({ c, data: p[0], ora: Number(p[1]), clasa: (d && d.clasa) || p[2] || "", disc: (d && d.disciplina) || "", inl: ac ? ac.nume : "", stInl: ac ? stareInlocuitor(ac.stare, c.stare) : null });
+            ore.push({ c, data: p[0], ora: Number(p[1]), clasa: (d && d.clasa) || p[2] || "", disc: (d && d.disciplina) || "", opt: opt ? (opt.tip === "vine" ? "Clasa vine de la ora " + opt.ora : "Clasa pleacă acasă de la ora " + opt.ora) : "", inl: ac ? ac.nume : "", stInl: ac ? stareInlocuitor(ac.stare, c.stare) : null });
           }));
           ore.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : a.ora - b.ora));
           const viit = ore.filter((x) => x.data >= azi), trec = ore.filter((x) => x.data < azi).reverse();
-          const hT = el("h3", "az-h", (cuIn ? "Ore cu înlocuitor propus (" : "Ore aprobate fără înlocuitor (") + ore.length + ")"); hT.id = "cr-lista-toate"; zona.appendChild(hT);
+          const hT = el("h3", "az-h", (cuCl ? "Ore cu clasa venită mai târziu / plecată acasă (" : cuIn ? "Ore cu înlocuitor propus (" : "Ore aprobate fără înlocuitor (") + ore.length + ")"); hT.id = "cr-lista-toate"; zona.appendChild(hT);
           const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(null, null, true); }); zona.appendChild(inch);
           const randOra = (x) => {
             const grup = el("div", "cr-rand-grup"), rand = el("div", "cr-rand");
-            rand.append(el("span", "cr-rand-pers", x.c.angajat), el("span", "cr-rand-data", "Ora " + x.ora + (x.clasa ? " · " + x.clasa : "")), ...(x.disc ? [el("span", "cr-rand-inr", x.disc)] : []), ...(cuIn ? [el("span", "cr-rand-inl", "Înlocuitor: " + (x.inl || "colegul propus")), ...(x.stInl ? [el("span", x.stInl[1], x.stInl[0])] : [])] : []));
+            rand.append(el("span", "cr-rand-pers", x.c.angajat), el("span", "cr-rand-data", "Ora " + x.ora + (x.clasa ? " · " + x.clasa : "")), ...(x.disc ? [el("span", "cr-rand-inr", x.disc)] : []), ...(cuCl ? [el("span", "cr-rand-inl", x.opt), el("span", "cr-rand-inr", x.c.decis_de ? "Aprobată de " + x.c.decis_de : "")] : []), ...(cuIn ? [el("span", "cr-rand-inl", "Înlocuitor: " + (x.inl || "colegul propus")), ...(x.stInl ? [el("span", x.stInl[1], x.stInl[0])] : [])] : []));
             const bv = el("button", "secondary cr-rand-b", "Vezi cererea"); bv.type = "button"; let card = null;
             bv.addEventListener("click", () => { if (card) { card.remove(); card = null; bv.textContent = "Vezi cererea"; bv.setAttribute("aria-expanded", "false"); return; } card = cardToate(x.c, x.c.angajat); grup.appendChild(card); bv.textContent = "Ascunde cererea"; bv.setAttribute("aria-expanded", "true"); });
             bv.setAttribute("aria-expanded", "false"); rand.appendChild(bv); grup.appendChild(rand); return grup;
           };
           const pePeZi = (lista, gazda) => { let zi = ""; lista.forEach((x) => { if (x.data !== zi) { zi = x.data; gazda.appendChild(el("h4", "cr-zi-t", ZSAPT[new Date(x.data + "T12:00:00").getDay()] + ", " + fd(x.data))); } gazda.appendChild(randOra(x)); }); };
-          if (!ore.length) zona.appendChild(el("p", "who", cuIn ? "Nicio oră aprobată nu are înlocuitor propus." : "Nicio oră aprobată nu a rămas fără înlocuitor."));
-          if (ore.length && !viit.length) zona.appendChild(el("p", "who", cuIn ? "Nicio oră viitoare cu înlocuitor propus." : "Nicio oră viitoare fără înlocuitor."));
+          if (!ore.length) zona.appendChild(el("p", "who", cuCl ? "Nicio oră aprobată nu are clasa venită mai târziu sau plecată acasă." : cuIn ? "Nicio oră aprobată nu are înlocuitor propus." : "Nicio oră aprobată nu a rămas fără înlocuitor."));
+          if (ore.length && !viit.length) zona.appendChild(el("p", "who", cuCl ? "Nicio oră viitoare cu clasa venită mai târziu sau plecată acasă." : cuIn ? "Nicio oră viitoare cu înlocuitor propus." : "Nicio oră viitoare fără înlocuitor."));
           pePeZi(viit, zona);
           if (trec.length) { const dt = el("details", "cr-trecute"); dt.appendChild(el("summary", "", "Trecute (" + trec.length + ")")); pePeZi(trec, dt); zona.appendChild(dt); }
         } else if (filtruToate === "profesori") {
