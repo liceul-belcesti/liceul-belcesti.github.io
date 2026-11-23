@@ -25,9 +25,11 @@
   .subtitlu { font-size:clamp(14px,1.5vw,28px); color:var(--estompat); margin:0; }
   .zi-et { font-size:clamp(18px,2vw,38px); color:var(--text); font-weight:700; margin:0; padding-top:1vh; border-top:1px solid var(--linie); }
   .bloc { --c:var(--urm); border-left:.45vw solid var(--c); padding-left:1.1vw; }
-  .bloc.c-acum { --c:var(--acum); }
+  .bloc.c-acum { --c:var(--acum); background:linear-gradient(90deg, rgba(74,222,128,.32) 0%, rgba(74,222,128,.14) 45%, rgba(74,222,128,0) 100%); border-radius:0 1vw 1vw 0; padding:.5vh 1.1vw .6vh; }
   .bloc.c-urm { --c:var(--urm); }
   .bloc.c-apoi { --c:var(--apoi); }
+  .bloc.c-trecut { --c:#6f8099; }
+  .bloc.c-trecut .rand .nume { color:var(--estompat); font-weight:500; }
   .mic.bloc { border-left-width:.3vw; padding-left:.9vw; }
   .eticheta { margin:0; font-size:clamp(22px,2.5vw,48px); font-weight:700; color:var(--c); line-height:1.15; }
   .eticheta .ora { color:var(--text); font-weight:600; margin-left:.4em; }
@@ -48,9 +50,7 @@
   .rand .interval { color:var(--estompat); font-size:.62em; font-weight:400; margin-left:.6em; }
   .rand.lipsa { background:rgba(255,138,122,.18); border-left:.45vw solid var(--alerta); padding:.5vh .8vw; margin-left:-.8vw; border-radius:.4vw; }
   .rand.lipsa .nume { color:var(--alerta); }
-  .urmatoare { display:grid; grid-template-columns:1fr 1fr; gap:1.2vh 2.2vw; border-top:1px solid var(--linie); padding-top:1.2vh; }
-  .urmatoare.una { grid-template-columns:1fr; }
-  .invatatori { margin-top:auto; border-top:1px solid var(--linie); padding-top:1.4vh; }
+    .invatatori { margin-top:auto; border-top:1px solid var(--linie); padding-top:1.4vh; }
   .anunt { border-top:1px solid var(--linie); padding-top:1.4vh; }
   .anunt:first-of-type { border-top:0; padding-top:0; }
   .anunt h3 { margin:0 0 .3vh; font-size:clamp(20px,2.2vw,42px); line-height:1.12; }
@@ -137,7 +137,7 @@
       if (!(titluGrupa in index)) { index[titluGrupa] = { titlu: titluGrupa, persoane: [] }; grupe.push(index[titluGrupa]); }
       index[titluGrupa].persoane.push({ r: r, loc: c && r.zona !== c ? r.zona : "" });
     });
-    var cadru = el("div", "grupe" + (mic || grupe.length < 2 ? " una" : ""));
+    var cadru = el("div", "grupe" + (grupe.length < 2 ? " una" : ""));
     grupe.forEach(function (g) {
       var b = el("div", "grupa");
       if (g.titlu) b.appendChild(el("h3", null, g.titlu));
@@ -157,17 +157,20 @@
     return bloc;
   }
 
-  // Pauza principală (mare) și încă două pauze, mai mici, dedesubt
-  function arataPauze(p, randuri, sediu, m, prefixAcum, prefixUrm) {
+  // Sus: pauza care a fost; la mijloc: pauza de acum (sau următoarea); jos: ce urmează
+  function arataPauze(p, randuri, sediu, m, et, cuTrecut) {
     var pauze = pauzeDin(randuri);
     var ales = alegePauza(pauze, m);
     if (!ales) return false;
-    p.appendChild(blocPauza(randuri, ales.k, sediu, (ales.acum ? prefixAcum : prefixUrm) + ales.k + "–" + (ales.k + 1), false, ales.acum ? "c-acum" : "c-urm"));
-    var urm = pauze.slice(ales.i + 1, ales.i + 3);
-    if (urm.length) {
-      var cadru = el("div", "urmatoare" + (urm.length < 2 ? " una" : ""));
-      urm.forEach(function (k, j) { cadru.appendChild(blocPauza(randuri, k, sediu, "Pauza " + k + "–" + (k + 1), true, ales.acum && j === 0 ? "c-urm" : "c-apoi")); });
-      p.appendChild(cadru);
+    var nume = function (k) { return k + "–" + (k + 1); };
+    if (cuTrecut && ales.i > 0) {
+      var kp = pauze[ales.i - 1];
+      p.appendChild(blocPauza(randuri, kp, sediu, "Au fost de serviciu: pauza " + nume(kp), true, "c-trecut"));
+    }
+    p.appendChild(blocPauza(randuri, ales.k, sediu, (ales.acum ? et.acum : et.urm) + nume(ales.k), false, ales.acum ? "c-acum" : "c-urm"));
+    if (ales.i + 1 < pauze.length) {
+      var kn = pauze[ales.i + 1];
+      p.appendChild(blocPauza(randuri, kn, sediu, "Urmează: pauza " + nume(kn), true, ales.acum ? "c-urm" : "c-apoi"));
     }
     return true;
   }
@@ -177,17 +180,18 @@
     p.appendChild(el("h2", "titlu", "Serviciul pe școală"));
     var randuri = d.serviciu || [];
     var invatatori = randuri.filter(function (r) { return r.pauza == null; });
-    var arata = d.zi.scoala && arataPauze(p, randuri, d.sediu, m, "Acum este pauza ", "Următoarea pauză: ");
+    var arata = d.zi.scoala && arataPauze(p, randuri, d.sediu, m, { acum: "Acum de serviciu: pauza ", urm: "Următoarea pauză: " }, true);
     if (!arata) {
       var cuPauze = d.zi.scoala && pauzeDin(randuri).length > 0;
       var mesajAzi = !d.zi.scoala ? "Azi nu sunt cursuri" + (d.zi.titlu ? " (" + d.zi.titlu + ")" : "") + "."
         : cuPauze ? "Serviciul din pauze s-a încheiat pentru azi."
         : invatatori.length ? "" : "Nu este serviciu programat azi.";
+      if (cuPauze) { var ult = pauzeDin(randuri); var ku = ult[ult.length - 1]; p.appendChild(blocPauza(randuri, ku, d.sediu, "Au fost de serviciu: pauza " + ku + "–" + (ku + 1), true, "c-trecut")); }
       if (mesajAzi) p.appendChild(el("p", d.maine ? "gol sus" : "gol", mesajAzi));
       // serviciul primei zile următoare cu serviciu programat
       if (d.maine) {
         p.appendChild(el("p", "zi-et", "Serviciul de " + etichetaZi(d.maine.data, d.acum.data)));
-        arataPauze(p, d.maine.serviciu, d.sediu, 0, "Prima pauză: ", "Prima pauză: ");
+        arataPauze(p, d.maine.serviciu, d.sediu, 0, { acum: "Prima pauză: ", urm: "Prima pauză: " }, false);
       }
     }
     if (invatatori.length && d.zi.scoala) {
