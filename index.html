@@ -9195,6 +9195,7 @@
       col.appendChild(el("strong", "", "Dispozitivele mele (" + lista.length + " din " + max + ")"));
       if (error) { col.appendChild(el("p", "who", "Dispozitivele nu au putut fi încărcate.")); return box; }
       col.appendChild(el("p", "who", "Contul se poate folosi pe cel mult " + textDisp(max) + ". Un dispozitiv se înregistrează singur la prima conectare. Când ai atins limita și vrei să adaugi altul, șterge unul de mai jos."));
+      col.appendChild(el("p", "who", "Dacă ai nevoie de mai multe dispozitive decât limita, scrie un mesaj sau trimite o cerere directorului, care îți poate mări limita."));
       if (!lista.length) col.appendChild(el("p", "who", "Niciun dispozitiv încă."));
       lista.forEach((d, i) => {
         const r = el("div", "wifi-disp");
