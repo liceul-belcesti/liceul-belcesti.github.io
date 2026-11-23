@@ -7,34 +7,58 @@
 <meta name="referrer" content="no-referrer">
 <title>Ecran cancelarie</title>
 <style>
-  :root { --fond:#0f1b2d; --panou:#16263d; --linie:#2a3f5c; --text:#f2f5f9; --estompat:#9fb0c7; --accent:#f5c451; --alerta:#ff8a7a; }
+  :root { --acum:#4ade80; --urm:#f5c451; --apoi:#6cb6ff; --anunt:#ff9f5a; --fond:#0f1b2d; --panou:#16263d; --linie:#2a3f5c; --text:#f2f5f9; --estompat:#9fb0c7; --accent:#f5c451; --alerta:#ff8a7a; }
   * { box-sizing: border-box; }
   html, body { margin:0; height:100%; background:var(--fond); color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor:none; overflow:hidden; }
   .ecran { height:100vh; display:grid; grid-template-rows:auto 1fr; padding:2.2vh 2.4vw; gap:2vh; }
   .antet { display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid var(--linie); padding-bottom:1.4vh; }
   .antet .scoala { font-size:clamp(14px,1.6vw,30px); color:var(--estompat); }
-  .antet .sediu { font-size:clamp(18px,2.4vw,46px); font-weight:700; letter-spacing:.02em; }
+  .antet .sediu { font-size:clamp(20px,2.6vw,50px); font-weight:700; letter-spacing:.02em; }
   .corp { display:grid; grid-template-columns:1.7fr 1fr; gap:2.4vw; min-height:0; }
   .corp.singur { grid-template-columns:1fr; }
-  .panou { background:var(--panou); border:1px solid var(--linie); border-radius:1.2vw; padding:2vh 1.8vw; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:1.4vh; }
-  .titlu { font-size:clamp(16px,1.9vw,36px); color:var(--accent); font-weight:700; margin:0; }
+  .panou.anunturi { background:#2b1f17; border:2px solid var(--anunt); box-shadow:0 0 2.5vw rgba(255,159,90,.25); }
+  .panou.anunturi .titlu { color:var(--anunt); }
+  .panou.anunturi .anunt { border-top-color:rgba(255,159,90,.35); }
+  .panou.anunturi .anunt h3 { color:#fff3e8; }
+  .panou { background:var(--panou); border:1px solid var(--linie); border-radius:1.2vw; padding:1.8vh 1.8vw; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:1.2vh; }
+  .titlu { font-size:clamp(16px,1.9vw,36px); color:var(--estompat); font-weight:600; margin:0; text-transform:uppercase; letter-spacing:.06em; }
   .subtitlu { font-size:clamp(14px,1.5vw,28px); color:var(--estompat); margin:0; }
+  .zi-et { font-size:clamp(18px,2vw,38px); color:var(--text); font-weight:700; margin:0; padding-top:1vh; border-top:1px solid var(--linie); }
+  .bloc { --c:var(--urm); border-left:.45vw solid var(--c); padding-left:1.1vw; }
+  .bloc.c-acum { --c:var(--acum); }
+  .bloc.c-urm { --c:var(--urm); }
+  .bloc.c-apoi { --c:var(--apoi); }
+  .mic.bloc { border-left-width:.3vw; padding-left:.9vw; }
+  .eticheta { margin:0; font-size:clamp(22px,2.5vw,48px); font-weight:700; color:var(--c); line-height:1.15; }
+  .eticheta .ora { color:var(--text); font-weight:600; margin-left:.4em; }
+  .mic .eticheta { font-size:clamp(15px,1.6vw,30px); }
+  .mic .eticheta .ora { color:var(--text); font-weight:500; }
   .grupa { min-width:0; }
-  .grupa h3 { margin:0 0 .6vh; font-size:clamp(14px,1.5vw,28px); color:var(--estompat); font-weight:600; }
-  .grupe { display:grid; grid-template-columns:1fr 1fr; gap:1.6vh 2.2vw; align-content:start; }
+  .grupa h3 { margin:0 0 .6vh; font-size:clamp(17px,1.95vw,37px); color:var(--text); background:rgba(255,255,255,.12); border-radius:.4vw; padding:.35vh .8vw; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+  .mic .grupa h3 { font-size:clamp(13px,1.3vw,25px); margin:0 0 .3vh; padding:.2vh .6vw; }
+  .grupe { display:grid; grid-template-columns:1fr 1fr; gap:1vh 2.2vw; align-content:start; margin-top:.6vh; }
   .grupe.una { grid-template-columns:1fr; }
-  .rand { display:flex; gap:.9vw; align-items:baseline; font-size:clamp(18px,2.05vw,40px); line-height:1.25; }
-  .rand .loc { flex:0 0 4.4em; color:var(--estompat); font-size:.7em; }
+  .rand { display:flex; gap:.9vw; align-items:baseline; font-size:clamp(19px,2.1vw,40px); line-height:1.15; padding:.2vh 0; }
+  .mic .rand { font-size:clamp(14px,1.4vw,27px); padding:.05vh 0; }
+  .invatatori .rand { font-size:clamp(16px,1.6vw,31px); }
+  .rand .loc { flex:0 0 4.4em; color:#dfe8f5; font-size:.7em; font-weight:700; }
   .rand .loc.larg { flex-basis:7.5em; }
-  .rand .nume { font-weight:600; }
-  .rand .nota { color:var(--estompat); font-size:.62em; font-weight:400; margin-left:.6em; }
+  .rand .nume { font-weight:600; min-width:0; }
+  .rand .nota { display:block; color:var(--estompat); font-size:.58em; font-weight:400; line-height:1.2; }
+  .rand .interval { color:var(--estompat); font-size:.62em; font-weight:400; margin-left:.6em; }
+  .rand.lipsa { background:rgba(255,138,122,.18); border-left:.45vw solid var(--alerta); padding:.5vh .8vw; margin-left:-.8vw; border-radius:.4vw; }
   .rand.lipsa .nume { color:var(--alerta); }
+  .urmatoare { display:grid; grid-template-columns:1fr 1fr; gap:1.2vh 2.2vw; border-top:1px solid var(--linie); padding-top:1.2vh; }
+  .urmatoare.una { grid-template-columns:1fr; }
   .invatatori { margin-top:auto; border-top:1px solid var(--linie); padding-top:1.4vh; }
   .anunt { border-top:1px solid var(--linie); padding-top:1.4vh; }
   .anunt:first-of-type { border-top:0; padding-top:0; }
-  .anunt h3 { margin:0 0 .5vh; font-size:clamp(18px,2.3vw,44px); line-height:1.2; }
-  .anunt p { margin:0; font-size:clamp(15px,1.8vw,34px); line-height:1.35; color:#d9e2ee; white-space:pre-line; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden; }
+  .anunt h3 { margin:0 0 .3vh; font-size:clamp(20px,2.2vw,42px); line-height:1.12; }
+  .anunt .data { font-size:clamp(13px,1.2vw,23px); color:var(--estompat); font-weight:400; display:block; margin-bottom:.4vh; }
+  .anunt p { margin:0; font-size:clamp(16px,1.75vw,34px); line-height:1.28; color:#d9e2ee; white-space:pre-line; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .pagina { margin-top:auto; text-align:right; color:var(--estompat); font-size:clamp(13px,1.2vw,23px); }
   .gol { color:var(--estompat); font-size:clamp(16px,1.9vw,36px); margin:auto 0; text-align:center; }
+  .gol.sus { margin:0; text-align:left; }
   .mesaj { height:100vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:6vw; font-size:clamp(20px,3vw,56px); color:var(--estompat); line-height:1.4; }
   .stare { position:fixed; right:1vw; bottom:.8vh; font-size:clamp(11px,1vw,18px); color:var(--estompat); opacity:.7; }
   .stare.veche { color:var(--alerta); opacity:1; }
@@ -76,58 +100,97 @@
     return c && c !== sediu && c !== r.zona && c !== "Corp unic" ? c : "";
   }
 
+  var ZILE = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
+  function dataParti(iso) { var p = iso.split("-"); return { a: +p[0], l: +p[1], z: +p[2] }; }
+  function zz(iso) { var p = dataParti(iso); return (p.z < 10 ? "0" : "") + p.z + "/" + (p.l < 10 ? "0" : "") + p.l + "/" + p.a; }
+  function ziSapt(iso) { var p = dataParti(iso); return ZILE[new Date(Date.UTC(p.a, p.l - 1, p.z)).getUTCDay()]; }
+  function plusUna(iso) { var p = dataParti(iso), t = new Date(Date.UTC(p.a, p.l - 1, p.z + 1)); return t.toISOString().slice(0, 10); }
+  function majuscula(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+  function etichetaZi(iso, azi) {
+    return (iso === plusUna(azi) ? "mâine, " : "") + ziSapt(iso) + ", " + zz(iso);
+  }
+
+  function unice(v) { var o = []; for (var i = 0; i < v.length; i++) if (o.indexOf(v[i]) < 0) o.push(v[i]); return o; }
+  function pauzeDin(randuri) {
+    return unice(randuri.filter(function (r) { return r.pauza != null; }).map(function (r) { return r.pauza; })).sort(function (a, b) { return a - b; });
+  }
+
   // Care pauză se arată: cea în desfășurare sau, dacă nu este pauză, următoarea
   function alegePauza(pauze, m) {
     for (var i = 0; i < pauze.length; i++) {
       var s = startPauza(pauze[i]);
-      if (m < s + 10) return { k: pauze[i], acum: m >= s };
+      if (m < s + 10) return { i: i, k: pauze[i], acum: m >= s };
     }
     return null;
+  }
+
+  // Un bloc cu persoanele de serviciu dintr-o pauză, grupate pe corp
+  function blocPauza(randuri, k, sediu, text, mic, culoare) {
+    var bloc = el("div", (mic ? "bloc mic " : "bloc ") + culoare);
+    var et = el("p", "eticheta", text);
+    et.appendChild(el("span", "ora", hm(startPauza(k)) + "–" + hm(startPauza(k) + 10)));
+    bloc.appendChild(et);
+    var grupe = [], index = {};
+    randuri.filter(function (r) { return r.pauza === k; }).forEach(function (r) {
+      var c = numeCorp(r, sediu);
+      var titluGrupa = c || (r.zona !== sediu ? r.zona : "");
+      if (!(titluGrupa in index)) { index[titluGrupa] = { titlu: titluGrupa, persoane: [] }; grupe.push(index[titluGrupa]); }
+      index[titluGrupa].persoane.push({ r: r, loc: c && r.zona !== c ? r.zona : "" });
+    });
+    var cadru = el("div", "grupe" + (mic || grupe.length < 2 ? " una" : ""));
+    grupe.forEach(function (g) {
+      var b = el("div", "grupa");
+      if (g.titlu) b.appendChild(el("h3", null, g.titlu));
+      var cuLoc = g.persoane.some(function (y) { return y.loc; });
+      g.persoane.forEach(function (x) {
+        var r = x.r;
+        var rand = el("div", "rand" + (r.neacoperit ? " lipsa" : ""));
+        if (cuLoc) rand.appendChild(el("span", "loc", x.loc));
+        var n = el("span", "nume", r.neacoperit ? "Nepreluat" : r.persoana);
+        if (r.nota) n.appendChild(el("span", "nota", r.nota));
+        rand.appendChild(n);
+        b.appendChild(rand);
+      });
+      cadru.appendChild(b);
+    });
+    bloc.appendChild(cadru);
+    return bloc;
+  }
+
+  // Pauza principală (mare) și încă două pauze, mai mici, dedesubt
+  function arataPauze(p, randuri, sediu, m, prefixAcum, prefixUrm) {
+    var pauze = pauzeDin(randuri);
+    var ales = alegePauza(pauze, m);
+    if (!ales) return false;
+    p.appendChild(blocPauza(randuri, ales.k, sediu, (ales.acum ? prefixAcum : prefixUrm) + ales.k + "–" + (ales.k + 1), false, ales.acum ? "c-acum" : "c-urm"));
+    var urm = pauze.slice(ales.i + 1, ales.i + 3);
+    if (urm.length) {
+      var cadru = el("div", "urmatoare" + (urm.length < 2 ? " una" : ""));
+      urm.forEach(function (k, j) { cadru.appendChild(blocPauza(randuri, k, sediu, "Pauza " + k + "–" + (k + 1), true, ales.acum && j === 0 ? "c-urm" : "c-apoi")); });
+      p.appendChild(cadru);
+    }
+    return true;
   }
 
   function panouServiciu(d, m) {
     var p = el("div", "panou");
     p.appendChild(el("h2", "titlu", "Serviciul pe școală"));
     var randuri = d.serviciu || [];
-    var cuPauza = randuri.filter(function (r) { return r.pauza != null; });
     var invatatori = randuri.filter(function (r) { return r.pauza == null; });
-    if (!d.zi.scoala) {
-      p.appendChild(el("p", "gol", "Azi nu sunt cursuri" + (d.zi.titlu ? " (" + d.zi.titlu + ")" : "") + "."));
-      return p;
+    var arata = d.zi.scoala && arataPauze(p, randuri, d.sediu, m, "Acum este pauza ", "Următoarea pauză: ");
+    if (!arata) {
+      var cuPauze = d.zi.scoala && pauzeDin(randuri).length > 0;
+      var mesajAzi = !d.zi.scoala ? "Azi nu sunt cursuri" + (d.zi.titlu ? " (" + d.zi.titlu + ")" : "") + "."
+        : cuPauze ? "Serviciul din pauze s-a încheiat pentru azi."
+        : invatatori.length ? "" : "Nu este serviciu programat azi.";
+      if (mesajAzi) p.appendChild(el("p", d.maine ? "gol sus" : "gol", mesajAzi));
+      // serviciul primei zile următoare cu serviciu programat
+      if (d.maine) {
+        p.appendChild(el("p", "zi-et", "Serviciul de " + etichetaZi(d.maine.data, d.acum.data)));
+        arataPauze(p, d.maine.serviciu, d.sediu, 0, "Prima pauză: ", "Prima pauză: ");
+      }
     }
-    var pauze = Array.from(new Set(cuPauza.map(function (r) { return r.pauza; }))).sort(function (a, b) { return a - b; });
-    var ales = alegePauza(pauze, m);
-    if (ales) {
-      p.appendChild(el("p", "subtitlu", (ales.acum ? "Acum este pauza " : "Următoarea pauză: ") + ales.k + "–" + (ales.k + 1) + (ales.acum ? "" : ", la ora " + hm(startPauza(ales.k)))));
-      var grupe = [], index = {};
-      cuPauza.filter(function (r) { return r.pauza === ales.k; }).forEach(function (r) {
-        var c = numeCorp(r, d.sediu);
-        var titluGrupa = c || (r.zona !== d.sediu ? r.zona : "");
-        if (!(titluGrupa in index)) { index[titluGrupa] = { titlu: titluGrupa, persoane: [] }; grupe.push(index[titluGrupa]); }
-        index[titluGrupa].persoane.push({ r: r, loc: c && r.zona !== c ? r.zona : "" });
-      });
-      var cadru = el("div", "grupe" + (grupe.length > 1 ? "" : " una"));
-      grupe.forEach(function (g) {
-        var b = el("div", "grupa");
-        if (g.titlu) b.appendChild(el("h3", null, g.titlu));
-        g.persoane.forEach(function (x) {
-          var r = x.r;
-          var rand = el("div", "rand" + (r.neacoperit ? " lipsa" : ""));
-          if (g.persoane.some(function (y) { return y.loc; })) rand.appendChild(el("span", "loc", x.loc));
-          var n = el("span", "nume", r.neacoperit ? "Nepreluat" : r.persoana);
-          if (r.nota) n.appendChild(el("span", "nota", r.nota));
-          rand.appendChild(n);
-          b.appendChild(rand);
-        });
-        cadru.appendChild(b);
-      });
-      p.appendChild(cadru);
-    } else if (pauze.length) {
-      p.appendChild(el("p", "gol", "Serviciul din pauze s-a încheiat pentru azi."));
-    } else if (!invatatori.length) {
-      p.appendChild(el("p", "gol", "Nu este serviciu programat azi."));
-    }
-    if (invatatori.length) {
+    if (invatatori.length && d.zi.scoala) {
       var b2 = el("div", "invatatori");
       b2.appendChild(el("h3", "subtitlu", "Învățători"));
       ["dimineata", "dupa_amiaza"].forEach(function (sc) {
@@ -136,7 +199,7 @@
         var rand = el("div", "rand");
         rand.appendChild(el("span", "loc larg", sc === "dimineata" ? "Dimineața" : "După-amiaza"));
         var n = el("span", "nume", ale.map(function (r) { return r.neacoperit ? "Nepreluat" : r.persoana; }).join(", "));
-        if (ale[0].ore_interval) n.appendChild(el("span", "nota", ale[0].ore_interval));
+        if (ale[0].ore_interval) n.appendChild(el("span", "interval", ale[0].ore_interval));
         rand.appendChild(n);
         b2.appendChild(rand);
       });
@@ -145,17 +208,26 @@
     return p;
   }
 
+  var PE_PAGINA = 3, SECUNDE_PAGINA = 15;
+  function dataAnunt(t) {
+    try { return new Date(t).toLocaleDateString("en-GB", { timeZone: "Europe/Bucharest", day: "2-digit", month: "2-digit", year: "numeric" }); } catch (e) { return ""; }
+  }
+
   function panouAnunturi(d) {
-    var p = el("div", "panou");
-    p.appendChild(el("h2", "titlu", "Anunțuri importante"));
     var an = d.anunturi || [];
-    if (!an.length) { p.appendChild(el("p", "gol", "Nu sunt anunțuri importante.")); return p; }
-    an.forEach(function (a) {
+    var p = el("div", "panou anunturi");
+    p.appendChild(el("h2", "titlu", "Anunțuri importante"));
+    var pagini = Math.ceil(an.length / PE_PAGINA);
+    var pag = pagini > 1 ? Math.floor(Date.now() / (SECUNDE_PAGINA * 1000)) % pagini : 0;
+    an.slice(pag * PE_PAGINA, pag * PE_PAGINA + PE_PAGINA).forEach(function (a) {
       var b = el("div", "anunt");
       b.appendChild(el("h3", null, a.titlu));
+      var dt = a.creat_la ? dataAnunt(a.creat_la) : "";
+      if (dt) b.appendChild(el("span", "data", dt));
       if (a.continut) b.appendChild(el("p", null, a.continut));
       p.appendChild(b);
     });
+    if (pagini > 1) p.appendChild(el("div", "pagina", (pag + 1) + " / " + pagini));
     return p;
   }
 
@@ -168,9 +240,10 @@
     ant.appendChild(el("span", "scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești"));
     ant.appendChild(el("span", "sediu", date.ecran && date.ecran !== date.sediu ? date.sediu + " · " + date.ecran : date.sediu));
     e.appendChild(ant);
-    var corp = el("div", "corp");
+    var cuAnunturi = (date.anunturi || []).length > 0;
+    var corp = el("div", "corp" + (cuAnunturi ? "" : " singur"));
     corp.appendChild(panouServiciu(date, m));
-    corp.appendChild(panouAnunturi(date));
+    if (cuAnunturi) corp.appendChild(panouAnunturi(date));
     e.appendChild(corp);
     var veche = Date.now() - ultimaReusita > 5 * 60000;
     // ora actualizării este ora serverului din momentul citirii
