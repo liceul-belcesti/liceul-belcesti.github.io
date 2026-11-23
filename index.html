@@ -943,6 +943,9 @@
     .ang-tipar-alege h3 { margin:0 0 4px; font-size:1.05rem; }
     .ang-tipar-alege p.who { margin:0 0 8px; }
     .ang-tipar-alege .ta-loc { margin:10px 0 0; padding-top:8px; border-top:1px solid var(--line); }
+    .ecran-zone label { display:flex; align-items:center; gap:10px; margin:0; min-height:40px; font-weight:400; }
+    .ecran-zone p.who { margin:8px 0 4px; }
+    .ecran-zone input[type=checkbox] { width:22px; height:22px; flex:none; margin:0; }
     .ang-tipar-alege label { display:flex; align-items:center; gap:10px; margin:0; min-height:40px; font-weight:400; }
     .ang-tipar-alege label.ta-loc-et { font-weight:700; }
     .ang-tipar-alege .ta-cat { padding-left:26px; }
@@ -1867,7 +1870,7 @@
     <main id="ecrane" class="wrap hidden">
       <button id="inapoi-ecrane" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Ecrane pentru cancelarie</h1>
-      <p class="who">Fiecare sediu are propriul ecran, care arată serviciul pe școală și anunțurile importante. Ecranul se deschide pe televizor cu un link secret, fără cont. Oricine are linkul poate vedea ecranul, de aceea îl dai doar celui care îl instalează.</p>
+      <p class="who">Fiecare cancelarie are propriul ecran, care arată serviciul pe școală din zonele ei și anunțurile importante. Ecranul se deschide pe televizor cu un link secret, fără cont. Oricine are linkul poate vedea ecranul, de aceea îl dai doar celui care îl instalează.</p>
       <div id="ecrane-msg" class="panel-msg" role="status"></div>
       <div id="ecrane-lista"></div>
     </main>
@@ -1976,7 +1979,7 @@
       structura: { ico: "📆", t: "Structura anului școlar", d: "Cursuri, vacanțe, practică comasată", sub: ["Module și vacanțe", "Școala Altfel și Săptămâna Verde", "Practică comasată"], activ: true },
       altfel:   { ico: "🎨", t: "Școala Altfel și Săptămâna Verde", d: "Programul celor două săptămâni", sub: ["Școala Altfel", "Săptămâna Verde"], activ: true },
       serviciu: { ico: "🛎️", t: "Serviciu pe școală", d: "Zone, clase și scutiri pentru serviciul din pauze", sub: ["Zone și clase", "Scutiri"], activ: true },
-      ecrane:   { ico: "📺", t: "Ecrane pentru cancelarie", d: "Linkuri pentru televizoarele din cancelarii", sub: ["Un ecran pe sediu"], activ: true },
+      ecrane:   { ico: "📺", t: "Ecrane pentru cancelarie", d: "Linkuri pentru televizoarele din cancelarii", sub: ["Un ecran pe cancelarie"], activ: true },
       registru: { ico: "📁", t: "Registratură", d: "Registrul documentelor", sub: ["Registrul documentelor", "Numere de înregistrare automate"], activ: true },
       catalog:  { ico: "📘", t: "Situație școlară", d: "Note și absențe", sub: ["Note", "Absențe"] }
     };
@@ -9102,7 +9105,7 @@
       const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === zi && (g.pauza || null) === pauza && (g.schimb || null) === schimb);
       return { rows, nume };
     }
-    // ===== Ecrane pentru cancelarie: linkuri secrete, câte unul pe sediu =====
+    // ===== Ecrane pentru cancelarie: câte un link secret pe cancelarie =====
     $("inapoi-ecrane").addEventListener("click", arataPrincipal);
     const mesajEcrane = (text, ok) => { $("ecrane-msg").textContent = text || ""; $("ecrane-msg").className = "panel-msg" + (ok ? " ok" : ""); };
     const ADRESA_ECRAN = "https://liceul-belcesti.org/ecran.html#";
@@ -9114,45 +9117,101 @@
       mesajEcrane("");
       await deseneazaEcrane(null);
     }
-    // linkNou = { sediu, link } imediat după generare; linkul se arată o singură dată
-    async function deseneazaEcrane(linkNou) {
+    // Formular pentru un ecran nou sau pentru modificarea unuia: nume, sediu, zonele care se văd
+    function formularEcran(x, optiuni, dupa) {
+      const f = el("div", "ang-rand citire");
+      const col = el("div", "");
+      const nume = document.createElement("input"); nume.type = "text"; nume.maxLength = 60; nume.value = x ? x.denumire : ""; nume.setAttribute("aria-label", "Numele ecranului"); nume.placeholder = "Numele ecranului (de exemplu Corp A)";
+      const sed = document.createElement("select"); sed.setAttribute("aria-label", "Sediul");
+      [...new Set(optiuni.map((o) => o.sediu))].forEach((s) => { const op = document.createElement("option"); op.value = s; op.textContent = s; sed.appendChild(op); });
+      if (x) sed.value = x.sediu;
+      const zone = el("div", "ecran-zone");
+      const alese = new Set(x ? x.grupe : []);
+      const deseneazaZone = () => {
+        zone.replaceChildren(el("p", "who", "Zonele care se văd pe acest ecran (dacă nu bifezi nimic, se văd toate zonele sediului):"));
+        optiuni.filter((o) => o.sediu === sed.value).forEach((o) => {
+          const lab = document.createElement("label"); 
+          const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = alese.has(o.grupa);
+          cb.addEventListener("change", () => { if (cb.checked) alese.add(o.grupa); else alese.delete(o.grupa); });
+          lab.append(cb, document.createTextNode(" " + o.grupa));
+          zone.appendChild(lab);
+        });
+      };
+      sed.addEventListener("change", () => { alese.clear(); deseneazaZone(); });
+      deseneazaZone();
+      const ctl = el("div", "ctl");
+      const sv = el("button", "", x ? "Salvează" : "Adaugă ecranul"); sv.type = "button";
+      sv.addEventListener("click", async () => {
+        if (!nume.value.trim()) return mesajEcrane("Scrie numele ecranului.");
+        sv.disabled = true; mesajEcrane("");
+        const { error } = await db.rpc("ecran_salveaza", { p_id: x ? x.id : null, p_denumire: nume.value, p_sediu: sed.value, p_grupe: [...alese] });
+        if (error) { sv.disabled = false; return mesajEcrane("Ecranul nu a putut fi salvat."); }
+        await dupa(); mesajEcrane(x ? "Ecranul a fost modificat." : "Ecranul a fost adăugat.", true);
+      });
+      const re = el("button", "secondary", "Renunță"); re.type = "button";
+      re.addEventListener("click", () => deseneazaEcrane(null));
+      ctl.append(sv, re);
+      col.append(nume, sed, zone, ctl);
+      f.appendChild(col);
+      return f;
+    }
+    // linkNou = { id, link } imediat după generare; linkul se arată o singură dată
+    // formular = null | "nou" | id-ul ecranului modificat
+    async function deseneazaEcrane(linkNou, formular) {
       const lista = $("ecrane-lista");
       lista.replaceChildren(el("p", "who", "Se încarcă…"));
-      const { data, error } = await db.rpc("ecrane_stare");
-      if (error || !Array.isArray(data)) { lista.replaceChildren(); return mesajEcrane("Ecranele nu au putut fi încărcate. Încearcă din nou."); }
+      const [r1, r2] = await Promise.all([db.rpc("ecrane_stare"), db.rpc("ecrane_optiuni")]);
+      const data = r1.data, optiuni = r2.data;
+      if (r1.error || r2.error || !Array.isArray(data) || !Array.isArray(optiuni)) { lista.replaceChildren(); return mesajEcrane("Ecranele nu au putut fi încărcate. Încearcă din nou."); }
       lista.replaceChildren();
+      const reDesen = () => deseneazaEcrane(null);
       data.forEach((x) => {
+        if (formular === x.id) { lista.appendChild(formularEcran(x, optiuni, reDesen)); return; }
         const card = el("div", "ang-rand citire");
         const st = el("div", "");
-        st.appendChild(el("strong", "", x.sediu));
-        const cand = x.generat_la ? new Date(x.generat_la).toLocaleString("ro-RO", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
-        st.appendChild(el("div", "who", x.activ ? "Ecran activ · link generat la " + cand : x.generat_la ? "Ecran oprit · ultimul link a fost generat la " + cand : "Nu există încă un link pentru acest sediu."));
+        st.appendChild(el("strong", "", x.sediu === x.denumire ? x.sediu : x.sediu + " · " + x.denumire));
+        st.appendChild(el("div", "who", x.grupe.length ? "Zone: " + x.grupe.join(", ") : "Toate zonele sediului"));
+        const cand = x.generat_la ? new Date(x.generat_la).toLocaleString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).replace(",", "") : "";
+        st.appendChild(el("div", "who", x.activ ? "Ecran activ · link generat la " + cand : x.generat_la ? "Ecran oprit · ultimul link a fost generat la " + cand : "Nu există încă un link pentru acest ecran."));
         card.appendChild(st);
         const ctl = el("div", "ctl");
+        const eticheta = x.sediu === x.denumire ? x.sediu : x.denumire;
         const gen = el("button", x.activ ? "secondary" : "", x.activ ? "Generează un link nou" : "Generează link"); gen.type = "button";
         gen.addEventListener("click", async () => {
-          if (x.activ && !confirm("Linkul de acum va înceta să funcționeze, iar televizorul din " + x.sediu + " va trebui deschis cu noul link. Continui?")) return;
+          if (x.activ && !confirm("Linkul de acum va înceta să funcționeze, iar televizorul din " + eticheta + " va trebui deschis cu noul link. Continui?")) return;
           gen.disabled = true; mesajEcrane("");
-          const { data: tok, error: e2 } = await db.rpc("ecran_genereaza", { p_sediu: x.sediu });
+          const { data: tok, error: e2 } = await db.rpc("ecran_genereaza", { p_id: x.id });
           if (e2 || typeof tok !== "string") { gen.disabled = false; return mesajEcrane("Linkul nu a putut fi generat."); }
-          await deseneazaEcrane({ sediu: x.sediu, link: ADRESA_ECRAN + tok });
+          await deseneazaEcrane({ id: x.id, link: ADRESA_ECRAN + tok });
         });
         ctl.appendChild(gen);
         if (x.activ) {
           const opr = el("button", "secondary", "Oprește ecranul"); opr.type = "button";
           opr.addEventListener("click", async () => {
-            if (!confirm("Ecranul din " + x.sediu + " va înceta să mai afișeze informații. Oprești ecranul?")) return;
+            if (!confirm("Ecranul din " + eticheta + " va înceta să mai afișeze informații. Oprești ecranul?")) return;
             opr.disabled = true;
-            const { error: e3 } = await db.rpc("ecran_dezactiveaza", { p_sediu: x.sediu });
+            const { error: e3 } = await db.rpc("ecran_dezactiveaza", { p_id: x.id });
             if (e3) { opr.disabled = false; return mesajEcrane("Ecranul nu a putut fi oprit."); }
-            await deseneazaEcrane(null); mesajEcrane("Ecranul din " + x.sediu + " a fost oprit.", true);
+            await deseneazaEcrane(null); mesajEcrane("Ecranul din " + eticheta + " a fost oprit.", true);
           });
           ctl.appendChild(opr);
         }
+        const mod = el("button", "secondary", "Modifică"); mod.type = "button";
+        mod.addEventListener("click", () => deseneazaEcrane(null, x.id));
+        ctl.appendChild(mod);
+        const sterg = el("button", "secondary", "Șterge"); sterg.type = "button";
+        sterg.addEventListener("click", async () => {
+          if (!confirm("Ecranul „" + eticheta + "” va fi șters, iar linkul lui nu va mai funcționa. Ștergi ecranul?")) return;
+          sterg.disabled = true;
+          const { error: e4 } = await db.rpc("ecran_sterge", { p_id: x.id });
+          if (e4) { sterg.disabled = false; return mesajEcrane("Ecranul nu a putut fi șters."); }
+          await deseneazaEcrane(null); mesajEcrane("Ecranul a fost șters.", true);
+        });
+        ctl.appendChild(sterg);
         card.appendChild(ctl);
-        if (linkNou && linkNou.sediu === x.sediu) {
+        if (linkNou && linkNou.id === x.id) {
           const caseta = el("div", "");
-          caseta.appendChild(el("p", "who", "Linkul ecranului din " + x.sediu + " (se arată doar acum; copiază-l și deschide-l pe televizor):"));
+          caseta.appendChild(el("p", "who", "Linkul ecranului din " + eticheta + " (se arată doar acum; copiază-l și deschide-l pe televizor):"));
           const camp = document.createElement("input"); camp.type = "text"; camp.readOnly = true; camp.value = linkNou.link; camp.setAttribute("aria-label", "Linkul ecranului");
           camp.addEventListener("focus", () => camp.select());
           const cop = el("button", "", "Copiază linkul"); cop.type = "button";
@@ -9165,6 +9224,12 @@
         }
         lista.appendChild(card);
       });
+      if (formular === "nou") lista.appendChild(formularEcran(null, optiuni, reDesen));
+      else if (!formular) {
+        const nou = el("button", "secondary", "Adaugă un ecran"); nou.type = "button";
+        nou.addEventListener("click", () => deseneazaEcrane(null, "nou"));
+        lista.appendChild(nou);
+      }
     }
 
     // ===== Graficul de serviciu: interfață =====

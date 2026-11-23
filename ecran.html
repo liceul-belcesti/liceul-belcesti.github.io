@@ -166,7 +166,7 @@
     var e = el("div", "ecran");
     var ant = el("div", "antet");
     ant.appendChild(el("span", "scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești"));
-    ant.appendChild(el("span", "sediu", date.sediu));
+    ant.appendChild(el("span", "sediu", date.ecran && date.ecran !== date.sediu ? date.sediu + " · " + date.ecran : date.sediu));
     e.appendChild(ant);
     var corp = el("div", "corp");
     corp.appendChild(panouServiciu(date, m));
