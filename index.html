@@ -1992,7 +1992,7 @@
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       documente: { ico: "📄", t: "Documentele mele", d: "Documente repartizate ție", sub: ["Documente repartizate ție"], activ: true },
-      wifi:     { ico: "📶", t: "Parola mea de Wi-Fi", d: "Numele de utilizator și parola ta pentru Wi-Fi-ul școlii", sub: ["Parola de Wi-Fi"], activ: true },
+      wifi:     { ico: "📶", t: "Parola mea de Wi-Fi", d: "Adresa ta de e-mail și parola ta pentru Wi-Fi-ul școlii", sub: ["Parola de Wi-Fi"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orele și serviciul tău pe școală"], activ: true },
       evaluare: { ico: "✅", t: "Evaluare", d: "Teste pentru clasele și disciplinele tale", sub: ["Clasele mele"], activ: true },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul profesorilor și al claselor, tipărire", sub: ["Orarul profesorilor", "Orarul claselor"], activ: true },
@@ -9243,14 +9243,14 @@
       rand("Rețea", "Profesori");
       const cop = el("button", "secondary mic", "Copiază"); cop.type = "button";
       cop.addEventListener("click", async () => { try { await navigator.clipboard.writeText(c.utilizator); mesajWifi("Numele de utilizator a fost copiat.", true); } catch (e) { mesajWifi("Nu am putut copia. Scrie numele de mână."); } });
-      rand("Nume de utilizator", c.utilizator, cop);
+      rand("Nume de utilizator (adresa ta de e-mail)", c.utilizator, cop);
       rand("Parola de Wi-Fi", c.are_parola ? "Setată la " + dataRo(c.parola_setata_la).slice(0, 10) : "Nu ai încă o parolă de Wi-Fi");
       if (!c.activ) { corp.appendChild(el("p", "who", "Accesul tău la Wi-Fi a fost oprit de administrator. Dacă ai nevoie de el, vorbește cu administratorul.")); return; }
       corp.appendChild(formularParolaWifi(c.utilizator, c.are_parola));
       corp.appendChild(await sectiuneDispozitiveWifi(c));
       const ghid = el("div", "ang-rand citire"); const g = el("div", "");
       g.appendChild(el("strong", "", "Cum te conectezi"));
-      ["Alege rețeaua „Profesori” din lista de Wi-Fi a telefonului sau a calculatorului.", "Scrie numele de utilizator și parola de mai sus.", "Dacă telefonul întreabă despre certificat, acceptă-l.", "Pe telefon, oprește adresa Wi-Fi privată doar pentru rețeaua „Profesori”: pe iPhone, în setările rețelei, „Adresă Wi-Fi privată” pe Oprit; pe Android, alege „Folosește MAC-ul dispozitivului”. Altfel telefonul poate fi socotit un dispozitiv nou."].forEach((t, i) => g.appendChild(el("div", "who", (i + 1) + ". " + t)));
+      ["Alege rețeaua „Profesori” din lista de Wi-Fi a telefonului sau a calculatorului.", "Scrie, la „Identitate” sau „Nume de utilizator”, adresa de e-mail de mai sus (cea cu care intri în platformă), apoi parola de Wi-Fi.", "Dacă telefonul întreabă despre certificat, acceptă-l.", "Pe telefon, oprește adresa Wi-Fi privată doar pentru rețeaua „Profesori”: pe iPhone, în setările rețelei, „Adresă Wi-Fi privată” pe Oprit; pe Android, alege „Folosește MAC-ul dispozitivului”. Altfel telefonul poate fi socotit un dispozitiv nou."].forEach((t, i) => g.appendChild(el("div", "who", (i + 1) + ". " + t)));
       ghid.appendChild(g); corp.appendChild(ghid);
     }
     // Fila „Wi-Fi” din Utilizatori: cine are acces, oprire și ștergerea parolei (parolele nu pot fi văzute)
