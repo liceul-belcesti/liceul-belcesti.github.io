@@ -780,6 +780,8 @@
     #cereri .cr-rand-data { font-weight:700; }
     #cereri .cr-rand-pers { font-weight:700; }
     #cereri .cr-rand-dec { margin:-4px 0 10px; padding:0 4px; }
+    #cereri .cr-zi-t { margin:14px 0 6px; font-size:.95rem; font-weight:700; text-transform:capitalize; }
+    #cereri .cr-trecute { margin:14px 0 0; } #cereri .cr-trecute > summary { cursor:pointer; padding:10px 14px; background:var(--card); border-radius:14px; font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:8px; }
     #cereri .cr-pers-lista { margin:0 0 8px 12px; padding-left:10px; border-left:3px solid var(--accent, #0a7c86); }
     #cereri .cr-rand-inr { color:var(--muted); font-size:.9rem; }
     #cereri .cr-rand .cr-rand-b { width:auto; min-height:40px; margin:0 0 0 auto; padding:0 14px; }
@@ -4480,7 +4482,6 @@
           anulata: { et: "Cereri retrase", f: (c) => c.stare === "anulata" },
           stearsa: { et: "Cereri șterse de profesor", f: (c) => !!c.stearsa_de_profesor_la },
           serviciu: { et: "Cereri aprobate în interes de serviciu", f: (c) => c.stare === "aprobata" && c.tip === "S" },
-          fara: { et: "Cereri aprobate cu ore fără înlocuitor", f: (c) => c.stare === "aprobata" && fara(c) > 0 },
           inlocuitor: { et: "Cereri aprobate cu ore cu înlocuitor propus", f: (c) => c.stare === "aprobata" && nrIn(c) > 0 },
           clasa: { et: "Cereri aprobate cu clasa venită mai târziu sau plecată acasă", f: (c) => c.stare === "aprobata" && nrCl(c) > 0 },
           modificata: { et: "Cereri modificate", f: (c) => c.modificari > 0 }
@@ -4516,6 +4517,32 @@
           const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(null, null, true); }); zona.appendChild(inch);
           if (!vizT.length) zona.appendChild(el("p", "who", "Nicio cerere în această categorie."));
           vizT.forEach((c, i) => zona.appendChild(randToate(c, vizT.length - i, true, filtruToate === "in_asteptare" || filtruToate === "aprobata")));
+        } else if (filtruToate === "fara") {
+          // Orele aprobate rămase fără înlocuitor și fără altă soluție (clasa vine mai târziu / pleacă acasă)
+          const azi = iso(new Date()), ZSAPT = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
+          const detOra = new Map(oreToti.map((x) => [x.cerere_id + "|" + x.data + "|" + x.ora, x]));
+          const ore = [];
+          apr.forEach((c) => (c.ore_alese || []).forEach((k) => {
+            if ((c.propuneri && c.propuneri[k]) || (c.optiuni_clasa && c.optiuni_clasa[k])) return;
+            const p = k.split("|"), d = detOra.get(c.id + "|" + p[0] + "|" + p[1]);
+            ore.push({ c, data: p[0], ora: Number(p[1]), clasa: (d && d.clasa) || p[2] || "", disc: (d && d.disciplina) || "" });
+          }));
+          ore.sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : a.ora - b.ora));
+          const viit = ore.filter((x) => x.data >= azi), trec = ore.filter((x) => x.data < azi).reverse();
+          const hT = el("h3", "az-h", "Ore aprobate fără înlocuitor (" + ore.length + ")"); hT.id = "cr-lista-toate"; zona.appendChild(hT);
+          const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(null, null, true); }); zona.appendChild(inch);
+          const randOra = (x) => {
+            const grup = el("div", "cr-rand-grup"), rand = el("div", "cr-rand");
+            rand.append(el("span", "cr-rand-pers", x.c.angajat), el("span", "cr-rand-data", "Ora " + x.ora + (x.clasa ? " · " + x.clasa : "")), ...(x.disc ? [el("span", "cr-rand-inr", x.disc)] : []));
+            const bv = el("button", "secondary cr-rand-b", "Vezi cererea"); bv.type = "button"; let card = null;
+            bv.addEventListener("click", () => { if (card) { card.remove(); card = null; bv.textContent = "Vezi cererea"; bv.setAttribute("aria-expanded", "false"); return; } card = cardToate(x.c, x.c.angajat); grup.appendChild(card); bv.textContent = "Ascunde cererea"; bv.setAttribute("aria-expanded", "true"); });
+            bv.setAttribute("aria-expanded", "false"); rand.appendChild(bv); grup.appendChild(rand); return grup;
+          };
+          const pePeZi = (lista, gazda) => { let zi = ""; lista.forEach((x) => { if (x.data !== zi) { zi = x.data; gazda.appendChild(el("h4", "cr-zi-t", ZSAPT[new Date(x.data + "T12:00:00").getDay()] + ", " + fd(x.data))); } gazda.appendChild(randOra(x)); }); };
+          if (!ore.length) zona.appendChild(el("p", "who", "Nicio oră aprobată nu a rămas fără înlocuitor."));
+          if (ore.length && !viit.length) zona.appendChild(el("p", "who", "Nicio oră viitoare fără înlocuitor."));
+          pePeZi(viit, zona);
+          if (trec.length) { const dt = el("details", "cr-trecute"); dt.appendChild(el("summary", "", "Trecute (" + trec.length + ")")); pePeZi(trec, dt); zona.appendChild(dt); }
         } else if (filtruToate === "profesori") {
           const hT = el("h3", "az-h", "Profesori care s-au învoit (" + pePers.size + ")"); hT.id = "cr-lista-toate"; zona.appendChild(hT);
           const inch = el("button", "secondary", "Închide lista"); inch.type = "button"; inch.addEventListener("click", () => { filtruToate = null; desenToate(null, null, true); }); zona.appendChild(inch);
