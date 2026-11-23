@@ -163,6 +163,7 @@
     .tabs.t4 { grid-template-columns:repeat(4,1fr); }
     .tabs.t4 button { padding:8px 2px; }
     .wifi-rand { align-items:center; }
+    .wifi-parola-noua { font-family:ui-monospace,Consolas,monospace; font-size:1.25rem; font-weight:700; letter-spacing:.05em; margin:6px 0; user-select:all; }
     .wifi-rand .ctl { display:flex; flex-wrap:wrap; gap:8px; margin:0; }
     .wifi-rand button { width:auto; min-height:40px; padding:0 14px; margin:0; }
     .wifi-disp { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:6px 12px; padding:10px 0; border-top:1px solid var(--line); }
@@ -9253,14 +9254,27 @@
       ghid.appendChild(g); corp.appendChild(ghid);
     }
     // Fila „Wi-Fi” din Utilizatori: cine are acces, oprire și ștergerea parolei (parolele nu pot fi văzute)
+    let parolaNouaWifi = null; // { nume, parola }: se arată o singură dată, după resetarea de către administrator
     async function deseneazaWifiAdmin() {
       const lista = $("lista");
       lista.replaceChildren(el("p", "who", "Se încarcă…"));
       const { data, error } = await db.rpc("wifi_lista");
       if (error || !Array.isArray(data)) { lista.replaceChildren(); return mesajPanou("Lista de Wi-Fi nu a putut fi încărcată. Încearcă din nou."); }
       lista.replaceChildren();
+      if (parolaNouaWifi) {
+        const cp = el("div", "ang-rand citire wifi-rand"); const tx = el("div", "");
+        tx.appendChild(el("strong", "", "Parola nouă pentru " + parolaNouaWifi.nume));
+        const pr = el("div", "wifi-parola-noua", parolaNouaWifi.parola); tx.appendChild(pr);
+        tx.appendChild(el("div", "who", "Notează-o acum și dă-o persoanei: după ce închizi, nu se mai poate vedea. Persoana își poate alege alta din „Parola mea de Wi-Fi”."));
+        const cc = el("div", "ctl");
+        const cop = el("button", "secondary", "Copiază"); cop.type = "button";
+        cop.addEventListener("click", async () => { try { await navigator.clipboard.writeText(parolaNouaWifi.parola); cop.textContent = "Copiată"; } catch (_e) { cop.textContent = "Nu s-a putut copia"; } });
+        const ina = el("button", "", "Am notat-o"); ina.type = "button";
+        ina.addEventListener("click", () => { parolaNouaWifi = null; cp.remove(); });
+        cc.append(cop, ina); cp.append(tx, cc); lista.appendChild(cp);
+      }
       const n = (s) => data.filter((x) => x.stare === s).length;
-      lista.appendChild(el("p", "who", "Cu acces: " + n("activ") + " · Fără parolă: " + n("fara_parola") + " · Oprit: " + n("oprit") + ". Profesorii își aleg singuri parola din „Parola mea de Wi-Fi”. Parolele nu pot fi văzute: poți doar opri accesul sau șterge o parolă, ca persoana să-și aleagă alta. Fiecare cont poate folosi 2 dispozitive, dacă nu schimbi limita."));
+      lista.appendChild(el("p", "who", "Cu acces: " + n("activ") + " · Fără parolă: " + n("fara_parola") + " · Oprit: " + n("oprit") + ". Profesorii își aleg singuri parola din „Parola mea de Wi-Fi”. Parolele existente nu pot fi văzute (se păstrează doar într-o formă care nu poate fi citită înapoi): poți opri accesul, șterge o parolă sau o poți reseta, iar parola nouă se arată o singură dată. Fiecare cont poate folosi 2 dispozitive, dacă nu schimbi limita."));
       if (!data.length) { lista.appendChild(el("p", "who", "Nu există conturi cu drept de Wi-Fi.")); return; }
       const ET = { activ: "Cu acces", fara_parola: "Fără parolă", oprit: "Oprit" };
       data.forEach((x) => {
@@ -9285,6 +9299,16 @@
           b.addEventListener("click", () => { if (!confirm(x.nume + " nu se va mai putea conecta la Wi-Fi. Oprești accesul?")) return; b.disabled = true; act("wifi_seteaza_activ", { p_user: x.user_id, p_activ: false }, "Accesul la Wi-Fi al lui " + x.nume + " a fost oprit."); });
           ctl.appendChild(b);
         }
+        const rp = el("button", "secondary", "Resetează parola"); rp.type = "button";
+        rp.addEventListener("click", async () => {
+          if (!confirm("Se creează o parolă nouă pentru " + x.nume + ", iar cea veche nu va mai funcționa. Resetezi parola?")) return;
+          rp.disabled = true; mesajPanou("");
+          const { data: r, error: e } = await db.functions.invoke("wifi-parola", { body: { user_id: x.user_id } });
+          if (e || !r || !r.parola) { rp.disabled = false; return mesajPanou(await eroareFunctie(e, "Parola nu a putut fi resetată. Încearcă din nou.")); }
+          parolaNouaWifi = { nume: x.nume, parola: r.parola };
+          await deseneazaWifiAdmin(); mesajPanou("Parola lui " + x.nume + " a fost resetată.", true);
+        });
+        ctl.appendChild(rp);
         if (x.stare !== "fara_parola") {
           const d = el("button", "secondary", "Șterge parola"); d.type = "button";
           d.addEventListener("click", () => { if (!confirm("Parola de Wi-Fi a lui " + x.nume + " se șterge, iar persoana trebuie să-și aleagă alta. Ștergi parola?")) return; d.disabled = true; act("wifi_sterge_parola", { p_user: x.user_id }, "Parola de Wi-Fi a lui " + x.nume + " a fost ștearsă."); });
