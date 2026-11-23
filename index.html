@@ -939,6 +939,35 @@
       #tipar-cerere .tc-nota + .tc-nota { margin-top:3mm; }
       #tipar-cerere .tc-nota { margin-top:10mm; font-size:9.5pt; color:#333; }
     }
+    .ang-tipar-alege { margin:8px 0; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; background:var(--card); }
+    .ang-tipar-alege h3 { margin:0 0 4px; font-size:1.05rem; }
+    .ang-tipar-alege p.who { margin:0 0 8px; }
+    .ang-tipar-alege .ta-loc { margin:10px 0 0; padding-top:8px; border-top:1px solid var(--line); }
+    .ang-tipar-alege label { display:flex; align-items:center; gap:10px; margin:0; min-height:40px; font-weight:400; }
+    .ang-tipar-alege label.ta-loc-et { font-weight:700; }
+    .ang-tipar-alege .ta-cat { padding-left:26px; }
+    .ang-tipar-alege .ta-nr { margin-left:auto; color:var(--muted); font-size:.9rem; }
+    .ang-tipar-alege input[type=checkbox] { width:22px; height:22px; flex:none; margin:0; }
+    .ang-tipar-alege .ta-ctl { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .ang-tipar-alege .ta-ctl button { width:auto; margin:0; min-height:44px; padding:0 18px; }
+    #tipar-angajati { display:none; }
+    @media print {
+      body.tipar-angajati > :not(#tipar-angajati) { display:none !important; }
+      body.tipar-angajati { background:#fff !important; }
+      body.tipar-angajati #tipar-angajati { display:block; color:#000; font-family:Arial, Helvetica, sans-serif; }
+      #tipar-angajati .ta-scoala { text-align:center; font-size:9pt; letter-spacing:.06em; margin:0; }
+      #tipar-angajati h1 { text-align:center; font-size:15pt; margin:1mm 0 0; text-transform:uppercase; }
+      #tipar-angajati .ta-sub { text-align:center; font-size:10pt; margin:1mm 0 4mm; }
+      #tipar-angajati h2 { font-size:11.5pt; margin:6mm 0 1mm; padding-bottom:1mm; border-bottom:.8pt solid #000; break-after:avoid; page-break-after:avoid; }
+      #tipar-angajati h3 { font-size:10.5pt; margin:4mm 0 1.5mm; break-after:avoid; page-break-after:avoid; }
+      #tipar-angajati table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:10pt; }
+      #tipar-angajati thead { display:table-header-group; }
+      #tipar-angajati th, #tipar-angajati td { border:.6pt solid #000; padding:1mm 1.6mm; text-align:left; vertical-align:top; color:#000; background:#fff; }
+      #tipar-angajati th { background:#e8e8e8 !important; font-weight:700; }
+      #tipar-angajati th.ta-c, #tipar-angajati td.ta-c { width:17mm; text-align:center; }
+      #tipar-angajati tr { break-inside:avoid; page-break-inside:avoid; }
+      #tipar-angajati .ta-total { margin:6mm 0 0; font-size:10.5pt; font-weight:700; }
+    }
     #tipar-orar { display:none; }
     @media print {
       body.tipar-orar > :not(#tipar-orar) { display:none !important; }
@@ -1762,9 +1791,11 @@
       <div id="ang-excel" class="ang-excel hidden">
         <a id="ang-sablon" class="mic" href="sablon-angajati.xlsx" download>⬇ Șablon gol</a>
         <button id="ang-export" class="mic" type="button">⬇ Lista curentă</button>
+        <button id="ang-tipar" class="mic" type="button">🖨 Tipărește lista</button>
         <button id="ang-import" class="mic" type="button">⬆ Importă din Excel</button>
         <input id="ang-fisier" type="file" accept=".xlsx" hidden>
       </div>
+      <div id="ang-tipar-alege" class="ang-tipar-alege hidden"></div>
       <div id="ang-previzualizare"></div>
       <div id="ang-form-loc"></div>
       <p id="ang-numar" class="who"></p>
@@ -5183,6 +5214,7 @@
       $("ang-sablon").classList.toggle("hidden", !poateEdita());
       $("ang-import").classList.toggle("hidden", !poateEdita());
       if (tabP !== "angajati") $("ang-previzualizare").replaceChildren();
+      if (tabP !== "angajati") { $("ang-tipar-alege").classList.add("hidden"); $("ang-tipar-alege").replaceChildren(); }
     }
 
     function incarcaTab() {
@@ -7444,6 +7476,72 @@
       });
       return xlsxPromise;
     }
+
+
+    // Tipărirea listei angajaților: alegi locurile și categoriile, apoi se tipărește o listă A4 (Nr. crt., nume, funcție)
+    function persoaneCat(l, c) { return angajati.filter((p) => !p.sters_la && (p.norme || []).some((n) => n.loc === l && n.categorie === c)); }
+    function catiLoc(l) { const c = CATEGORII[l].slice(); angajati.forEach((p) => { if (!p.sters_la) (p.norme || []).forEach((n) => { if (n.loc === l && !c.includes(n.categorie)) c.push(n.categorie); }); }); return c.filter((x) => persoaneCat(l, x).length); }
+    function tiparesteAngajati(alese) {
+      const a = anCurent(); const vechi = document.getElementById("tipar-angajati"); if (vechi) vechi.remove();
+      const cont = el("div", ""); cont.id = "tipar-angajati";
+      const azi = new Date(), z2 = (n) => String(n).padStart(2, "0");
+      cont.appendChild(el("p", "ta-scoala", "LICEUL TEHNOLOGIC „VICTOR MIHĂILESCU CRAIU” BELCEȘTI"));
+      cont.appendChild(el("h1", "", "Lista angajaților"));
+      cont.appendChild(el("p", "ta-sub", (a ? "Anul școlar " + a.denumire + " · " : "") + "tipărită la " + z2(azi.getDate()) + "/" + z2(azi.getMonth() + 1) + "/" + azi.getFullYear()));
+      const unici = new Set();
+      LOCURI.forEach((l) => {
+        const cats = catiLoc(l).filter((c) => alese.has(l + "|" + c)); if (!cats.length) return;
+        cont.appendChild(el("h2", "", NUME_LOC[l]));
+        cats.forEach((c) => {
+          const pers = persoaneCat(l, c);
+          cont.appendChild(el("h3", "", c + " (" + pers.length + ")"));
+          const t = document.createElement("table"), th = document.createElement("thead"), hr = document.createElement("tr");
+          [["Nr. crt.", "ta-c"], ["Nume și prenume", ""], ["Funcție", ""]].forEach(([x, k]) => hr.appendChild(el("th", k, x))); th.appendChild(hr); t.appendChild(th);
+          const tb = document.createElement("tbody");
+          pers.forEach((p, i) => {
+            unici.add(p.id);
+            const n = p.norme.find((x) => x.loc === l && x.categorie === c), alt = [...new Set(p.norme.filter((x) => x.loc !== l).map((x) => x.loc))];
+            const r = document.createElement("tr"); r.append(el("td", "ta-c", String(i + 1)), el("td", "", p.nume), el("td", "", [n && n.functie, alt.length ? "și la " + alt.join(", ") : ""].filter(Boolean).join(" · "))); tb.appendChild(r);
+          });
+          t.appendChild(tb); cont.appendChild(t);
+        });
+      });
+      cont.appendChild(el("p", "ta-total", "Total: " + unici.size + (unici.size === 1 ? " persoană" : " persoane")));
+      document.body.appendChild(cont); document.body.classList.add("tipar-angajati");
+      const pag = document.createElement("style"); pag.id = "tipar-angajati-pagina"; pag.textContent = "@page { size: A4 portrait; margin: 15mm; }"; document.head.appendChild(pag);
+      const curata = () => { document.body.classList.remove("tipar-angajati"); const c = document.getElementById("tipar-angajati"); if (c) c.remove(); const pg = document.getElementById("tipar-angajati-pagina"); if (pg) pg.remove(); window.removeEventListener("afterprint", curata); };
+      window.addEventListener("afterprint", curata);
+      const t0 = document.title; document.title = "Lista angajaților" + (a ? " " + a.denumire.replace("–", "-") : "");
+      window.print(); setTimeout(() => { document.title = t0; }, 1000); setTimeout(curata, 1500);
+    }
+    $("ang-tipar").addEventListener("click", () => {
+      const cutie = $("ang-tipar-alege");
+      if (!cutie.classList.contains("hidden")) { cutie.classList.add("hidden"); cutie.replaceChildren(); return; }
+      cutie.replaceChildren(); cutie.classList.remove("hidden");
+      cutie.append(el("h3", "", "Ce tipărești?"), el("p", "who", "Bifează categoriile care să apară pe listă."));
+      const bife = [], filtruLoc = $("ang-loc").value, rez = el("p", "who");
+      const alese = () => new Set(bife.filter((x) => x.i.checked).map((x) => x.k));
+      const actualizeaza = () => { const n = alese(), u = new Set(); LOCURI.forEach((l) => catiLoc(l).forEach((c) => { if (n.has(l + "|" + c)) persoaneCat(l, c).forEach((p) => u.add(p.id)); })); rez.textContent = u.size + (u.size === 1 ? " persoană" : " persoane") + " pe listă"; ok.disabled = !n.size; };
+      LOCURI.forEach((l) => {
+        const cats = catiLoc(l); if (!cats.length) return;
+        const g = el("div", "ta-loc"), lbl = el("label", "ta-loc-et"), il = document.createElement("input"); il.type = "checkbox"; il.checked = !filtruLoc || filtruLoc === l;
+        lbl.append(il, document.createTextNode(l)); g.appendChild(lbl);
+        const dinLoc = [];
+        cats.forEach((c) => {
+          const lc = el("label", "ta-cat"), ic = document.createElement("input"); ic.type = "checkbox"; ic.checked = il.checked;
+          lc.append(ic, document.createTextNode(c), el("span", "ta-nr", String(persoaneCat(l, c).length)));
+          g.appendChild(lc); const o = { i: ic, k: l + "|" + c }; bife.push(o); dinLoc.push(ic);
+          ic.addEventListener("change", () => { il.checked = dinLoc.every((x) => x.checked); actualizeaza(); });
+        });
+        il.addEventListener("change", () => { dinLoc.forEach((x) => { x.checked = il.checked; }); actualizeaza(); });
+        cutie.appendChild(g);
+      });
+      if (!bife.length) { cutie.appendChild(el("p", "who", "Nu există angajați de tipărit în acest an școlar.")); return; }
+      const ctl = el("div", "ta-ctl"), ok = el("button", "", "🖨 Tipărește"), nu = el("button", "secondary", "Renunță"); ok.type = "button"; nu.type = "button";
+      ok.addEventListener("click", () => tiparesteAngajati(alese()));
+      nu.addEventListener("click", () => { cutie.classList.add("hidden"); cutie.replaceChildren(); });
+      ctl.append(ok, nu); cutie.append(rez, ctl); actualizeaza();
+    });
 
     $("ang-export").addEventListener("click", async () => {
       const a = anCurent(); if (!a) return;
