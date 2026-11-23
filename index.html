@@ -165,6 +165,9 @@
     .wifi-rand { align-items:center; }
     .wifi-rand .ctl { display:flex; flex-wrap:wrap; gap:8px; margin:0; }
     .wifi-rand button { width:auto; min-height:40px; padding:0 14px; margin:0; }
+    .wifi-disp { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:6px 12px; padding:10px 0; border-top:1px solid var(--line); }
+    .wifi-disp .ctl { display:flex; flex-wrap:wrap; gap:8px; margin:0; }
+    .wifi-disp button { width:auto; min-height:40px; padding:0 14px; margin:0; }
     .tabs.t5 { grid-template-columns:repeat(5,1fr); }
     .tabs.t5 button { padding:8px 2px; font-size:.9rem; }
     @media (max-width:560px) { .tabs.t5 { grid-template-columns:repeat(3,1fr); } }
@@ -9182,6 +9185,44 @@
       f.appendChild(col);
       return f;
     }
+    const textDisp = (n) => n + " " + (n === 1 ? "dispozitiv" : (n % 100 === 0 || n % 100 >= 20) ? "de dispozitive" : "dispozitive");
+    // Dispozitivele contului: se înregistrează singure la prima conectare, până la limită; profesorul le poate redenumi sau șterge
+    async function sectiuneDispozitiveWifi(c) {
+      const { data, error } = await db.rpc("wifi_dispozitive_ale_mele");
+      const box = el("div", "ang-rand citire"); const col = el("div", ""); box.appendChild(col);
+      const lista = Array.isArray(data) ? data : [];
+      const max = c.max_dispozitive || 2;
+      col.appendChild(el("strong", "", "Dispozitivele mele (" + lista.length + " din " + max + ")"));
+      if (error) { col.appendChild(el("p", "who", "Dispozitivele nu au putut fi încărcate.")); return box; }
+      col.appendChild(el("p", "who", "Contul se poate folosi pe cel mult " + textDisp(max) + ". Un dispozitiv se înregistrează singur la prima conectare. Când ai atins limita și vrei să adaugi altul, șterge unul de mai jos."));
+      if (!lista.length) col.appendChild(el("p", "who", "Niciun dispozitiv încă."));
+      lista.forEach((d, i) => {
+        const r = el("div", "wifi-disp");
+        const st = el("div", "");
+        st.appendChild(el("strong", "", d.nume || "Dispozitiv " + (i + 1)));
+        st.appendChild(el("div", "who", d.mac + " · ultima conectare " + dataRo(d.ultima_conectare).slice(0, 10)));
+        const ctl = el("div", "ctl");
+        const re = el("button", "secondary", "Redenumește"); re.type = "button";
+        re.addEventListener("click", async () => {
+          const nume = prompt("Cum se numește dispozitivul? (de exemplu Telefon)", d.nume || "");
+          if (nume === null) return;
+          re.disabled = true; mesajWifi("");
+          const { error: e } = await db.rpc("wifi_dispozitiv_nume", { p_id: d.id, p_nume: nume });
+          if (e) { re.disabled = false; return mesajWifi("Numele nu a putut fi salvat. Încearcă din nou."); }
+          await deseneazaWifi(); mesajWifi("Numele a fost salvat.", true);
+        });
+        const sh = el("button", "secondary", "Șterge"); sh.type = "button";
+        sh.addEventListener("click", async () => {
+          if (!confirm("Dispozitivul se șterge din cont și face loc altuia. Ștergi dispozitivul?")) return;
+          sh.disabled = true; mesajWifi("");
+          const { error: e } = await db.rpc("wifi_dispozitiv_sterge", { p_id: d.id });
+          if (e) { sh.disabled = false; return mesajWifi("Dispozitivul nu a putut fi șters. Încearcă din nou."); }
+          await deseneazaWifi(); mesajWifi("Dispozitivul a fost șters.", true);
+        });
+        ctl.append(re, sh); r.append(st, ctl); col.appendChild(r);
+      });
+      return box;
+    }
     async function deseneazaWifi() {
       const corp = $("wifi-corp");
       corp.replaceChildren(el("p", "who", "Se încarcă…"));
@@ -9204,9 +9245,10 @@
       rand("Parola de Wi-Fi", c.are_parola ? "Setată la " + dataRo(c.parola_setata_la).slice(0, 10) : "Nu ai încă o parolă de Wi-Fi");
       if (!c.activ) { corp.appendChild(el("p", "who", "Accesul tău la Wi-Fi a fost oprit de administrator. Dacă ai nevoie de el, vorbește cu administratorul.")); return; }
       corp.appendChild(formularParolaWifi(c.utilizator, c.are_parola));
+      corp.appendChild(await sectiuneDispozitiveWifi(c));
       const ghid = el("div", "ang-rand citire"); const g = el("div", "");
       g.appendChild(el("strong", "", "Cum te conectezi"));
-      ["Alege rețeaua „Profesori” din lista de Wi-Fi a telefonului sau a calculatorului.", "Scrie numele de utilizator și parola de mai sus.", "Dacă telefonul întreabă despre certificat, acceptă-l."].forEach((t, i) => g.appendChild(el("div", "who", (i + 1) + ". " + t)));
+      ["Alege rețeaua „Profesori” din lista de Wi-Fi a telefonului sau a calculatorului.", "Scrie numele de utilizator și parola de mai sus.", "Dacă telefonul întreabă despre certificat, acceptă-l.", "Pe telefon, oprește adresa Wi-Fi privată doar pentru rețeaua „Profesori”: pe iPhone, în setările rețelei, „Adresă Wi-Fi privată” pe Oprit; pe Android, alege „Folosește MAC-ul dispozitivului”. Altfel telefonul poate fi socotit un dispozitiv nou."].forEach((t, i) => g.appendChild(el("div", "who", (i + 1) + ". " + t)));
       ghid.appendChild(g); corp.appendChild(ghid);
     }
     // Fila „Wi-Fi” din Utilizatori: cine are acces, oprire și ștergerea parolei (parolele nu pot fi văzute)
@@ -9217,14 +9259,14 @@
       if (error || !Array.isArray(data)) { lista.replaceChildren(); return mesajPanou("Lista de Wi-Fi nu a putut fi încărcată. Încearcă din nou."); }
       lista.replaceChildren();
       const n = (s) => data.filter((x) => x.stare === s).length;
-      lista.appendChild(el("p", "who", "Cu acces: " + n("activ") + " · Fără parolă: " + n("fara_parola") + " · Oprit: " + n("oprit") + ". Profesorii își aleg singuri parola din „Parola mea de Wi-Fi”. Parolele nu pot fi văzute: poți doar opri accesul sau șterge o parolă, ca persoana să-și aleagă alta."));
+      lista.appendChild(el("p", "who", "Cu acces: " + n("activ") + " · Fără parolă: " + n("fara_parola") + " · Oprit: " + n("oprit") + ". Profesorii își aleg singuri parola din „Parola mea de Wi-Fi”. Parolele nu pot fi văzute: poți doar opri accesul sau șterge o parolă, ca persoana să-și aleagă alta. Fiecare cont poate folosi 2 dispozitive, dacă nu schimbi limita."));
       if (!data.length) { lista.appendChild(el("p", "who", "Nu există conturi cu drept de Wi-Fi.")); return; }
       const ET = { activ: "Cu acces", fara_parola: "Fără parolă", oprit: "Oprit" };
       data.forEach((x) => {
         const card = el("div", "ang-rand citire wifi-rand");
         const st = el("div", "");
         st.appendChild(el("strong", "", x.nume));
-        st.appendChild(el("div", "who", (x.utilizator ? x.utilizator + " · " : "") + ET[x.stare] + (x.parola_setata_la ? " · parola setată la " + dataRo(x.parola_setata_la).slice(0, 10) : "")));
+        st.appendChild(el("div", "who", (x.utilizator ? x.utilizator + " · " : "") + ET[x.stare] + (x.parola_setata_la ? " · parola setată la " + dataRo(x.parola_setata_la).slice(0, 10) : "") + " · dispozitive " + x.dispozitive + "/" + x.max_dispozitive));
         card.appendChild(st);
         const ctl = el("div", "ctl");
         const act = async (fn, args, ok) => {
@@ -9246,6 +9288,20 @@
           const d = el("button", "secondary", "Șterge parola"); d.type = "button";
           d.addEventListener("click", () => { if (!confirm("Parola de Wi-Fi a lui " + x.nume + " se șterge, iar persoana trebuie să-și aleagă alta. Ștergi parola?")) return; d.disabled = true; act("wifi_sterge_parola", { p_user: x.user_id }, "Parola de Wi-Fi a lui " + x.nume + " a fost ștearsă."); });
           ctl.appendChild(d);
+        }
+        const lim = el("button", "secondary", "Schimbă limita"); lim.type = "button";
+        lim.addEventListener("click", () => {
+          const v = prompt("Câte dispozitive poate folosi " + x.nume + "? (între 1 și 100)", String(x.max_dispozitive));
+          if (v === null) return;
+          const n = Number(String(v).trim());
+          if (!Number.isInteger(n) || n < 1 || n > 100) return mesajPanou("Scrie un număr întreg între 1 și 100.");
+          lim.disabled = true; act("wifi_seteaza_limita", { p_user: x.user_id, p_limita: n }, x.nume + " poate folosi acum " + textDisp(n) + ".");
+        });
+        ctl.appendChild(lim);
+        if (x.dispozitive > 0) {
+          const rs = el("button", "secondary", "Șterge dispozitivele"); rs.type = "button";
+          rs.addEventListener("click", () => { if (!confirm("Toate dispozitivele lui " + x.nume + " se șterg, iar următoarele se înregistrează din nou la conectare. Ștergi dispozitivele?")) return; rs.disabled = true; act("wifi_dispozitive_reseteaza", { p_user: x.user_id }, "Dispozitivele lui " + x.nume + " au fost șterse."); });
+          ctl.appendChild(rs);
         }
         card.appendChild(ctl);
         lista.appendChild(card);
