@@ -162,6 +162,12 @@
     .tabs.t3 button { padding:8px 4px; }
     .tabs.t4 { grid-template-columns:repeat(4,1fr); }
     .tabs.t4 button { padding:8px 2px; }
+    .wifi-rand { align-items:center; }
+    .wifi-rand .ctl { display:flex; flex-wrap:wrap; gap:8px; margin:0; }
+    .wifi-rand button { width:auto; min-height:40px; padding:0 14px; margin:0; }
+    .tabs.t5 { grid-template-columns:repeat(5,1fr); }
+    .tabs.t5 button { padding:8px 2px; font-size:.9rem; }
+    @media (max-width:560px) { .tabs.t5 { grid-template-columns:repeat(3,1fr); } }
     .golire { display:block; width:100%; min-height:44px; margin:0 0 12px; background:transparent; color:var(--err); border:1.5px solid var(--err); }
     .sterge-rand { width:auto; min-height:36px; margin:10px 0 0; padding:4px 14px; background:transparent; color:var(--err); border:1.5px solid var(--err); font-size:.85rem; }
     .user .sub { margin-top:6px; color:var(--muted); font-size:.86rem; }
@@ -1919,6 +1925,14 @@
       <div id="orarmeu-corp"></div>
     </main>
 
+    <main id="wifi" class="wrap hidden">
+      <button id="inapoi-wifi" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Parola mea de Wi-Fi</h1>
+      <p class="who">Cu aceste date te conectezi la rețeaua Wi-Fi „Profesori” din școală. Parola de Wi-Fi nu este parola din platformă: alege una pe care nu o folosești în altă parte.</p>
+      <div id="wifi-msg" class="panel-msg" role="alert"></div>
+      <div id="wifi-corp"></div>
+    </main>
+
     <main id="registru" class="wrap hidden">
       <button id="inapoi-registru" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Registratură</h1>
@@ -1939,10 +1953,11 @@
       <button id="inapoi" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Utilizatori</h1>
       <p class="who">Aprobă conturile noi, bifează rolurile fiecărui cont și dezactivează conturile.</p>
-      <div class="tabs t3" role="tablist" id="tab-panou">
+      <div class="tabs t4" role="tablist" id="tab-panou">
         <button type="button" role="tab" data-v="conturi" aria-selected="true">Conturi</button>
         <button type="button" role="tab" data-v="sterse" aria-selected="false">Șterse</button>
         <button type="button" role="tab" data-v="istoric" aria-selected="false">Istoric</button>
+        <button type="button" role="tab" data-v="wifi" aria-selected="false">Wi-Fi</button>
         <button type="button" role="tab" data-v="copie" id="tab-copie" class="hidden" aria-selected="false">Copie de siguranță</button>
       </div>
       <div id="panou-msg" class="panel-msg" role="alert"></div>
@@ -1973,6 +1988,7 @@
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       documente: { ico: "📄", t: "Documentele mele", d: "Documente repartizate ție", sub: ["Documente repartizate ție"], activ: true },
+      wifi:     { ico: "📶", t: "Parola mea de Wi-Fi", d: "Numele de utilizator și parola ta pentru Wi-Fi-ul școlii", sub: ["Parola de Wi-Fi"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orele și serviciul tău pe școală"], activ: true },
       evaluare: { ico: "✅", t: "Evaluare", d: "Teste pentru clasele și disciplinele tale", sub: ["Clasele mele"], activ: true },
       orar:     { ico: "🗓️", t: "Orar", d: "Orarul profesorilor și al claselor, tipărire", sub: ["Orarul profesorilor", "Orarul claselor"], activ: true },
@@ -1986,11 +2002,11 @@
     // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru"],
-      director_adjunct: ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru"],
+      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru", "wifi"],
+      director_adjunct: ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru", "wifi"],
       secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "serviciu", "registru"],
       contabilitate: ["pontaj", "structura", "anunturi"],
-      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi"],
+      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi", "wifi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -2225,6 +2241,7 @@
       $("altfel").classList.add("hidden");
       $("serviciu").classList.add("hidden");
       $("ecrane").classList.add("hidden");
+      $("wifi").classList.add("hidden");
       $("registru").classList.add("hidden");
       $("documente").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
@@ -2234,13 +2251,14 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare" && cheie !== "altfel" && cheie !== "serviciu" && cheie !== "ecrane" && cheie !== "registru" && cheie !== "documente") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare" && cheie !== "altfel" && cheie !== "serviciu" && cheie !== "ecrane" && cheie !== "wifi" && cheie !== "registru" && cheie !== "documente") return;
       if (cheie === "registru") return deschideRegistru();
       if (cheie === "documente") return deschideDocumente();
       if (cheie === "cereri") return deschideCereri();
       if (cheie === "altfel") return deschideAltfel();
       if (cheie === "serviciu") return deschideServiciu();
       if (cheie === "ecrane") return deschideEcrane();
+      if (cheie === "wifi") return deschideWifi();
       if (cheie === "evaluare") return deschideEvaluare();
       if (cheie === "azi") return deschideAzi();
       if (cheie === "orar") return deschideOrar();
@@ -2258,7 +2276,7 @@
       mesajPanou("");
       vedere = vedereIni || "conturi";
       const adm = euRoluri.includes("administrator");
-      $("tab-copie").classList.toggle("hidden", !adm); $("tab-panou").classList.toggle("t4", adm); $("tab-panou").classList.toggle("t3", !adm);
+      $("tab-copie").classList.toggle("hidden", !adm); $("tab-panou").classList.toggle("t5", adm); $("tab-panou").classList.toggle("t4", !adm);
       $("tab-panou").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === vedere ? "true" : "false"));
       incarcaUtilizatori();
     }
@@ -2351,6 +2369,7 @@
     }
     async function incarcaUtilizatori() {
       if (vedere === "copie") return deseneazaCopie();
+      if (vedere === "wifi") return deseneazaWifiAdmin();
       const lista = $("lista");
       const campuri = "id, nume, roluri, activ, creat_la, email, calitate, detalii, completat, protejat, sters_la, sters_de, angajat_nume";
       if (vedere === "istoric") {
@@ -9105,6 +9124,133 @@
       const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === zi && (g.pauza || null) === pauza && (g.schimb || null) === schimb);
       return { rows, nume };
     }
+    // ===== Parola mea de Wi-Fi: contul de Wi-Fi al fiecărui profesor (parola se salvează doar ca amprentă, prin funcția wifi-parola) =====
+    $("inapoi-wifi").addEventListener("click", arataPrincipal);
+    const mesajWifi = (text, ok) => { $("wifi-msg").textContent = text || ""; $("wifi-msg").className = "panel-msg" + (ok ? " ok" : ""); };
+    const WIFI_MIN = 10, WIFI_MAX = 64;
+    // Mesajul de eroare trimis de funcție (sau unul general)
+    async function eroareFunctie(error, general) {
+      try { if (error && error.context && typeof error.context.json === "function") { const j = await error.context.json(); if (j && j.eroare) return j.eroare; } } catch (e) { /* mesaj general */ }
+      return general;
+    }
+    // Parolă generată: litere și cifre fără semne greu de scris sau de confundat
+    function parolaGenerata() {
+      const alfabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+      const v = new Uint32Array(12); crypto.getRandomValues(v);
+      return Array.from(v, (x) => alfabet[x % alfabet.length]).join("");
+    }
+    async function deschideWifi() {
+      memoreazaVedere("wifi");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("wifi").classList.remove("hidden");
+      mesajWifi("");
+      await deseneazaWifi();
+    }
+    function formularParolaWifi(utilizator, areParola) {
+      const f = el("div", "ang-rand citire");
+      const col = el("div", "");
+      col.appendChild(el("strong", "", areParola ? "Schimbă parola de Wi-Fi" : "Alege parola de Wi-Fi"));
+      const mk = (ph) => { const i = document.createElement("input"); i.type = "password"; i.maxLength = WIFI_MAX; i.autocomplete = "new-password"; i.placeholder = ph; i.setAttribute("aria-label", ph); i.spellcheck = false; return i; };
+      const p1 = mk("Parola nouă de Wi-Fi"), p2 = mk("Repetă parola");
+      const lab = document.createElement("label"); const cb = document.createElement("input"); cb.type = "checkbox";
+      cb.addEventListener("change", () => { p1.type = p2.type = cb.checked ? "text" : "password"; });
+      lab.append(cb, document.createTextNode(" Arată parola"));
+      const zonaArata = el("div", "ecran-zone"); zonaArata.appendChild(lab);
+      col.append(p1, p2, zonaArata);
+      col.appendChild(el("p", "who", "Între " + WIFI_MIN + " și " + WIFI_MAX + " de caractere: litere fără diacritice, cifre și semne, fără spații. Dacă îți generăm o parolă, noteaz-o înainte să o salvezi: după salvare nu mai poate fi văzută."));
+      const ctl = el("div", "ctl");
+      const sv = el("button", "", "Salvează parola"); sv.type = "button";
+      const gen = el("button", "secondary", "Generează o parolă"); gen.type = "button";
+      gen.addEventListener("click", () => { const g = parolaGenerata(); p1.value = g; p2.value = g; cb.checked = true; p1.type = p2.type = "text"; mesajWifi(""); });
+      sv.addEventListener("click", async () => {
+        mesajWifi("");
+        const a = p1.value;
+        if (a.length < WIFI_MIN) return mesajWifi("Parola trebuie să aibă cel puțin " + WIFI_MIN + " caractere.");
+        if (a.length > WIFI_MAX) return mesajWifi("Parola poate avea cel mult " + WIFI_MAX + " de caractere.");
+        if (!/^[\x21-\x7e]+$/.test(a)) return mesajWifi("Folosește doar litere fără diacritice, cifre și semne, fără spații.");
+        if (a !== p2.value) return mesajWifi("Cele două parole nu sunt la fel.");
+        if (a.toLowerCase() === String(utilizator).toLowerCase()) return mesajWifi("Parola nu poate fi la fel cu numele de utilizator.");
+        sv.disabled = true;
+        const { error } = await db.functions.invoke("wifi-parola", { body: { parola: a } });
+        p1.value = ""; p2.value = "";
+        if (error) { sv.disabled = false; return mesajWifi(await eroareFunctie(error, "Parola nu a putut fi salvată. Încearcă din nou.")); }
+        await deseneazaWifi();
+        mesajWifi("Parola de Wi-Fi a fost salvată. O poți folosi acum la conectare.", true);
+      });
+      ctl.append(sv, gen);
+      col.appendChild(ctl);
+      f.appendChild(col);
+      return f;
+    }
+    async function deseneazaWifi() {
+      const corp = $("wifi-corp");
+      corp.replaceChildren(el("p", "who", "Se încarcă…"));
+      const { data, error } = await db.rpc("wifi_cont_al_meu");
+      const c = Array.isArray(data) ? data[0] : data;
+      corp.replaceChildren();
+      if (error || !c) return mesajWifi("Contul de Wi-Fi nu a putut fi încărcat. Încearcă din nou.");
+      if (!c.permis) { corp.appendChild(el("p", "who", "Contul tău nu are drept de Wi-Fi în școală. Dacă ai nevoie de acces, vorbește cu administratorul.")); return; }
+      const rand = (eticheta, valoare, extra) => {
+        const r = el("div", "ang-rand citire wifi-rand");
+        r.appendChild(el("span", "who", eticheta));
+        const v = el("strong", "", valoare);
+        if (extra) { const w = el("span", ""); w.append(v, document.createTextNode(" "), extra); r.appendChild(w); } else r.appendChild(v);
+        corp.appendChild(r);
+      };
+      rand("Rețea", "Profesori");
+      const cop = el("button", "secondary mic", "Copiază"); cop.type = "button";
+      cop.addEventListener("click", async () => { try { await navigator.clipboard.writeText(c.utilizator); mesajWifi("Numele de utilizator a fost copiat.", true); } catch (e) { mesajWifi("Nu am putut copia. Scrie numele de mână."); } });
+      rand("Nume de utilizator", c.utilizator, cop);
+      rand("Parola de Wi-Fi", c.are_parola ? "Setată la " + dataRo(c.parola_setata_la).slice(0, 10) : "Nu ai încă o parolă de Wi-Fi");
+      if (!c.activ) { corp.appendChild(el("p", "who", "Accesul tău la Wi-Fi a fost oprit de administrator. Dacă ai nevoie de el, vorbește cu administratorul.")); return; }
+      corp.appendChild(formularParolaWifi(c.utilizator, c.are_parola));
+      const ghid = el("div", "ang-rand citire"); const g = el("div", "");
+      g.appendChild(el("strong", "", "Cum te conectezi"));
+      ["Alege rețeaua „Profesori” din lista de Wi-Fi a telefonului sau a calculatorului.", "Scrie numele de utilizator și parola de mai sus.", "Dacă telefonul întreabă despre certificat, acceptă-l."].forEach((t, i) => g.appendChild(el("div", "who", (i + 1) + ". " + t)));
+      ghid.appendChild(g); corp.appendChild(ghid);
+    }
+    // Fila „Wi-Fi” din Utilizatori: cine are acces, oprire și ștergerea parolei (parolele nu pot fi văzute)
+    async function deseneazaWifiAdmin() {
+      const lista = $("lista");
+      lista.replaceChildren(el("p", "who", "Se încarcă…"));
+      const { data, error } = await db.rpc("wifi_lista");
+      if (error || !Array.isArray(data)) { lista.replaceChildren(); return mesajPanou("Lista de Wi-Fi nu a putut fi încărcată. Încearcă din nou."); }
+      lista.replaceChildren();
+      const n = (s) => data.filter((x) => x.stare === s).length;
+      lista.appendChild(el("p", "who", "Cu acces: " + n("activ") + " · Fără parolă: " + n("fara_parola") + " · Oprit: " + n("oprit") + ". Profesorii își aleg singuri parola din „Parola mea de Wi-Fi”. Parolele nu pot fi văzute: poți doar opri accesul sau șterge o parolă, ca persoana să-și aleagă alta."));
+      if (!data.length) { lista.appendChild(el("p", "who", "Nu există conturi cu drept de Wi-Fi.")); return; }
+      const ET = { activ: "Cu acces", fara_parola: "Fără parolă", oprit: "Oprit" };
+      data.forEach((x) => {
+        const card = el("div", "ang-rand citire wifi-rand");
+        const st = el("div", "");
+        st.appendChild(el("strong", "", x.nume));
+        st.appendChild(el("div", "who", (x.utilizator ? x.utilizator + " · " : "") + ET[x.stare] + (x.parola_setata_la ? " · parola setată la " + dataRo(x.parola_setata_la).slice(0, 10) : "")));
+        card.appendChild(st);
+        const ctl = el("div", "ctl");
+        const act = async (fn, args, ok) => {
+          mesajPanou("");
+          const { error: e } = await db.rpc(fn, args);
+          if (e) return mesajPanou("Operația nu a reușit. Încearcă din nou.");
+          await deseneazaWifiAdmin(); mesajPanou(ok, true);
+        };
+        if (x.stare === "oprit") {
+          const b = el("button", "secondary", "Pornește accesul"); b.type = "button";
+          b.addEventListener("click", () => { b.disabled = true; act("wifi_seteaza_activ", { p_user: x.user_id, p_activ: true }, "Accesul la Wi-Fi al lui " + x.nume + " a fost pornit."); });
+          ctl.appendChild(b);
+        } else {
+          const b = el("button", "secondary", "Oprește accesul"); b.type = "button";
+          b.addEventListener("click", () => { if (!confirm(x.nume + " nu se va mai putea conecta la Wi-Fi. Oprești accesul?")) return; b.disabled = true; act("wifi_seteaza_activ", { p_user: x.user_id, p_activ: false }, "Accesul la Wi-Fi al lui " + x.nume + " a fost oprit."); });
+          ctl.appendChild(b);
+        }
+        if (x.stare !== "fara_parola") {
+          const d = el("button", "secondary", "Șterge parola"); d.type = "button";
+          d.addEventListener("click", () => { if (!confirm("Parola de Wi-Fi a lui " + x.nume + " se șterge, iar persoana trebuie să-și aleagă alta. Ștergi parola?")) return; d.disabled = true; act("wifi_sterge_parola", { p_user: x.user_id }, "Parola de Wi-Fi a lui " + x.nume + " a fost ștearsă."); });
+          ctl.appendChild(d);
+        }
+        card.appendChild(ctl);
+        lista.appendChild(card);
+      });
+    }
     // ===== Ecrane pentru cancelarie: câte un link secret pe cancelarie =====
     $("inapoi-ecrane").addEventListener("click", arataPrincipal);
     const mesajEcrane = (text, ok) => { $("ecrane-msg").textContent = text || ""; $("ecrane-msg").className = "panel-msg" + (ok ? " ok" : ""); };
@@ -10233,7 +10379,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi-altfel", "inapoi-serviciu", "inapoi-ecrane", "inapoi-registru", "inapoi-documente", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi-altfel", "inapoi-serviciu", "inapoi-ecrane", "inapoi-wifi", "inapoi-registru", "inapoi-documente", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
