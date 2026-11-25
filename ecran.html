@@ -10,9 +10,11 @@
   :root { --fond:#e9eff6; --card:#ffffff; --text:#0f172a; --estompat:#475569; --linie:#d3dce8; --alerta:#b91c1c; --acum:#16a34a; --urm:#f59e0b; --apoi:#2563eb; --trecut:#64748b; --anunt:#ea580c; }
   * { box-sizing: border-box; }
   html, body { margin:0; height:100%; background:var(--fond); color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor:none; overflow:hidden; }
-  .ecran { height:100vh; display:grid; grid-template-rows:auto 1fr; padding:2vh 1.8vw; gap:2vh; }
+  .ecran { height:100vh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; padding:2vh 1.8vw; gap:1.6vh; }
   .antet { display:flex; justify-content:space-between; align-items:center; gap:2vw; background:linear-gradient(90deg,#1e3a8a 0%,#2563eb 55%,#0d9488 100%); color:#fff; border-radius:1.2vw; padding:1.3vh 1.8vw; box-shadow:0 .5vh 1.2vh rgba(30,58,138,.25); }
-  .antet .scoala { font-size:clamp(14px,1.7vw,32px); font-weight:600; opacity:.95; }
+  .antet .stanga { flex:1; min-width:0; }
+  .antet .scoala { display:block; font-size:clamp(14px,1.6vw,30px); font-weight:600; opacity:.95; }
+  .antet .ceas { font-size:clamp(30px,4.4vw,84px); font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.02em; line-height:1; text-shadow:0 .3vh .8vh rgba(0,0,0,.25); }
   .antet .sediu { font-size:clamp(20px,2.7vw,52px); font-weight:800; letter-spacing:.02em; background:rgba(255,255,255,.2); border-radius:1vw; padding:.3vh 1.4vw; white-space:nowrap; }
   .corp { display:grid; grid-template-columns:1.75fr 1fr; gap:1.8vw; min-height:0; }
   .corp.singur { grid-template-columns:1fr; }
@@ -25,15 +27,21 @@
   .banda .ora-pauza { font-size:clamp(17px,2vw,38px); font-weight:700; background:rgba(255,255,255,.22); border-radius:.9vw; padding:.2vh 1.1vw; white-space:nowrap; }
   .c-acum { --culoare:var(--acum); } .c-urm { --culoare:var(--urm); } .c-apoi { --culoare:var(--apoi); } .c-trecut { --culoare:var(--trecut); }
   .c-urm .banda { color:#2a1800; } .c-urm .banda .ora-pauza { background:rgba(42,24,0,.13); }
-  .mare { display:flex; flex-direction:column; gap:1.2vh; flex:0 0 auto; }
-  .cartonase { display:grid; gap:1.2vw; align-items:stretch; }
+  .mare { display:flex; flex-direction:column; gap:1.2vh; flex:1 1 auto; min-height:0; }
+  .cartonase { display:grid; gap:1.2vw; align-items:stretch; flex:1 1 auto; min-height:0; grid-auto-rows:minmax(0,1fr); }
 
   /* Cartonașe pe corp */
   .carton { background:var(--card); border-radius:1.1vw; overflow:hidden; box-shadow:0 .4vh 1vh rgba(15,23,42,.12); border:.25vw solid var(--k); min-width:0; }
   .carton h3 { margin:0; padding:.8vh 1.2vw; background:var(--k); color:#fff; font-size:clamp(18px,2.1vw,40px); font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
-  .carton .continut { padding:1vh 1.2vw 1.2vh; display:flex; flex-direction:column; gap:.7vh; }
+  .carton .continut { padding:1vh 1.2vw 1.2vh; display:flex; flex-direction:column; justify-content:center; gap:1.6vh; }
+  .cartonase .carton { display:flex; flex-direction:column; }
+  .cartonase .carton .continut { flex:1; }
   .k0 { --k:#2563eb; --kd:#dbeafe; } .k1 { --k:#7c3aed; --kd:#ede9fe; } .k2 { --k:#0d9488; --kd:#ccfbf1; } .k3 { --k:#db2777; --kd:#fce7f3; } .k4 { --k:#ea580c; --kd:#ffedd5; }
   .rand { display:flex; gap:.9vw; align-items:center; font-size:clamp(19px,2.15vw,41px); line-height:1.12; }
+  .cartonase.medii .rand { font-size:clamp(21px,2.4vw,46px); }
+  .corp.singur .cartonase.medii .rand { font-size:clamp(22px,2.9vw,56px); }
+  .cartonase.mari .rand { font-size:clamp(22px,2.9vw,56px); }
+  .corp.singur .cartonase.mari .rand { font-size:clamp(24px,3.5vw,68px); }
   .rand .loc { flex:0 0 auto; min-width:4.2em; text-align:center; background:var(--kd); color:var(--k); border-radius:.7vw; padding:.15vh .7vw; font-size:.62em; font-weight:800; }
   .rand .loc.larg { min-width:7em; }
   .rand .nume { font-weight:700; min-width:0; }
@@ -43,16 +51,16 @@
   .rand.lipsa .nume { color:var(--alerta); }
   .rand.lipsa .nota { color:#991b1b; }
 
-  /* Cartonașe mici: au fost / urmează */
-  .jos { display:grid; grid-template-columns:1fr 1fr; gap:1.2vw; }
-  .jos.una { grid-template-columns:1fr; }
-  .mic { background:var(--card); border-radius:1vw; overflow:hidden; box-shadow:0 .3vh .8vh rgba(15,23,42,.1); border:.2vw solid var(--culoare); min-width:0; }
-  .mic .cap { background:var(--culoare); color:#fff; padding:.6vh 1vw; font-size:clamp(15px,1.7vw,32px); font-weight:800; display:flex; justify-content:space-between; align-items:baseline; gap:1vw; }
+  /* Banda de jos: au fost / urmează */
+  .banda-jos { display:grid; grid-template-columns:repeat(var(--n,2),1fr); gap:1.2vw; }
+  .mic { display:flex; background:var(--card); border-radius:.9vw; overflow:hidden; box-shadow:0 .3vh .8vh rgba(15,23,42,.1); border:.2vw solid var(--culoare); min-width:0; }
+  .mic .cap { flex:0 0 auto; background:var(--culoare); color:#fff; padding:.5vh .9vw; display:flex; flex-direction:column; justify-content:center; gap:.1vh; min-width:10.5vw; }
   .mic.c-urm .cap { color:#2a1800; }
-  .mic .cap .t { text-transform:uppercase; letter-spacing:.03em; }
-  .mic .cap .o { font-weight:700; white-space:nowrap; font-size:.9em; }
-  .mic .corp-linie { padding:.5vh 1vw; font-size:clamp(14px,1.4vw,27px); line-height:1.25; border-top:1px solid var(--linie); }
-  .mic .corp-linie:first-of-type { border-top:0; }
+  .mic .cap .t { font-size:clamp(14px,1.5vw,28px); font-weight:800; text-transform:uppercase; letter-spacing:.03em; }
+  .mic .cap .o { font-size:clamp(11px,1.1vw,21px); font-weight:700; line-height:1.15; }
+  .mic .cont { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; }
+  .mic .corp-linie { padding:.3vh .9vw; font-size:clamp(12px,1.25vw,24px); line-height:1.2; border-top:1px solid var(--linie); }
+  .mic .corp-linie:first-child { border-top:0; }
   .mic .corp-linie b { color:var(--estompat); text-transform:uppercase; letter-spacing:.04em; margin-right:.5em; font-size:.9em; }
   .mic .corp-linie .p { font-weight:700; }
   .mic.c-trecut .corp-linie .p { font-weight:500; color:var(--estompat); }
@@ -62,10 +70,10 @@
   .gol { color:var(--estompat); font-size:clamp(18px,2vw,38px); font-weight:600; background:var(--card); border-radius:1.1vw; padding:2vh 1.6vw; box-shadow:0 .3vh .8vh rgba(15,23,42,.08); margin:0; }
 
   /* Învățători */
-  .invatatori { margin-top:auto; --k:#0369a1; --kd:#e0f2fe; }
+  .invatatori { margin-top:0; flex:0 0 auto; --k:#0369a1; --kd:#e0f2fe; }
   .invatatori .carton { border-color:var(--k); }
   .invatatori h3 { font-size:clamp(16px,1.8vw,34px); padding:.5vh 1.2vw; }
-  .invatatori .continut { flex-direction:row; flex-wrap:wrap; gap:.8vh 2.4vw; padding:.9vh 1.2vw; }
+  .invatatori .continut { flex-direction:row; flex-wrap:wrap; justify-content:flex-start; align-items:center; gap:.8vh 2.4vw; padding:.9vh 1.2vw; }
   .invatatori .rand { font-size:clamp(17px,1.8vw,34px); }
 
   /* Anunțuri */
@@ -79,8 +87,8 @@
   .pagina { background:var(--anunt); color:#fff; border-radius:.8vw; padding:.1vh 1vw; font-size:clamp(13px,1.3vw,25px); font-weight:700; }
 
   .mesaj { height:100vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:6vw; font-size:clamp(20px,3vw,56px); color:var(--estompat); line-height:1.4; }
-  .stare { position:fixed; right:1vw; bottom:.6vh; font-size:clamp(11px,1vw,18px); color:var(--estompat); opacity:.8; }
-  .stare.veche { color:var(--alerta); opacity:1; font-weight:700; }
+  .stare { display:block; font-size:clamp(11px,1vw,18px); font-weight:500; opacity:.8; margin-top:.3vh; }
+  .stare.veche { color:#fecaca; opacity:1; font-weight:800; }
 </style>
 </head>
 <body>
@@ -102,6 +110,7 @@
   var token = citesteToken();
 
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function ora(m) { return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
   function hm(m) { return Math.floor(m / 60) + ":" + String(m % 60).padStart(2, "0"); }
   var startPauza = function (k) { return 480 + (k - 1) * 60 + 50; }; // pauza k este între ora k și ora k+1, durează 10 minute
 
@@ -155,6 +164,7 @@
     return grupe;
   }
   var MAX_COLOANE = 3;
+  var josNoduri = []; // cartonașele „Au fost” și „Urmează”, puse în banda de jos
   var orePauza = function (k) { return hm(startPauza(k)) + "–" + hm(startPauza(k) + 10); };
 
   function cartonGrupa(g, idx, sediu) {
@@ -183,7 +193,8 @@
     banda.appendChild(el("span", "ora-pauza", "Pauza " + k + "–" + (k + 1) + " · " + orePauza(k)));
     bloc.appendChild(banda);
     var grupe = grupeDin(randuri, k, sediu);
-    var cart = el("div", "cartonase");
+    var maxP = 0; grupe.forEach(function (g) { if (g.persoane.length > maxP) maxP = g.persoane.length; });
+    var cart = el("div", "cartonase " + (maxP <= 2 ? "mari" : maxP === 3 ? "medii" : ""));
     cart.style.gridTemplateColumns = "repeat(" + Math.max(1, Math.min(grupe.length, MAX_COLOANE)) + ", 1fr)";
     grupe.forEach(function (g, i) { cart.appendChild(cartonGrupa(g, i, sediu)); });
     bloc.appendChild(cart);
@@ -195,8 +206,10 @@
     var bloc = el("div", "mic " + culoare);
     var cap = el("div", "cap");
     cap.appendChild(el("span", "t", text));
-    cap.appendChild(el("span", "o", "pauza " + k + "–" + (k + 1) + " · " + orePauza(k)));
+    cap.appendChild(el("span", "o", "pauza " + k + "–" + (k + 1)));
+    cap.appendChild(el("span", "o", orePauza(k)));
     bloc.appendChild(cap);
+    var cont = el("div", "cont");
     grupeDin(randuri, k, sediu).forEach(function (g) {
       var linie = el("div", "corp-linie");
       if (g.titlu) linie.appendChild(el("b", null, g.titlu));
@@ -207,8 +220,9 @@
         linie.appendChild(s);
         if (r.nota) linie.appendChild(el("span", "n", " (" + r.nota + ")"));
       });
-      bloc.appendChild(linie);
+      cont.appendChild(linie);
     });
+    bloc.appendChild(cont);
     return bloc;
   }
 
@@ -219,10 +233,8 @@
     if (!ales) return false;
     p.appendChild(blocMare(randuri, ales.k, sediu, ales.acum ? et.acum : et.urm, ales.acum ? "c-acum" : "c-urm"));
     if (faraJos) return true;
-    var jos = el("div", "jos");
-    if (cuTrecut && ales.i > 0) jos.appendChild(blocMic(randuri, pauze[ales.i - 1], sediu, "Au fost", "c-trecut"));
-    if (ales.i + 1 < pauze.length) jos.appendChild(blocMic(randuri, pauze[ales.i + 1], sediu, "Urmează", ales.acum ? "c-urm" : "c-apoi"));
-    if (jos.childNodes.length) { if (jos.childNodes.length < 2) jos.className = "jos una"; p.appendChild(jos); }
+    if (cuTrecut && ales.i > 0) josNoduri.push(blocMic(randuri, pauze[ales.i - 1], sediu, "Au fost", "c-trecut"));
+    if (ales.i + 1 < pauze.length) josNoduri.push(blocMic(randuri, pauze[ales.i + 1], sediu, "Urmează", ales.acum ? "c-urm" : "c-apoi"));
     return true;
   }
 
@@ -237,7 +249,7 @@
       var mesajAzi = !d.zi.scoala ? "Azi nu sunt cursuri" + (d.zi.titlu ? " (" + d.zi.titlu + ")" : "") + "."
         : cuPauze ? "Serviciul din pauze s-a încheiat pentru azi."
         : invatatori.length ? "" : "Nu este serviciu programat azi.";
-      if (cuPauze && !d.maine) { var ult = pauzeDin(randuri); var ku = ult[ult.length - 1]; var j0 = el("div", "jos una"); j0.appendChild(blocMic(randuri, ku, d.sediu, "Au fost", "c-trecut")); p.appendChild(j0); }
+      if (cuPauze && !d.maine) { var ult = pauzeDin(randuri); var ku = ult[ult.length - 1]; josNoduri.push(blocMic(randuri, ku, d.sediu, "Au fost", "c-trecut")); }
       if (mesajAzi) p.appendChild(el("p", "gol", mesajAzi));
       // serviciul primei zile următoare cu serviciu programat
       if (d.maine) {
@@ -298,19 +310,29 @@
     radacina.textContent = "";
     var e = el("div", "ecran");
     var ant = el("div", "antet");
-    ant.appendChild(el("span", "scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești"));
+    var stanga = el("div", "stanga");
+    stanga.appendChild(el("span", "scoala", "Liceul Tehnologic „Victor Mihăilescu Craiu” Belcești"));
+    var veche = Date.now() - ultimaReusita > 5 * 60000;
+    // ora actualizării este ora serverului din momentul citirii
+    stanga.appendChild(el("span", "stare" + (veche ? " veche" : ""), "Actualizat la " + hm(date.acum.minute) + (veche ? " · fără conexiune" : "")));
+    ant.appendChild(stanga);
+    var ceas = el("span", "ceas", ora(m)); ceas.id = "ceas";
+    ant.appendChild(ceas);
     ant.appendChild(el("span", "sediu", date.ecran && date.ecran !== date.sediu ? date.sediu + " · " + date.ecran : date.sediu));
     e.appendChild(ant);
     var cuAnunturi = (date.anunturi || []).length > 0;
     MAX_COLOANE = cuAnunturi ? 2 : 3;
     var corp = el("div", "corp" + (cuAnunturi ? "" : " singur"));
+    josNoduri = [];
     corp.appendChild(panouServiciu(date, m));
     if (cuAnunturi) corp.appendChild(panouAnunturi(date));
     e.appendChild(corp);
-    var veche = Date.now() - ultimaReusita > 5 * 60000;
-    // ora actualizării este ora serverului din momentul citirii
-    var st = el("div", "stare" + (veche ? " veche" : ""), "Actualizat la " + hm(date.acum.minute) + (veche ? " · fără conexiune" : ""));
-    e.appendChild(st);
+    if (josNoduri.length) {
+      var jos = el("div", "banda-jos");
+      jos.style.setProperty("--n", String(josNoduri.length));
+      josNoduri.forEach(function (n) { jos.appendChild(n); });
+      e.appendChild(jos);
+    }
     radacina.appendChild(e);
   }
 
@@ -336,6 +358,7 @@
   incarca();
   setInterval(incarca, 60 * 1000);                    // date noi în fiecare minut
   setInterval(function () { if (date) deseneaza(); }, 15 * 1000); // pauza curentă se schimbă singură
+  setInterval(function () { var c = document.getElementById("ceas"); if (c && date) c.textContent = ora(minutAcum()); }, 5 * 1000); // ceasul, după ora serverului
 })();
 </script>
 </body>
