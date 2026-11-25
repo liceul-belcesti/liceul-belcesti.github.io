@@ -1,6 +1,6 @@
 // Logica orarului propriu: ce se întâmplă într-o zi (ore, zile libere, vacanțe, practică, suplinire, serviciu).
 // Folosită de pagina Acasă și, mai târziu, de modulul „Orarul meu”.
-import { db, iso, dinIso } from "./core.js";
+import { db, iso, dinIso } from "./core.js?v=20261125b";
 
 export const ZL7 = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"];
 export const ziSapt = (d) => (d.getDay() + 6) % 7; // 0 = luni … 6 = duminică

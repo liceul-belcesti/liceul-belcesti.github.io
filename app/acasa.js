@@ -1,10 +1,10 @@
 // Pagina Acasă: salut, cardul „Azi”, orele zilei, calendarul de azi, anunțuri noi, notificările pe telefon și casetele modulelor (telefon).
-import { db, h, umple, stare, azi, iso, fmtData, ZILE, p2, modulePentruVedere, rolurileVazute, MODULE, titluModul, descriereModul, poate, actualizeazaNotificari } from "./core.js";
-import { svgIcon } from "./ui.js";
-import { esteIntunecat, comutaTema } from "./tema.js";
-import { naviga, deschideContul, deschideClopot } from "./shell.js";
-import { incarcaDateOrar, incarcaPlanZi, rezumatZi, hm, stOra, intervalOra, stPauza, textPlan, detOra } from "./orar-logic.js";
-import { cardNotificariTelefon } from "./notif-tel.js";
+import { db, h, umple, stare, azi, iso, fmtData, ZILE, p2, modulePentruVedere, rolurileVazute, MODULE, titluModul, descriereModul, poate, actualizeazaNotificari } from "./core.js?v=20261125b";
+import { svgIcon } from "./ui.js?v=20261125b";
+import { esteIntunecat, comutaTema } from "./tema.js?v=20261125b";
+import { naviga, deschideContul, deschideClopot } from "./shell.js?v=20261125b";
+import { incarcaDateOrar, incarcaPlanZi, rezumatZi, hm, stOra, intervalOra, stPauza, textPlan, detOra } from "./orar-logic.js?v=20261125b";
+import { cardNotificariTelefon } from "./notif-tel.js?v=20261125b";
 
 const salutZi = () => { const o = new Date().getHours(); return o >= 5 && o < 12 ? "Bună dimineața" : o >= 12 && o < 18 ? "Bună ziua" : "Bună seara"; };
 

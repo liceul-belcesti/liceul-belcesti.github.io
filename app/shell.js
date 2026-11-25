@@ -1,11 +1,11 @@
 // Cadrul aplicației: bară laterală (laptop), bară de jos (telefon), rute, meniul contului, clopoțel.
-import { db, h, umple, $, stare, modulePentruVedere, moduleleMele, MODULE, titluModul, descriereModul, ETICHETE_ROL, rolurileVazute, actualizeazaNotificari } from "./core.js";
-import { svgIcon, icon, fereastra, inchideFereastra, capPagina } from "./ui.js";
-import { temaAleasa, aplicaTema } from "./tema.js";
+import { db, h, umple, $, stare, modulePentruVedere, moduleleMele, MODULE, titluModul, descriereModul, ETICHETE_ROL, rolurileVazute, actualizeazaNotificari } from "./core.js?v=20261125b";
+import { svgIcon, icon, fereastra, inchideFereastra, capPagina } from "./ui.js?v=20261125b";
+import { temaAleasa, aplicaTema } from "./tema.js?v=20261125b";
 
 // Modulele rescrise în aspectul nou. Celelalte se deschid, deocamdată, în versiunea veche (aceeași autentificare).
 const RESCRISE = {
-  calendar: () => import("./module/calendar.js")
+  calendar: () => import("./module/calendar.js?v=20261125b")
 };
 let curat = null, versiune = 0;
 
@@ -65,7 +65,7 @@ async function ruteaza() {
   umple(zona); window.scrollTo(0, 0);
   document.title = (id ? titluModul(id, rolurileVazute()) + " · " : "") + "Spațiul digital al școlii";
   try {
-    if (!id) { const m = await import("./acasa.js"); if (v !== versiune) return; curat = (await m.randeaza(zona)) || null; }
+    if (!id) { const m = await import("./acasa.js?v=20261125b"); if (v !== versiune) return; curat = (await m.randeaza(zona)) || null; }
     else if (RESCRISE[id]) { const m = await RESCRISE[id](); if (v !== versiune) return; curat = (await m.randeaza(zona)) || null; }
     else zona.append(modulVechi(id));
   } catch (e) {

@@ -1,5 +1,5 @@
 // Componente comune: pictograme, ferestre, mesaje, antet de pagină.
-import { h } from "./core.js";
+import { h } from "./core.js?v=20261125b";
 
 const P = {
   acasa: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',

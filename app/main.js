@@ -1,8 +1,8 @@
 // Pornirea aplicației: verifică sesiunea, apoi arată intrarea sau cadrul aplicației.
-import { db, $, stare } from "./core.js";
-import * as auth from "./auth.js";
-import { pornesteCadru, actualizeazaUtilizator } from "./shell.js";
-import { actualizeazaNotificari } from "./core.js";
+import { db, $, stare } from "./core.js?v=20261125b";
+import * as auth from "./auth.js?v=20261125b";
+import { pornesteCadru, actualizeazaUtilizator } from "./shell.js?v=20261125b";
+import { actualizeazaNotificari } from "./core.js?v=20261125b";
 
 let mesajRamas = "";
 async function verificaAcces(sesiune) {
