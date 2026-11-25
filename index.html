@@ -183,6 +183,50 @@
     .wifi-badge.stop { color:var(--err); border-color:var(--err); }
     .wifi-sumar { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
     .wifi-cauta { width:100%; margin:0 0 6px; }
+    /* ---------- Calendarul meu ---------- */
+    #calendar .panel-msg { margin:6px 0; padding:8px 10px; font-size:.85rem; }
+    .cal-luna { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
+    .cal-luna h2 { flex:1; margin:0; font-size:1.1rem; text-align:center; }
+    .cal-luna button { width:auto; min-height:40px; margin:0; padding:0 14px; }
+    .cal-grila { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; margin:0 0 12px; }
+    .cal-cap { text-align:center; font-size:.8rem; font-weight:700; color:var(--muted); padding:2px 0; }
+    .cal-grila button.cal-zi { width:100%; min-height:50px; margin:0; padding:5px 0 3px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px;
+      background:var(--card); color:var(--text); border:1.5px solid var(--line); border-radius:10px; font-weight:600; }
+    .cal-grila button.cal-zi.alta { opacity:.5; }
+    .cal-grila button.cal-zi.azi { border-color:var(--accent); border-width:2.5px; }
+    .cal-grila button.cal-zi.sel { background:var(--accent); color:var(--on-accent); border-color:var(--accent); opacity:1; }
+    .cal-puncte { display:flex; gap:3px; min-height:7px; }
+    .cal-p { width:7px; height:7px; border-radius:50%; background:var(--accent); }
+    .cal-p.task { background:#f59e0b; }
+    .cal-p.intarziat { background:var(--err); }
+    .cal-zi.sel .cal-p, .cal-zi.sel .cal-p.task, .cal-zi.sel .cal-p.intarziat { background:var(--on-accent); }
+    .cal-legenda { display:flex; flex-wrap:wrap; gap:4px 14px; margin:-6px 0 12px; font-size:.8rem; color:var(--muted); }
+    .cal-legenda span::before { content:""; display:inline-block; width:8px; height:8px; margin-right:5px; border-radius:50%; background:var(--accent); }
+    .cal-legenda .t::before { background:#f59e0b; }
+    .cal-legenda .i::before { background:var(--err); }
+    .cal-ziua { margin:0 0 8px; font-size:1.05rem; }
+    .cal-grup { margin:14px 0 6px; font-size:.9rem; font-weight:700; color:var(--muted); }
+    .cal-grup.intarziat { color:var(--err); }
+    .cal-rand { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; margin:0 0 6px; background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
+    .cal-rand.intarziat { border-color:var(--err); }
+    .cal-rand input[type="checkbox"] { flex:none; width:24px; min-height:0; height:24px; margin:2px 0 0; padding:0; }
+    .cal-text { flex:1; min-width:0; cursor:pointer; }
+    .cal-titlu { font-weight:700; overflow-wrap:anywhere; }
+    .cal-rand.gata .cal-titlu { text-decoration:line-through; color:var(--muted); }
+    .cal-meta { font-size:.85rem; color:var(--muted); overflow-wrap:anywhere; }
+    .cal-meta.rosu { color:var(--err); font-weight:700; }
+    .cal-nota { font-size:.9rem; white-space:pre-wrap; overflow-wrap:anywhere; margin-top:2px; }
+    .cal-ico { flex:none; font-size:1.3rem; line-height:1.5; }
+    .cal-gol { margin:6px 0 12px; color:var(--muted); }
+    .cal-form { background:var(--card); border:1.5px solid var(--accent); border-radius:12px; padding:14px; margin:0 0 14px; }
+    .cal-form h2 { margin:0 0 4px; font-size:1.05rem; }
+    .cal-form select, .cal-form textarea { width:100%; min-height:48px; padding:11px 14px; font:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--line); border-radius:10px; }
+    .cal-form textarea { min-height:84px; resize:vertical; }
+    .cal-form .cal-ind { margin:6px 0 0; font-size:.85rem; color:var(--muted); }
+    .cal-form .cal-doua { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .cal-form .cal-butoane { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .cal-form .cal-butoane button { width:auto; flex:1 1 120px; min-height:44px; margin:0; }
+    .cal-form .cal-butoane button.sterge { flex:0 0 auto; color:var(--err); border-color:var(--err); }
     .wifi-nou { border-color:var(--accent); }
     .wifi-parola-noua { font-family:ui-monospace,Consolas,monospace; font-size:1.3rem; font-weight:700; letter-spacing:.05em; margin:8px 0; user-select:all; overflow-wrap:anywhere; }
     .wifi-pers { background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:0 14px; margin-bottom:8px; }
@@ -1966,6 +2010,18 @@
       <div id="wifi-corp"></div>
     </main>
 
+    <main id="calendar" class="wrap hidden">
+      <button id="inapoi-calendar" class="back" type="button">← Înapoi</button>
+      <h1 class="hello">Calendarul meu</h1>
+      <p class="who">Mementouri și taskuri doar ale tale; nimeni altcineva nu le vede.</p>
+      <div class="tabs" role="tablist" id="tab-calendar">
+        <button type="button" role="tab" data-v="luna" aria-selected="true">Calendar</button>
+        <button type="button" role="tab" data-v="taskuri" aria-selected="false">Taskuri de făcut</button>
+      </div>
+      <div id="calendar-msg" class="panel-msg" role="alert"></div>
+      <div id="calendar-corp"></div>
+    </main>
+
     <main id="registru" class="wrap hidden">
       <button id="inapoi-registru" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Registratură</h1>
@@ -2020,6 +2076,7 @@
       pontaj:   { ico: "🕒", t: "Pontaj", d: "Angajați și prezența lunară", sub: ["Foaia lunară", "Plata cu ora"], activ: true },
       anunturi: { ico: "📢", t: "Anunțuri", d: "Informări de la școală", sub: ["Informări de la școală"], activ: true },
       documente: { ico: "📄", t: "Documentele mele", d: "Documente repartizate ție", sub: ["Documente repartizate ție"], activ: true },
+      calendar: { ico: "📅", t: "Calendarul meu", d: "Mementouri și taskuri, cu notificare pe telefon", sub: ["Mementouri", "Taskuri"], activ: true },
       wifi:     { ico: "📶", t: "Parola mea de Wi-Fi", d: "Adresa ta de e-mail și parola ta pentru Wi-Fi-ul școlii", sub: ["Parola de Wi-Fi"], activ: true },
       orarmeu:  { ico: "🗓️", t: "Orarul meu", d: "Orele tale pe zile și pe clase", sub: ["Orele și serviciul tău pe școală"], activ: true },
       evaluare: { ico: "✅", t: "Evaluare", d: "Teste pentru clasele și disciplinele tale", sub: ["Clasele mele"], activ: true },
@@ -2034,11 +2091,11 @@
     // Ce module vede fiecare rol. Un cont poate avea mai multe roluri; vede reuniunea lor.
     // Administratorul vede toate modulele. (Protecția reală a datelor este în baza de date.)
     const PE_ROL = {
-      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru", "wifi"],
-      director_adjunct: ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru", "wifi"],
-      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "serviciu", "registru"],
-      contabilitate: ["pontaj", "structura", "anunturi"],
-      profesor:      ["pontaj", "orarmeu", "cereri", "evaluare", "altfel", "anunturi", "wifi"],
+      director:      ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru", "calendar", "wifi"],
+      director_adjunct: ["utilizatori", "azi", "pontaj", "structura", "anunturi", "orar", "cereri", "evaluare", "altfel", "serviciu", "ecrane", "registru", "calendar", "wifi"],
+      secretariat:   ["azi", "pontaj", "structura", "anunturi", "orar", "altfel", "serviciu", "registru", "calendar"],
+      contabilitate: ["pontaj", "structura", "anunturi", "calendar"],
+      profesor:      ["pontaj", "orarmeu", "calendar", "cereri", "evaluare", "altfel", "anunturi", "wifi"],
       parinte:       ["anunturi", "orar", "catalog"],
       elev:          ["anunturi", "orar", "catalog"]
     };
@@ -2275,6 +2332,7 @@
       $("serviciu").classList.add("hidden");
       $("ecrane").classList.add("hidden");
       $("wifi").classList.add("hidden");
+      $("calendar").classList.add("hidden");
       $("registru").classList.add("hidden");
       $("documente").classList.add("hidden");
       document.querySelector("#acasa > main.wrap").classList.remove("hidden");
@@ -2284,7 +2342,7 @@
     $("alerta-copie").addEventListener("click", () => deschideModul("utilizatori", "copie"));
 
     function deschideModul(cheie, vedereIni) {
-      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare" && cheie !== "altfel" && cheie !== "serviciu" && cheie !== "ecrane" && cheie !== "wifi" && cheie !== "registru" && cheie !== "documente") return;
+      if (cheie !== "pontaj" && cheie !== "utilizatori" && cheie !== "structura" && cheie !== "anunturi" && cheie !== "orarmeu" && cheie !== "orar" && cheie !== "azi" && cheie !== "cereri" && cheie !== "evaluare" && cheie !== "altfel" && cheie !== "serviciu" && cheie !== "ecrane" && cheie !== "wifi" && cheie !== "calendar" && cheie !== "registru" && cheie !== "documente") return;
       if (cheie === "registru") return deschideRegistru();
       if (cheie === "documente") return deschideDocumente();
       if (cheie === "cereri") return deschideCereri();
@@ -2292,6 +2350,7 @@
       if (cheie === "serviciu") return deschideServiciu();
       if (cheie === "ecrane") return deschideEcrane();
       if (cheie === "wifi") return deschideWifi();
+      if (cheie === "calendar") return deschideCalendar();
       if (cheie === "evaluare") return deschideEvaluare();
       if (cheie === "azi") return deschideAzi();
       if (cheie === "orar") return deschideOrar();
@@ -9156,6 +9215,235 @@
       const rows = c.grafic.filter((g) => g.zona_id === z.id && g.zi === zi && (g.pauza || null) === pauza && (g.schimb || null) === schimb);
       return { rows, nume };
     }
+    // ===== Calendarul meu: mementouri și taskuri private, cu anunț pe telefon la ora aleasă =====
+    $("inapoi-calendar").addEventListener("click", arataPrincipal);
+    const CAL_LUNI = ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"];
+    const CAL_ZILE = ["duminică", "luni", "marți", "miercuri", "joi", "vineri", "sâmbătă"];
+    const CAL_LIT = ["L", "M", "M", "J", "V", "S", "D"];
+    const CAL_ANUNT = { 0: "la ora stabilită", 15: "cu 15 minute înainte", 60: "cu o oră înainte", 1440: "cu o zi înainte" };
+    const calIso = (d) => d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate());
+    const calDinIso = (s) => new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+    const calAzi = () => calIso(new Date());
+    const calMare = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+    const calZiuaScrisa = (s) => calMare(CAL_ZILE[calDinIso(s).getDay()]) + ", " + fmtData(s);
+    let calStare = { luna: null, sel: "", fila: "luna", elemente: [], taskuri: [], zonaForm: null, zonaLista: null };
+    const mesajCal = (text, ok) => { $("calendar-msg").textContent = text || ""; $("calendar-msg").className = "panel-msg" + (ok ? " ok" : ""); };
+
+    async function calIncarcaLuna() {
+      const prima = new Date(calStare.luna.getFullYear(), calStare.luna.getMonth(), 1);
+      const start = new Date(prima); start.setDate(1 - ((prima.getDay() + 6) % 7));
+      const sfarsit = new Date(start); sfarsit.setDate(start.getDate() + 41);
+      const { data, error } = await db.rpc("calendar_lista", { p_de: calIso(start), p_pana: calIso(sfarsit) });
+      if (error) { mesajCal("Calendarul nu a putut fi încărcat. Încearcă din nou."); return false; }
+      calStare.elemente = data || []; calStare.start = start; return true;
+    }
+    async function calIncarcaTaskuri() {
+      const { data, error } = await db.rpc("calendar_taskuri_deschise");
+      if (error) { mesajCal("Taskurile nu au putut fi încărcate. Încearcă din nou."); return false; }
+      calStare.taskuri = data || []; return true;
+    }
+    async function calActualizeaza() {
+      mesajCal("");
+      const ok = calStare.fila === "luna" ? await calIncarcaLuna() : await calIncarcaTaskuri();
+      if (ok) calDeseneaza();
+    }
+    async function deschideCalendar() {
+      memoreazaVedere("calendar");
+      document.querySelector("#acasa > main.wrap").classList.add("hidden");
+      $("calendar").classList.remove("hidden");
+      const a = new Date();
+      calStare.luna = new Date(a.getFullYear(), a.getMonth(), 1); calStare.sel = calAzi(); calStare.fila = "luna";
+      $("tab-calendar").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === "luna" ? "true" : "false"));
+      await calActualizeaza();
+    }
+    $("tab-calendar").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button[data-v]"); if (!b || b.dataset.v === calStare.fila) return;
+      calStare.fila = b.dataset.v;
+      $("tab-calendar").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === calStare.fila ? "true" : "false"));
+      calActualizeaza();
+    });
+
+    // Un rând: element de calendar (memento sau task), cu bifă doar pentru taskuri
+    function calRand(e, cuData) {
+      const azi = calAzi();
+      const intarziat = e.tip === "task" && !e.gata && e.data < azi;
+      const r = el("div", "cal-rand" + (e.gata ? " gata" : "") + (intarziat ? " intarziat" : ""));
+      if (e.tip === "task") {
+        const c = document.createElement("input"); c.type = "checkbox"; c.checked = !!e.gata; c.setAttribute("aria-label", "Task făcut: " + e.titlu);
+        c.addEventListener("change", async () => {
+          c.disabled = true;
+          const { error } = await db.rpc("calendar_gata", { p_id: e.id, p_gata: c.checked });
+          if (error) { c.checked = !c.checked; c.disabled = false; return mesajCal("Nu s-a putut salva. Încearcă din nou."); }
+          calActualizeaza();
+        });
+        r.appendChild(c);
+      } else { const i = el("span", "cal-ico", "📌"); i.setAttribute("aria-hidden", "true"); r.appendChild(i); }
+      const t = el("div", "cal-text"); t.tabIndex = 0; t.setAttribute("role", "button");
+      t.appendChild(el("div", "cal-titlu", e.titlu));
+      const meta = [];
+      if (cuData) meta.push(calZiuaScrisa(e.data));
+      if (e.ora) meta.push("ora " + e.ora);
+      if (e.anunt_min !== null && e.anunt_min !== undefined) meta.push("🔔 " + CAL_ANUNT[e.anunt_min]);
+      if (e.tip === "memento" && !e.ora && !cuData) meta.push("toată ziua");
+      if (meta.length || intarziat) {
+        const m = el("div", "cal-meta" + (intarziat ? " rosu" : ""), (intarziat ? "Întârziat · " : "") + meta.join(" · "));
+        t.appendChild(m);
+      }
+      if (e.nota) t.appendChild(el("div", "cal-nota", e.nota));
+      const deschide = () => calFormular(e);
+      t.addEventListener("click", deschide);
+      t.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); deschide(); } });
+      r.appendChild(t);
+      return r;
+    }
+
+    function calDeseneaza() {
+      const corp = $("calendar-corp"); corp.replaceChildren();
+      calStare.zonaForm = el("div"); corp.appendChild(calStare.zonaForm);
+      if (calStare.fila === "luna") calDeseneazaLuna(corp); else calDeseneazaTaskuri(corp);
+    }
+
+    function calDeseneazaLuna(corp) {
+      const L = calStare.luna, azi = calAzi();
+      const bara = el("div", "cal-luna");
+      const mutaLuna = (n) => {
+        calStare.luna = new Date(L.getFullYear(), L.getMonth() + n, 1);
+        const a = new Date(), inLuna = calStare.luna.getFullYear() === a.getFullYear() && calStare.luna.getMonth() === a.getMonth();
+        calStare.sel = inLuna ? calAzi() : calIso(calStare.luna);
+        calActualizeaza();
+      };
+      const bp = el("button", "secondary", "‹"); bp.type = "button"; bp.setAttribute("aria-label", "Luna anterioară"); bp.addEventListener("click", () => mutaLuna(-1));
+      const bn = el("button", "secondary", "›"); bn.type = "button"; bn.setAttribute("aria-label", "Luna următoare"); bn.addEventListener("click", () => mutaLuna(1));
+      const bz = el("button", "secondary", "Azi"); bz.type = "button";
+      bz.addEventListener("click", () => { const a = new Date(); calStare.luna = new Date(a.getFullYear(), a.getMonth(), 1); calStare.sel = calAzi(); calActualizeaza(); });
+      bara.append(bp, el("h2", "", calMare(CAL_LUNI[L.getMonth()]) + " " + L.getFullYear()), bz, bn);
+      corp.appendChild(bara);
+
+      const pe = {};
+      calStare.elemente.forEach((e) => { (pe[e.data] = pe[e.data] || []).push(e); });
+      const grila = el("div", "cal-grila");
+      CAL_LIT.forEach((l) => grila.appendChild(el("div", "cal-cap", l)));
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(calStare.start); d.setDate(calStare.start.getDate() + i);
+        const iso = calIso(d), lista = pe[iso] || [];
+        const b = el("button", "cal-zi" + (d.getMonth() !== L.getMonth() ? " alta" : "") + (iso === azi ? " azi" : "") + (iso === calStare.sel ? " sel" : ""));
+        b.type = "button"; b.setAttribute("aria-pressed", String(iso === calStare.sel));
+        b.setAttribute("aria-label", calZiuaScrisa(iso) + (lista.length ? ", " + lista.length + (lista.length === 1 ? " element" : " elemente") : ""));
+        b.appendChild(el("span", "", String(d.getDate())));
+        const pct = el("span", "cal-puncte");
+        const memento = lista.some((e) => e.tip === "memento");
+        const taskuri = lista.filter((e) => e.tip === "task");
+        if (memento) pct.appendChild(el("i", "cal-p"));
+        if (taskuri.some((e) => !e.gata && iso >= azi) || (taskuri.length && taskuri.every((e) => e.gata))) pct.appendChild(el("i", "cal-p task"));
+        if (taskuri.some((e) => !e.gata && iso < azi)) pct.appendChild(el("i", "cal-p intarziat"));
+        b.appendChild(pct);
+        b.addEventListener("click", () => {
+          calStare.sel = iso;
+          if (d.getMonth() !== L.getMonth()) { calStare.luna = new Date(d.getFullYear(), d.getMonth(), 1); calActualizeaza(); } else calDeseneaza();
+        });
+        grila.appendChild(b);
+      }
+      corp.appendChild(grila);
+      const leg = el("div", "cal-legenda");
+      leg.append(el("span", "", "memento"), el("span", "t", "task"), el("span", "i", "task întârziat"));
+      corp.appendChild(leg);
+
+      corp.appendChild(el("h2", "cal-ziua", calZiuaScrisa(calStare.sel) + (calStare.sel === azi ? " (azi)" : "")));
+      const zi = pe[calStare.sel] || [];
+      if (!zi.length) corp.appendChild(el("p", "cal-gol", "Nimic notat pe această zi."));
+      zi.forEach((e) => corp.appendChild(calRand(e, false)));
+      const adauga = el("button", "", "＋ Adaugă pe această zi"); adauga.type = "button";
+      adauga.addEventListener("click", () => calFormular(null, calStare.sel));
+      corp.appendChild(adauga);
+    }
+
+    function calDeseneazaTaskuri(corp) {
+      const azi = calAzi(), t = calStare.taskuri;
+      const adauga = el("button", "", "＋ Task nou"); adauga.type = "button"; adauga.style.marginTop = "0";
+      adauga.addEventListener("click", () => calFormular(null, azi, "task"));
+      corp.appendChild(adauga);
+      if (!t.length) { corp.appendChild(el("p", "cal-gol", "Nu ai taskuri de făcut. ")); return; }
+      const grupuri = [["Întârziate", (e) => e.data < azi, "intarziat"], ["Azi", (e) => e.data === azi, ""], ["Mai târziu", (e) => e.data > azi, ""]];
+      grupuri.forEach(([nume, pot, cls]) => {
+        const l = t.filter(pot); if (!l.length) return;
+        corp.appendChild(el("div", "cal-grup " + cls, nume + " (" + l.length + ")"));
+        l.forEach((e) => corp.appendChild(calRand(e, true)));
+      });
+    }
+
+    // Formular de adăugare / modificare
+    async function calFormular(e, dataImplicita, tipImplicit) {
+      const zona = calStare.zonaForm; if (!zona) return;
+      mesajCal("");
+      const f = el("form", "cal-form"); f.noValidate = true;
+      f.appendChild(el("h2", "", e ? "Modifică" : "Element nou"));
+      const camp = (et, nod) => { const l = el("label", "", et); l.appendChild(nod); f.appendChild(l); return nod; };
+      const tip = document.createElement("select");
+      [["memento", "Memento (ceva de ținut minte)"], ["task", "Task (ceva de făcut, se bifează)"]].forEach(([v, t]) => tip.appendChild(Object.assign(document.createElement("option"), { value: v, textContent: t })));
+      tip.value = e ? e.tip : (tipImplicit || "memento");
+      camp("Ce adaugi", tip);
+      const titlu = Object.assign(document.createElement("input"), { type: "text", maxLength: 120, value: e ? e.titlu : "", autocomplete: "off" });
+      camp("Titlu", titlu);
+      const doua = el("div", "cal-doua");
+      const data = Object.assign(document.createElement("input"), { type: "date", value: e ? e.data : (dataImplicita || calAzi()), min: "2020-01-01", max: "2100-12-31" });
+      const ora = Object.assign(document.createElement("input"), { type: "time", value: e && e.ora ? e.ora : "" });
+      const lData = el("label", "", "Data"); lData.appendChild(data);
+      const lOra = el("label", "", "Ora (nu e obligatorie)"); lOra.appendChild(ora);
+      doua.append(lData, lOra); f.appendChild(doua);
+      const anunt = document.createElement("select");
+      anunt.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "Fără anunț" }));
+      Object.keys(CAL_ANUNT).forEach((k) => anunt.appendChild(Object.assign(document.createElement("option"), { value: k, textContent: "Anunță-mă " + CAL_ANUNT[k] })));
+      anunt.value = e && e.anunt_min !== null && e.anunt_min !== undefined ? String(e.anunt_min) : "";
+      camp("Notificare pe telefon", anunt);
+      const ind = el("p", "cal-ind"); f.appendChild(ind);
+      const nota = Object.assign(document.createElement("textarea"), { maxLength: 1000, value: e && e.nota ? e.nota : "" });
+      camp("Notă (nu e obligatorie)", nota);
+      const mesaj = el("div", "panel-msg"); mesaj.setAttribute("role", "alert"); f.appendChild(mesaj);
+      const bt = el("div", "cal-butoane");
+      const bs = el("button", "", "Salvează"); bs.type = "submit";
+      const ba = el("button", "secondary", "Renunță"); ba.type = "button"; ba.addEventListener("click", () => zona.replaceChildren());
+      bt.append(bs, ba);
+      if (e) {
+        const bd = el("button", "secondary sterge", "Șterge"); bd.type = "button";
+        bd.addEventListener("click", async () => {
+          if (!confirm("Ștergi „" + e.titlu + "”?")) return;
+          bd.disabled = true;
+          const { error } = await db.rpc("calendar_sterge", { p_id: e.id });
+          if (error) { bd.disabled = false; mesaj.textContent = "Nu s-a putut șterge. Încearcă din nou."; return; }
+          calActualizeaza();
+        });
+        bt.appendChild(bd);
+      }
+      f.appendChild(bt);
+
+      let activ = null;
+      const arataIndiciu = async () => {
+        if (anunt.value === "") { ind.textContent = ""; return; }
+        if (activ === null) { try { activ = notifTelSuportat() && !!(await abonareCurenta()); } catch (x) { activ = false; } }
+        ind.textContent = (activ ? "Primești notificare pe acest telefon." : "Notificările nu sunt active pe acest telefon: le activezi din pagina principală, la „Notificări de dimineață”. Până atunci anunțul vine pe e-mail.")
+          + (ora.value ? "" : " Fără oră stabilită, se socotește ora 8:00.");
+      };
+      anunt.addEventListener("change", arataIndiciu); ora.addEventListener("input", arataIndiciu); arataIndiciu();
+
+      f.addEventListener("submit", async (ev) => {
+        ev.preventDefault(); mesaj.textContent = "";
+        if (!titlu.value.trim()) { mesaj.textContent = "Scrie un titlu."; titlu.focus(); return; }
+        if (!data.value) { mesaj.textContent = "Alege data."; return; }
+        bs.disabled = true;
+        const { error } = await db.rpc("calendar_salveaza", {
+          p_id: e ? e.id : null, p_tip: tip.value, p_titlu: titlu.value.trim(), p_nota: nota.value.trim() || null,
+          p_data: data.value, p_ora: ora.value || null, p_anunt_min: anunt.value === "" ? null : Number(anunt.value)
+        });
+        bs.disabled = false;
+        if (error) { mesaj.textContent = "Nu s-a putut salva. Verifică datele și încearcă din nou."; return; }
+        if (calStare.fila === "luna") { const d = calDinIso(data.value); calStare.luna = new Date(d.getFullYear(), d.getMonth(), 1); calStare.sel = data.value; }
+        calActualizeaza();
+      });
+      zona.replaceChildren(f);
+      f.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      titlu.focus({ preventScroll: true });
+    }
+
     // ===== Parola mea de Wi-Fi: contul de Wi-Fi al fiecărui profesor (parola se salvează doar ca amprentă, prin funcția wifi-parola) =====
     $("inapoi-wifi").addEventListener("click", arataPrincipal);
     const mesajWifi = (text, ok) => { $("wifi-msg").textContent = text || ""; $("wifi-msg").className = "panel-msg" + (ok ? " ok" : ""); };
@@ -10516,7 +10804,7 @@
 
     // Butoanele „Înapoi” stau în antet, în stânga; se afișează cel al ecranului deschis.
     (function () {
-      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi-altfel", "inapoi-serviciu", "inapoi-ecrane", "inapoi-wifi", "inapoi-registru", "inapoi-documente", "inapoi"];
+      const ordine = ["inapoi-pco", "inapoi-admin", "inapoi-pontaj", "inapoi-str", "inapoi-anunturi", "inapoi-orarmeu", "inapoi-orar", "inapoi-azi", "inapoi-cereri", "inapoi-evaluare", "inapoi-altfel", "inapoi-serviciu", "inapoi-ecrane", "inapoi-wifi", "inapoi-calendar", "inapoi-registru", "inapoi-documente", "inapoi"];
       const slot = $("bar-inapoi");
       const lista = ordine.map((id) => { const b = $(id); return b ? { b, p: b.parentElement } : null; }).filter(Boolean);
       lista.forEach((x) => slot.appendChild(x.b));
