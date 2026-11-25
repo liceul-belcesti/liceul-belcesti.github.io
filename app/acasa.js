@@ -9,9 +9,8 @@ import { cardNotificariTelefon } from "./notif-tel.js";
 const salutZi = () => { const o = new Date().getHours(); return o >= 5 && o < 12 ? "Bună dimineața" : o >= 12 && o < 18 ? "Bună ziua" : "Bună seara"; };
 
 export async function randeaza(zona) {
-  const laptop = window.matchMedia("(min-width:900px)");
-  let orar = null, plan = [], gataOrar = false, vii = true, deschisOre = null;
-  const sectiuni = { erou: h("section", { class: "erou ascuns", role: "button", tabindex: 0 }), ore: h("details", { class: "card ore-zi ascuns" }),
+  let orar = null, plan = [], gataOrar = false, vii = true;
+  const sectiuni = { erou: h("section", { class: "erou ascuns", role: "button", tabindex: 0 }),
     cal: h("section", { class: "card ascuns", "aria-label": "În calendarul tău azi" }), anunt: h("section", { class: "card ascuns", "aria-label": "Anunțuri" }) };
 
   // ----- antet: data, temă, clopoțel, salut
@@ -44,51 +43,47 @@ export async function randeaza(zona) {
   tiles();
 
   umple(zona, 
-    h("div", { class: "acasa-cap" }, h("div", { class: "st" }, avatar, data), h("div", { class: "dr" }, tema, clopot)), salut,
-    h("div", { class: "grila doua" }, sectiuni.erou, sectiuni.cal, sectiuni.ore, sectiuni.anunt),
+    h("div", { class: "acasa-cap" }, h("div", { class: "st" }, avatar, data), h("div", { class: "dr" }, tema, clopot), salut),
+    h("div", { class: "grila egal acasa-grila" }, sectiuni.erou, sectiuni.cal, sectiuni.anunt),
     notif ? h("div", { style: "margin-top:12px" }, notif) : null,
     h("div", { class: "mobil-doar" }, h("h2", { class: "sect", text: "Modulele tale" }), casete));
 
-  // ----- cardul mare „Azi” și lista orelor
+  // ----- cardul mare „Azi”, cu orele zilei în el
   function deseneazaOrar() {
-    const { erou, ore } = sectiuni;
-    if (!orar) { erou.classList.add("ascuns"); ore.classList.add("ascuns"); return; }
+    const { erou } = sectiuni;
+    if (!orar) { erou.classList.add("ascuns"); return; }
     const acum = new Date(), r = rezumatZi(orar, new Date(acum.getFullYear(), acum.getMonth(), acum.getDate()), plan, acum);
     const { info, lista, active, prac, cur, urm, mN, svP, svS } = r;
     const facute = info.suspendat ? 0 : active.filter((x) => stOra(x.ora) + 50 <= mN).length;
-    let et = "AZI", dr = "", mare = "", acc = "", sub = "";
-    if (info.suspendat) { mare = info.titlu; sub = info.sub; }
-    else if (!active.length) mare = "Nicio oră de predat";
-    else if (cur) { et = "ORA CURENTĂ"; dr = "până la " + hm(stOra(cur.ora) + 50); mare = "Ora " + cur.ora; acc = " · " + hm(stOra(cur.ora)); sub = detOra(cur); }
-    else if (urm) { et = "URMĂTOAREA ORĂ"; const m = stOra(urm.ora) - mN; dr = "peste " + (m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "")); mare = "Ora " + urm.ora; acc = " · " + hm(stOra(urm.ora)); sub = detOra(urm); }
-    else { mare = "Gata pe azi"; sub = "Orele de azi s-au încheiat"; }
+    let et = "AZI", dr = "", mare = "", sub = "", text = false;
+    if (info.suspendat) { mare = info.titlu; sub = info.sub; text = true; }
+    else if (!active.length) { mare = "Nicio oră de predat"; text = true; }
+    else if (cur) { et = "ORA CURENTĂ"; dr = "până la " + hm(stOra(cur.ora) + 50); mare = hm(stOra(cur.ora)); sub = "Ora " + cur.ora + " · " + detOra(cur); }
+    else if (urm) { et = "URMĂTOAREA ORĂ"; const m = stOra(urm.ora) - mN; dr = "peste " + (m < 60 ? m + " min" : Math.floor(m / 60) + " h" + (m % 60 ? " " + (m % 60) + " min" : "")); mare = hm(stOra(urm.ora)); sub = "Ora " + urm.ora + " · " + detOra(urm); }
+    else { mare = "Gata pe azi"; sub = "Orele de azi s-au încheiat"; text = true; }
     const sv = [];
     svP.forEach((g) => sv.push("pauza " + g.pauza + "–" + (g.pauza + 1) + (g.locuri.length ? ", " + g.locuri.join(", ") : "")));
     svS.forEach((x) => sv.push(x.text + (x.loc ? ", " + x.loc : "")));
-    const mareE = h("div", { class: "mare", text: mare }, acc ? h("span", { class: "acc", text: acc }) : null);
-    umple(erou, 
-      h("div", { class: "cap" }, h("span", { class: "et", text: et }), h("span", { class: "dr", text: dr })), mareE, sub ? h("div", { class: "sub", text: sub }) : null,
-      !info.suspendat && active.length ? h("div", { class: "segm" }, active.map((_, i) => h("span", { class: i < facute ? "gata" : "" }))) : null,
-      h("div", { class: "jos" }, h("span", { text: !info.suspendat && active.length ? facute + " din " + active.length + (active.length === 1 ? " oră făcută" : " ore făcute") : "" }),
-        sv.length ? h("span", { class: "sv" }, svgIcon("pin", 16), h("span", { text: "Serviciu · " + sv.join(" · ") })) : null));
-    erou.setAttribute("aria-label", "Azi: " + et.toLowerCase() + " " + mare + acc + (sub ? ", " + sub : "") + ". Deschide orarul meu.");
+    const arataOre = !info.suspendat && lista.length > 0;
+    umple(erou,
+      h("div", { class: "cap" }, h("span", { class: "et", text: et }), h("span", { class: "dr", text: dr })),
+      h("div", { class: "mare" + (text ? " text" : ""), text: mare }), sub ? h("div", { class: "sub", text: sub }) : null,
+      sv.length ? h("div", { class: "sv" }, svgIcon("pin", 18), h("span", { text: "Serviciu · " + sv.join(" · ") })) : null,
+      arataOre ? h("div", { class: "casute-ore", role: "list", "aria-label": "Orele de azi" }, lista.map((x) => {
+        const practica = prac.has(x.clasa), gata = !practica && !x.plan && stOra(x.ora) + 50 <= mN, eAcum = x === cur, eUrm = x === urm;
+        const nota = practica ? "practică" : x.plan ? textPlan(x.plan) : "";
+        return h("div", { class: "casuta" + (gata ? " gata" : "") + (eAcum ? " acum" : "") + (eUrm ? " urm" : ""), role: "listitem" },
+          h("div", { class: "rd" }, h("span", { class: "no", text: "Ora " + x.ora }),
+            gata ? h("span", { class: "bif" }, svgIcon("bifa2", 14)) : eAcum ? h("span", { class: "tag", text: "ACUM" }) : eUrm ? h("span", { class: "tag", text: "URMEAZĂ" }) : null),
+          h("div", { class: "ti", text: intervalOra(x.ora) }), h("div", { class: "cl", text: detOra(x) }), nota ? h("div", { class: "nt2", text: nota }) : null);
+      })) : null);
+    erou.setAttribute("aria-label", "Azi: " + et.toLowerCase() + " " + mare + (sub ? ", " + sub : "") + (arataOre ? ". " + facute + " din " + active.length + " ore făcute" : "") + ". Deschide orarul meu.");
     erou.classList.remove("ascuns");
     if (!erou.dataset.legat) {
       erou.dataset.legat = "1"; const mergi = () => naviga(moduleDisponibil());
       erou.addEventListener("click", mergi); erou.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); mergi(); } });
     }
-    if (info.suspendat || !lista.length) { ore.classList.add("ascuns"); return; }
-    if (deschisOre === null) deschisOre = laptop.matches;
-    umple(ore, h("summary", null, h("span", { text: "Orele de azi" })), ...lista.map((x) => {
-      const practica = prac.has(x.clasa), gata = !practica && !x.plan && stOra(x.ora) + 50 <= mN, eAcum = x === cur, eUrm = x === urm;
-      const nota = practica ? "practică" : x.plan ? textPlan(x.plan) : eAcum ? "acum" : eUrm ? "următoarea" : "";
-      return h("div", { class: "ora" + (gata ? " gata" : "") + (eAcum ? " acum" : "") + (eUrm ? " urm" : "") },
-        h("span", { class: "st" }, gata ? svgIcon("bifa2", 14) : null), h("span", { class: "interval", text: intervalOra(x.ora) }),
-        h("span", { class: "txt", text: "Ora " + x.ora + " · " + detOra(x) }), nota ? h("span", { class: "nota" + (x.plan && !practica ? " rosu" : ""), text: nota }) : null);
-    }));
-    ore.open = deschisOre; ore.classList.remove("ascuns");
   }
-  sectiuni.ore.addEventListener("toggle", () => { if (!sectiuni.ore.classList.contains("ascuns")) deschisOre = sectiuni.ore.open; });
   const moduleDisponibil = () => (modulePentruVedere().includes("orarmeu") ? "orarmeu" : "orar");
 
   // ----- calendar azi și anunțuri
@@ -120,7 +115,7 @@ export async function randeaza(zona) {
     umple(sec, h("div", { class: "cap" }, h("h2", { text: noi.length ? "Anunțuri noi" : "Anunțuri" }),
       noi.length ? h("span", { class: "badge", text: noi.length + (noi.length === 1 ? " nou" : " noi") }) : h("button", { class: "btn text", type: "button", text: "Vezi tot", onclick: mergi })),
       !aratate.length ? h("p", { class: "gol-mic", text: "Nu există anunțuri." }) : null,
-      aratate.map((x) => h("button", { class: "rand-azi", type: "button", onclick: mergi }, h("span", { class: "tx" }, x.titlu, h("small", { text: (noi.includes(x) ? "Anunț nou" : "Citit") + " · " + fmtData(x.creat_la.slice(0, 10)) })))));
+      aratate.map((x) => h("button", { class: "rand-azi anunt", type: "button", onclick: mergi }, h("span", { class: "tx" }, x.titlu, h("small", { text: (noi.includes(x) ? "Anunț nou" : "Citit") + " · " + fmtData(x.creat_la.slice(0, 10)) })))));
     sec.classList.remove("ascuns");
   }
   async function incarcaOrar() {
