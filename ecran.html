@@ -42,6 +42,10 @@
   .corp.singur .cartonase.medii .rand { font-size:clamp(22px,2.9vw,56px); }
   .cartonase.mari .rand { font-size:clamp(22px,2.9vw,56px); }
   .corp.singur .cartonase.mari .rand { font-size:clamp(24px,3.5vw,68px); }
+  .corp .cartonase.unul .rand { font-size:clamp(26px,3.9vw,76px); }
+  .corp .cartonase.unul.medii .rand { font-size:clamp(24px,3.4vw,66px); }
+  .corp.singur .cartonase.unul .rand { font-size:clamp(28px,4.4vw,84px); }
+  .corp .cartonase.unul .rand .loc { font-size:.5em; }
   .rand .loc { flex:0 0 auto; min-width:4.2em; text-align:center; background:var(--kd); color:var(--k); border-radius:.7vw; padding:.15vh .7vw; font-size:.62em; font-weight:800; }
   .rand .loc.larg { min-width:7em; }
   .rand .nume { font-weight:700; min-width:0; }
@@ -194,7 +198,7 @@
     bloc.appendChild(banda);
     var grupe = grupeDin(randuri, k, sediu);
     var maxP = 0; grupe.forEach(function (g) { if (g.persoane.length > maxP) maxP = g.persoane.length; });
-    var cart = el("div", "cartonase " + (maxP <= 2 ? "mari" : maxP === 3 ? "medii" : ""));
+    var cart = el("div", "cartonase " + (maxP <= 2 ? "mari" : maxP === 3 ? "medii" : "") + (grupe.length === 1 ? " unul" : ""));
     cart.style.gridTemplateColumns = "repeat(" + Math.max(1, Math.min(grupe.length, MAX_COLOANE)) + ", 1fr)";
     grupe.forEach(function (g, i) { cart.appendChild(cartonGrupa(g, i, sediu)); });
     bloc.appendChild(cart);
