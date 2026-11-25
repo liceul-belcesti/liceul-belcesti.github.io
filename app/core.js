@@ -50,22 +50,22 @@ const PE_ROL = {
 };
 // culoarea pictogramei (--k) și ordinea de pe pagina principală
 export const MODULE = {
-  azi: { titlu: "Azi în școală", desc: "Cine lipsește, ore neacoperite, suplinitori", k: "#0b7f8a", ico: "scoala" },
-  utilizatori: { titlu: "Utilizatori", desc: "Aprobă conturi și atribuie roluri", k: "#4d6fd0", ico: "utilizatori" },
-  orarmeu: { titlu: "Orarul meu", desc: "Orele și serviciul tău pe școală", k: "#0b7f8a", ico: "orar" },
-  calendar: { titlu: "Calendarul meu", desc: "Mementouri și taskuri", k: "#2f5fd0", ico: "calendar" },
-  anunturi: { titlu: "Anunțuri", desc: "Informări de la școală", k: "#d97706", ico: "anunturi" },
-  cereri: { titlu: "Cereri de învoire", desc: "Cere o învoire și vezi răspunsul", k: "#7c4dcc", ico: "cerere" },
-  documente: { titlu: "Documentele mele", desc: "Documente repartizate ție", k: "#b45f06", ico: "dosar" },
-  evaluare: { titlu: "Evaluare", desc: "Teste pentru clasele tale", k: "#2e9a52", ico: "bifa" },
-  pontaj: { titlu: "Pontaj", desc: "Prezența lunară", k: "#5b7a82", ico: "ceas" },
-  altfel: { titlu: "Școala Altfel și Săptămâna Verde", desc: "Programul celor două săptămâni", k: "#c93a55", ico: "stea" },
-  serviciu: { titlu: "Serviciu pe școală", desc: "Zone, clase și scutiri", k: "#5b7a82", ico: "scut" },
-  structura: { titlu: "Structura anului școlar", desc: "Cursuri, vacanțe, practică", k: "#4d6fd0", ico: "straturi" },
-  orar: { titlu: "Orar", desc: "Orarul profesorilor și al claselor", k: "#0b7f8a", ico: "orar2" },
-  ecrane: { titlu: "Ecrane pentru cancelarie", desc: "Linkuri pentru televizoare", k: "#5b7a82", ico: "ecran" },
-  registru: { titlu: "Registratură", desc: "Registrul documentelor", k: "#b45f06", ico: "carte" },
-  wifi: { titlu: "Parola mea de Wi‑Fi", desc: "Parola ta pentru Wi‑Fi-ul școlii", k: "#5b7a82", ico: "wifi" }
+  azi: { titlu: "Azi în școală", desc: "Cine lipsește, ore neacoperite, suplinitori", k: "#0e9aa0", ico: "scoala" },
+  utilizatori: { titlu: "Utilizatori", desc: "Aprobă conturi și atribuie roluri", k: "#3d4446", ico: "utilizatori" },
+  orarmeu: { titlu: "Orarul meu", desc: "Orele și serviciul tău pe școală", k: "#0e9aa0", ico: "orar" },
+  calendar: { titlu: "Calendarul meu", desc: "Mementouri și taskuri", k: "#ea6a0a", ico: "calendar" },
+  anunturi: { titlu: "Anunțuri", desc: "Informări de la școală", k: "#ea6a0a", ico: "anunturi" },
+  cereri: { titlu: "Cereri de învoire", desc: "Cere o învoire și vezi răspunsul", k: "#0e9aa0", ico: "cerere" },
+  documente: { titlu: "Documentele mele", desc: "Documente repartizate ție", k: "#ea6a0a", ico: "dosar" },
+  evaluare: { titlu: "Evaluare", desc: "Teste pentru clasele tale", k: "#0e9aa0", ico: "bifa" },
+  pontaj: { titlu: "Pontaj", desc: "Prezența lunară", k: "#3d4446", ico: "ceas" },
+  altfel: { titlu: "Școala Altfel și Săptămâna Verde", desc: "Programul celor două săptămâni", k: "#ea6a0a", ico: "stea" },
+  serviciu: { titlu: "Serviciu pe școală", desc: "Zone, clase și scutiri", k: "#3d4446", ico: "scut" },
+  structura: { titlu: "Structura anului școlar", desc: "Cursuri, vacanțe, practică", k: "#3d4446", ico: "straturi" },
+  orar: { titlu: "Orar", desc: "Orarul profesorilor și al claselor", k: "#0e9aa0", ico: "orar2" },
+  ecrane: { titlu: "Ecrane pentru cancelarie", desc: "Linkuri pentru televizoare", k: "#3d4446", ico: "ecran" },
+  registru: { titlu: "Registratură", desc: "Registrul documentelor", k: "#ea6a0a", ico: "carte" },
+  wifi: { titlu: "Parola mea de Wi‑Fi", desc: "Parola ta pentru Wi‑Fi-ul școlii", k: "#3d4446", ico: "wifi" }
 };
 export const ORDINE = ["azi", "utilizatori", "orarmeu", "calendar", "anunturi", "cereri", "documente", "evaluare", "pontaj", "altfel", "serviciu", "structura", "orar", "ecrane", "registru", "wifi"];
 
