@@ -371,6 +371,7 @@
     .cap-clopot { position:relative; background:var(--card); color:var(--text); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
     .cap-nr { position:absolute; top:-4px; right:-4px; min-width:20px; height:20px; padding:0 5px; border-radius:10px; background:#c2410c; color:#fff; font-size:.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg); }
     #acasa.pe-principal .hello { font-size:2rem; line-height:1.1; letter-spacing:-.02em; margin:10px 0 16px; }
+    #acasa.pe-principal .hello #prenume { overflow-wrap:anywhere; }
     #acasa.pe-principal .hello-rand { display:none; }
     #acasa.pe-principal h3.sect { margin:20px 0 10px; font-size:.95rem; }
     #acasa.pe-principal #module.grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
@@ -11122,7 +11123,7 @@
       arataPrincipal(true);
       $("login").classList.add("hidden");
       $("acasa").classList.remove("hidden");
-      $("prenume").textContent = (data.nume || "").split(" ")[0]; actualizeazaAntet();
+      $("prenume").textContent = (data.nume || "").trim(); actualizeazaAntet();
       $("cine").textContent = data.nume + " · " + sesiune.user.email;
       $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
       $("bar-email").textContent = sesiune.user.email; $("bar-functie").textContent = $("rol").textContent;
