@@ -18,12 +18,14 @@
       --bg:#eef7f8; --card:#ffffff; --text:#13292d; --muted:#53686c; --line:#cfe3e5;
       --accent:#0b7f8a; --on-accent:#ffffff; --err:#b42318; --shadow:0 10px 30px rgba(6,78,87,.15);
       --hero-a:#0b7f8a; --hero-b:#064e57;
+      --nav-bg:#10262a; --nav-ic:#b9d3d6; --nav-act:#5eead4; --nav-act-ink:#0b2f33;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg:#0d1a1c; --card:#14272a; --text:#e8f5f6; --muted:#9ab6ba; --line:#244045;
         --accent:#3cc9d6; --on-accent:#06262a; --err:#ff8a80; --shadow:0 10px 30px rgba(0,0,0,.4);
         --teal-100:#17353a; --hero-a:#0a5a63; --hero-b:#041f23;
+        --nav-bg:#1c3a40; --nav-act:#a7f3e6;
       }
     }
     * { box-sizing:border-box; }
@@ -357,6 +359,68 @@
     .tile.off { opacity:.85; }
     .tile.on { cursor:pointer; border-color:var(--accent); }
     .tile.on:hover, .tile.on:focus-visible { box-shadow:var(--shadow); outline:none; border-color:var(--accent); }
+    /* ---------- Pagina principală în stil de aplicație ---------- */
+    #acasa.pe-principal > header.bar { display:none; }
+    #acasa.pe-principal > main.wrap { padding:16px 18px calc(116px + env(safe-area-inset-bottom)); }
+    .cap-nou { display:none; align-items:center; justify-content:space-between; gap:10px; margin:0 0 6px; }
+    #acasa.pe-principal .cap-nou { display:flex; }
+    .cap-stanga { display:flex; align-items:center; gap:12px; min-width:0; }
+    .cap-nou button { width:44px; min-height:44px; height:44px; margin:0; padding:0; border-radius:50%; font-weight:800; }
+    .cap-avatar { background:var(--accent); color:var(--on-accent); font-size:1.05rem; border:0; }
+    .cap-data { font-size:.85rem; font-weight:600; color:var(--muted); }
+    .cap-clopot { position:relative; background:var(--card); color:var(--text); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
+    .cap-nr { position:absolute; top:-4px; right:-4px; min-width:20px; height:20px; padding:0 5px; border-radius:10px; background:#c2410c; color:#fff; font-size:.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:2px solid var(--bg); }
+    #acasa.pe-principal .hello { font-size:2rem; line-height:1.1; letter-spacing:-.02em; margin:10px 0 16px; }
+    #acasa.pe-principal .hello-rand { display:none; }
+    #acasa.pe-principal h3.sect { margin:20px 0 10px; font-size:.95rem; }
+    #acasa.pe-principal #module.grid { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+    @media (min-width:760px) { #acasa.pe-principal #module.grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+    #acasa.pe-principal .tile { min-height:116px; padding:14px; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:14px; border-radius:24px; background:var(--card); border:1px solid var(--line); box-shadow:none; }
+    #acasa.pe-principal .tile.on { border-color:var(--line); }
+    #acasa.pe-principal .tile.on:hover, #acasa.pe-principal .tile.on:focus-visible { border-color:var(--accent); box-shadow:var(--shadow); }
+    #acasa.pe-principal .tile .ico { width:42px; height:42px; border-radius:14px; font-size:1.3rem; filter:none; background:color-mix(in srgb, var(--k, #0b7f8a) 16%, var(--card)); color:color-mix(in srgb, var(--k, #0b7f8a) 80%, var(--text)); }
+    #acasa.pe-principal .tile .txt { padding-top:0; width:100%; }
+    #acasa.pe-principal .tile .t { font-size:.98rem; line-height:1.2; margin:0 0 2px; }
+    #acasa.pe-principal .tile .d { color:var(--muted); font-size:.8rem; line-height:1.3; }
+    #acasa.pe-principal .tile .d ~ .d { display:none; }
+    #acasa.pe-principal .tile .cnt { top:12px; right:12px; min-width:24px; height:24px; font-size:.8rem; background:#c2410c; }
+    #acasa.pe-principal .tile.mare { order:-1; min-height:92px; flex-direction:row; align-items:center; background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+    #acasa.pe-principal .tile.mare .ico { background:rgba(255,255,255,.2); color:#fff; }
+    #acasa.pe-principal .tile.mare .t { color:#fff; font-size:1.1rem; }
+    #acasa.pe-principal .tile.mare .d { color:rgba(255,255,255,.92); }
+    #acasa.pe-principal .tile.mare::after { display:none; }
+    #acasa.pe-principal .notif-tel { border-left:1px solid var(--line); border-radius:20px; padding:6px 16px; margin:0 0 12px; }
+    #acasa.pe-principal .notif-tel summary { flex-wrap:nowrap; }
+    #acasa.pe-principal .notif-tel summary b { white-space:nowrap; font-size:.95rem; }
+    #acasa.pe-principal .notif-tel .nt-scurt { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    #acasa.pe-principal .tile.mare { justify-content:flex-start; }
+    .tile[data-m="orarmeu"], .tile[data-m="orar"] { --k:#0b7f8a; }
+    .tile[data-m="calendar"] { --k:#2f5fd0; }
+    .tile[data-m="anunturi"] { --k:#d97706; }
+    .tile[data-m="cereri"] { --k:#7c4dcc; }
+    .tile[data-m="evaluare"] { --k:#2e9a52; }
+    .tile[data-m="altfel"] { --k:#c93a55; }
+    .tile[data-m="documente"], .tile[data-m="registru"] { --k:#b45f06; }
+    .tile[data-m="utilizatori"], .tile[data-m="structura"] { --k:#4d6fd0; }
+    .tile[data-m="pontaj"], .tile[data-m="wifi"], .tile[data-m="serviciu"], .tile[data-m="ecrane"] { --k:#5b7a82; }
+    .nav-jos { display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:max(16px, env(safe-area-inset-bottom)); z-index:50; width:min(358px, calc(100% - 32px)); height:64px; box-sizing:border-box; padding:0 8px;
+               border-radius:32px; background:var(--nav-bg); align-items:center; justify-content:space-between; box-shadow:0 10px 24px rgba(0,0,0,.28); }
+    #acasa.pe-principal .nav-jos { display:flex; }
+    .nav-jos button { width:48px; min-height:48px; height:48px; margin:0; padding:0; border:0; border-radius:24px; background:transparent; color:var(--nav-ic); display:flex; align-items:center; justify-content:center; gap:8px; font-size:.9rem; font-weight:700; }
+    .nav-jos button[aria-current="page"] { width:auto; padding:0 18px; background:var(--nav-act); color:var(--nav-act-ink); }
+    .nav-jos button:not([aria-current="page"]) span { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+    .cont-fundal { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.45); display:flex; align-items:flex-end; justify-content:center; }
+    .cont-foaie { width:100%; max-width:480px; max-height:90vh; overflow:auto; background:var(--card); color:var(--text); border-radius:28px 28px 0 0; padding:20px 18px calc(18px + env(safe-area-inset-bottom)); box-shadow:0 -10px 30px rgba(0,0,0,.25); }
+    .cont-foaie h2 { margin:0; font-size:1.15rem; }
+    .cont-foaie .cont-mic { margin:2px 0 0; color:var(--muted); font-size:.9rem; overflow-wrap:anywhere; }
+    .cont-foaie .cont-rol { display:inline-block; margin:8px 0 0; padding:2px 10px; border-radius:12px; font-size:.8rem; font-weight:700; background:var(--teal-100); color:var(--accent); }
+    .cont-foaie h3 { margin:18px 0 8px; font-size:.85rem; color:var(--muted); }
+    .cont-tema { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; padding:4px; background:var(--bg); border-radius:12px; }
+    .cont-tema button { margin:0; min-height:42px; padding:0 4px; background:transparent; color:var(--muted); border:0; font-size:.9rem; }
+    .cont-tema button[aria-pressed="true"] { background:var(--card); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,.18); }
+    .cont-foaie .cont-btn { display:flex; align-items:center; gap:12px; width:100%; min-height:52px; margin:0; padding:0 4px; text-align:left; background:transparent; color:var(--text); border:0; border-top:1px solid var(--line); border-radius:0; font-weight:600; }
+    .cont-foaie .cont-btn.iesire { color:var(--err); }
+    .cont-foaie .cont-lista { margin-top:14px; }
     #acasa > main.wrap:not(#pontaj):not(#panou) { max-width:1200px; }
 
     .card select { width:100%; min-height:48px; padding:11px 14px; font:inherit; color:var(--text); background:var(--card);
@@ -1743,7 +1807,14 @@
       <p class="aj-nota">Ajutorul explică platforma. Nu vede date despre angajați, elevi sau orar.</p>
     </section>
     <main class="wrap">
-      <h1 class="hello">Bun venit, <span id="prenume"></span>!</h1>
+      <div class="cap-nou">
+        <div class="cap-stanga">
+          <button id="cap-avatar" class="cap-avatar" type="button" aria-label="Contul meu"></button>
+          <span id="cap-data" class="cap-data"></span>
+        </div>
+        <button id="cap-clopot" class="cap-clopot hidden" type="button" aria-label="Notificări"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16v-5a6 6 0 1112 0v5l1.5 2h-15z"/><path d="M10 21h4"/></svg><span id="cap-nr" class="cap-nr hidden"></span></button>
+      </div>
+      <h1 class="hello"><span id="salut">Bună ziua</span>,<br><span id="prenume"></span></h1>
       <div class="hello-rand"><span class="role" id="rol"></span><p class="who"><span id="cine"></span></p></div>
       <div id="comutator" class="switch hidden">
         <label id="ca-eticheta">Vezi platforma ca:</label>
@@ -1777,6 +1848,13 @@
       <h3 class="sect">Modulele tale</h3>
       <div id="module" class="grid"></div>
     </main>
+
+    <nav id="nav-jos" class="nav-jos" aria-label="Navigare principală">
+      <button type="button" data-nav="acasa" aria-current="page" aria-label="Acasă"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Acasă</span></button>
+      <button type="button" data-nav="orar" class="hidden" aria-label="Orar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 9v12"/></svg><span>Orar</span></button>
+      <button type="button" data-nav="calendar" class="hidden" aria-label="Calendar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Calendar</span></button>
+      <button type="button" data-nav="cont" aria-label="Contul meu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg><span>Cont</span></button>
+    </nav>
 
     <main id="pontaj" class="wrap hidden">
       <button id="inapoi-pontaj" class="back" type="button">← Înapoi</button>
@@ -2278,10 +2356,10 @@
       $("btn-ajutor").classList.toggle("hidden", !euRoluri.includes("administrator"));
       if (!euRoluri.includes("administrator")) $("ajutor").hidden = true;
       const gestioneazaWifi = roluri.some((r) => ["administrator", "director", "director_adjunct"].includes(r));
-      moduleleMele(roluri).forEach((cheie) => {
+      moduleleMele(roluri).sort((a, b) => ordineAcasa(a) - ordineAcasa(b)).forEach((cheie) => {
         const m = cheie === "wifi" && gestioneazaWifi ? { ...MODULE.wifi, t: "Wi-Fi", d: "Conturile de Wi-Fi ale profesorilor", sub: ["Conturile profesorilor", "Parola mea de Wi-Fi"] } : MODULE[cheie];
         const c = document.createElement("div");
-        c.className = (m.activ ? "tile on" : "tile off") + (cheie === "azi" ? " mare" : "");
+        c.className = (m.activ ? "tile on" : "tile off") + (cheie === "azi" ? " mare" : ""); c.dataset.m = cheie;
         const soon = document.createElement("span"); soon.className = "soon"; soon.textContent = "În curând";
         if (m.activ) {
           c.setAttribute("role", "button"); c.tabIndex = 0;
@@ -2289,7 +2367,7 @@
           c.addEventListener("click", deschide);
           c.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); deschide(); } });
         }
-        const ico = document.createElement("div"); ico.className = "ico"; ico.setAttribute("aria-hidden", "true"); ico.textContent = m.ico;
+        const ico = document.createElement("div"); ico.className = "ico"; ico.setAttribute("aria-hidden", "true"); if (ICONITE[cheie]) ico.innerHTML = svgIcon(cheie); else ico.textContent = m.ico;
         const text = document.createElement("div"); text.className = "txt";
         const t = document.createElement("div"); t.className = "t"; t.textContent = m.t; text.appendChild(t);
         (m.sub || [m.d]).forEach((x) => { const d = document.createElement("div"); d.className = "d"; d.textContent = x; text.appendChild(d); });
@@ -2314,7 +2392,105 @@
         }
         zona.appendChild(c);
       });
+      actualizeazaNavJos(roluri);
     }
+
+    // ===== Pagina principală în stil de aplicație: iconițe, antet, bara de jos, meniul contului, tema =====
+    const ICONITE = {
+      utilizatori: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 010 6.4M18.5 14.8c1.7.7 2.8 2.3 3 5.2"/>',
+      azi: '<path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M10 21v-5h4v5"/>',
+      cereri: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+      pontaj: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      anunturi: '<path d="M3 11v2a1 1 0 001 1h2l5 4V6L6 10H4a1 1 0 00-1 1z"/><path d="M15 9a4 4 0 010 6M18 6.5a8 8 0 010 11"/>',
+      documente: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',
+      wifi: '<path d="M2 9a15 15 0 0120 0M5 12.5a10.5 10.5 0 0114 0M8.5 16a5.5 5.5 0 017 0"/><circle cx="12" cy="19.5" r="1"/>',
+      orarmeu: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M9 9v12"/>',
+      evaluare: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+      orar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 13h2M12 13h2M16 13h2M8 17h2M12 17h2"/>',
+      structura: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+      altfel: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5l-5.4 3 1.2-6L3.3 9.3l6.1-.7z"/>',
+      serviciu: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+      ecrane: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+      registru: '<path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h11"/>',
+      calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+      catalog: '<path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h11"/>'
+    };
+    const ORDINE_ACASA = ["azi", "utilizatori", "orarmeu", "calendar", "anunturi", "cereri", "documente", "evaluare", "pontaj", "altfel", "serviciu", "structura", "orar", "ecrane", "registru", "wifi", "catalog"];
+    const ordineAcasa = (k) => { const i = ORDINE_ACASA.indexOf(k); return i < 0 ? 99 : i; };
+    const svgIcon = (k) => '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONITE[k] + "</svg>";
+    const salutZi = () => { const o = new Date().getHours(); return o >= 5 && o < 12 ? "Bună dimineața" : o >= 12 && o < 18 ? "Bună ziua" : "Bună seara"; };
+    function actualizeazaAntet() {
+      const d = new Date(), zile = ["Duminică", "Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă"];
+      $("salut").textContent = salutZi();
+      $("cap-data").textContent = zile[d.getDay()] + ", " + p2(d.getDate()) + "/" + p2(d.getMonth() + 1) + "/" + d.getFullYear();
+      const n = ($("prenume").textContent || "").trim(); $("cap-avatar").textContent = n ? n.charAt(0).toUpperCase() : "•";
+    }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && euId) actualizeazaAntet(); });
+    function sincronizeazaClopotNou() {
+      const b = $("clopot"), n = $("cap-clopot"), nr = $("clopot-nr");
+      n.classList.toggle("hidden", b.classList.contains("hidden"));
+      $("cap-nr").textContent = nr.textContent; $("cap-nr").classList.toggle("hidden", nr.classList.contains("hidden"));
+      n.setAttribute("aria-label", b.getAttribute("aria-label") || "Notificări");
+    }
+    // Tema: automat (după telefon), luminos sau întunecat; alegerea se ține minte pe acest dispozitiv.
+    // Regulile de culoare întunecată din pagină sunt scrise pentru „prefers-color-scheme: dark”; le pornim sau le oprim de aici.
+    const reguliIntunecat = [];
+    for (const sh of Array.from(document.styleSheets)) {
+      let reguli; try { reguli = sh.cssRules; } catch (e) { continue; }
+      for (const r of Array.from(reguli)) if (r.type === CSSRule.MEDIA_RULE && /prefers-color-scheme:\s*dark/.test(r.media.mediaText)) reguliIntunecat.push({ r, orig: r.media.mediaText });
+    }
+    let temaAleasa = "auto"; try { const s = localStorage.getItem("tema"); if (s === "luminos" || s === "intunecat") temaAleasa = s; } catch (e) { /* rămâne automat */ }
+    function aplicaTema(t) {
+      temaAleasa = t;
+      reguliIntunecat.forEach((x) => { x.r.media.mediaText = t === "intunecat" ? "all" : t === "luminos" ? "not all" : x.orig; });
+      document.documentElement.dataset.tema = t;
+      try { if (t === "auto") localStorage.removeItem("tema"); else localStorage.setItem("tema", t); } catch (e) { /* fără memorare */ }
+    }
+    aplicaTema(temaAleasa);
+    // Meniul contului (foaie din partea de jos)
+    function inchideFoaieCont() { const f = document.getElementById("cont-fundal"); if (f) f.remove(); }
+    function deschideFoaieCont() {
+      inchideFoaieCont();
+      const f = el("div", "cont-fundal"); f.id = "cont-fundal";
+      const p = el("div", "cont-foaie"); p.setAttribute("role", "dialog"); p.setAttribute("aria-modal", "true"); p.setAttribute("aria-label", "Contul meu");
+      p.appendChild(el("h2", "", $("cine").textContent.split(" · ")[0] || "Contul meu"));
+      p.appendChild(el("p", "cont-mic", $("bar-email").textContent));
+      if ($("rol").textContent) p.appendChild(el("span", "cont-rol", $("rol").textContent));
+      p.appendChild(el("h3", "", "Aspect"));
+      const tema = el("div", "cont-tema"); tema.setAttribute("role", "group"); tema.setAttribute("aria-label", "Tema");
+      [["auto", "Automat"], ["luminos", "Luminos"], ["intunecat", "Întunecat"]].forEach(([k, t]) => {
+        const b = el("button", "", t); b.type = "button"; b.setAttribute("aria-pressed", String(temaAleasa === k));
+        b.addEventListener("click", () => { aplicaTema(k); tema.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); });
+        tema.appendChild(b);
+      });
+      p.appendChild(tema);
+      const lista = el("div", "cont-lista");
+      const intrare = (text, cls, fa) => { const b = el("button", "cont-btn" + (cls ? " " + cls : ""), text); b.type = "button"; b.addEventListener("click", () => { inchideFoaieCont(); fa(); }); lista.appendChild(b); };
+      if (!$("btn-admin").classList.contains("hidden")) intrare("Administrare", "", () => $("btn-admin").click());
+      if (!$("btn-ajutor").classList.contains("hidden")) intrare("Ajutor", "", () => $("btn-ajutor").click());
+      intrare("Reîmprospătează pagina", "", () => $("btn-refresh").click());
+      intrare("Ieși din cont", "iesire", () => $("iesire").click());
+      p.appendChild(lista);
+      f.appendChild(p);
+      f.addEventListener("click", (ev) => { if (ev.target === f) inchideFoaieCont(); });
+      document.body.appendChild(f);
+      const prima = p.querySelector("button"); if (prima) prima.focus();
+    }
+    document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") inchideFoaieCont(); });
+    function actualizeazaNavJos(roluri) {
+      const m = moduleleMele(roluri), orar = m.includes("orarmeu") ? "orarmeu" : m.includes("orar") ? "orar" : "";
+      const bo = document.querySelector('#nav-jos [data-nav="orar"]'); bo.classList.toggle("hidden", !orar); bo.dataset.modul = orar;
+      document.querySelector('#nav-jos [data-nav="calendar"]').classList.toggle("hidden", !m.includes("calendar"));
+    }
+    $("nav-jos").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button[data-nav]"); if (!b) return;
+      const k = b.dataset.nav;
+      if (k === "acasa") window.scrollTo({ top: 0, behavior: "smooth" });
+      else if (k === "cont") deschideFoaieCont();
+      else if (k === "orar") deschideModul(b.dataset.modul);
+      else if (k === "calendar") deschideModul("calendar");
+    });
+    $("cap-avatar").addEventListener("click", deschideFoaieCont);
 
     // ---------- Panou utilizatori (administrator și director; regulile din baza de date decid efectiv) ----------
     let euId = null;
@@ -2727,7 +2903,7 @@
     }
     async function actualizeazaClopotInterior() {
       const b = $("clopot");
-      if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); return; }
+      if (!euId || !moduleleMele(euRoluri).includes("anunturi")) { b.classList.add("hidden"); sincronizeazaClopotNou(); return; }
       const azi = new Date().toISOString().slice(0, 10);
       const decide = ["administrator", "director", "director_adjunct"].some((r) => euRoluri.includes(r)) && moduleleMele(euRoluri).includes("cereri");
       const areCereri = moduleleMele(euRoluri).includes("cereri");
@@ -2743,22 +2919,24 @@
       const nc = cereriDeDecis + cereriDeRaspuns + cereriDecise, nd = dn.error || typeof dn.data !== "number" ? 0 : dn.data, tot = n + nc + nd;
       b.classList.remove("hidden");
       $("clopot-nr").textContent = tot > 99 ? "99+" : String(tot); $("clopot-nr").classList.toggle("hidden", tot < 1);
-      b.setAttribute("aria-label", tot ? tot + " notificări" : "Notificări");
+      b.setAttribute("aria-label", tot ? tot + " notificări" : "Notificări"); sincronizeazaClopotNou();
       if (n !== anunturiNoi || nc !== cereriNoi || nd !== documenteNoi) { anunturiNoi = n; cereriNoi = nc; documenteNoi = nd; const sel = $("activ-ca"); deseneazaModule(sel && sel.value ? [sel.value] : euRoluri); }
     }
     const inchideMeniuClopot = () => { const m = document.getElementById("clopot-meniu"); if (m) m.remove(); };
-    $("clopot").addEventListener("click", (ev) => {
+    const clopotClick = (ev, ancora) => {
       ev.stopPropagation();
       if (document.getElementById("clopot-meniu")) return inchideMeniuClopot();
       const intrariClopot = [["Cereri de învoire (" + cereriNoi + ")", "cereri", cereriNoi], ["Anunțuri noi (" + anunturiNoi + ")", "anunturi", anunturiNoi], ["Documente repartizate (" + documenteNoi + ")", "documente", documenteNoi]].filter((x) => x[2] > 0);
       if (intrariClopot.length < 2) return deschideModul(intrariClopot.length ? intrariClopot[0][1] : "anunturi");
       const m = document.createElement("div"); m.id = "clopot-meniu"; m.className = "clopot-meniu";
-      const r = $("clopot").getBoundingClientRect(); m.style.top = (r.bottom + 6) + "px"; m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 240)) + "px";
+      const r = ancora.getBoundingClientRect(); m.style.top = (r.bottom + 6) + "px"; m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 240)) + "px";
       intrariClopot.forEach(([t, k]) => {
         const x = document.createElement("button"); x.type = "button"; x.textContent = t; x.addEventListener("click", () => { inchideMeniuClopot(); deschideModul(k); }); m.appendChild(x);
       });
       document.body.appendChild(m);
-    });
+    };
+    $("clopot").addEventListener("click", (ev) => clopotClick(ev, $("clopot")));
+    $("cap-clopot").addEventListener("click", (ev) => clopotClick(ev, $("cap-clopot")));
     document.addEventListener("click", inchideMeniuClopot);
     setInterval(() => { if (euId && !document.hidden) actualizeazaClopot(); }, 30000); // notificările apar în cel mult 30 de secunde, fără reîmprospătare
     document.addEventListener("visibilitychange", () => { if (euId && !document.hidden) actualizeazaClopot(); });
@@ -10799,6 +10977,7 @@
         lista.forEach((x) => { const arata = !gasit && vizibil(x.p); if (arata) gasit = true; x.b.style.display = arata ? "" : "none"; });
         $("bar-pontaj").classList.toggle("hidden", !vizibil($("pontaj")) || vizibil($("administrare")));
         const bara = document.querySelector("#acasa header.bar"); if (bara) bara.classList.toggle("cu-inapoi", gasit);
+        $("acasa").classList.toggle("pe-principal", !gasit);
       }
       // Săgeata „înapoi” a browserului merge la ecranul anterior din platformă, nu la pagina Google.
       const cheie = () => { const x = lista.find((y) => vizibil(y.p)); return x ? x.b.id : ""; };
@@ -10943,7 +11122,7 @@
       arataPrincipal(true);
       $("login").classList.add("hidden");
       $("acasa").classList.remove("hidden");
-      $("prenume").textContent = (data.nume || "").split(" ")[0];
+      $("prenume").textContent = (data.nume || "").split(" ")[0]; actualizeazaAntet();
       $("cine").textContent = data.nume + " · " + sesiune.user.email;
       $("rol").textContent = euRoluri.map((r) => ETICHETE[r] || r).join(" · ");
       $("bar-email").textContent = sesiune.user.email; $("bar-functie").textContent = $("rol").textContent;
