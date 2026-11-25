@@ -185,6 +185,10 @@
     .wifi-cauta { width:100%; margin:0 0 6px; }
     /* ---------- Calendarul meu ---------- */
     #calendar .panel-msg { margin:6px 0; padding:8px 10px; font-size:.85rem; }
+    .cal-ghid { margin:0 0 12px; padding:10px 14px; background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
+    .cal-ghid summary { cursor:pointer; font-weight:700; }
+    .cal-ghid ol { margin:8px 0 2px; padding-left:20px; }
+    .cal-ghid li { margin:0 0 6px; }
     .cal-luna { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
     .cal-luna h2 { flex:1; margin:0; font-size:1.1rem; text-align:center; }
     .cal-luna button { width:auto; min-height:40px; margin:0; padding:0 14px; }
@@ -205,8 +209,6 @@
     .cal-legenda .t::before { background:#f59e0b; }
     .cal-legenda .i::before { background:var(--err); }
     .cal-ziua { margin:0 0 8px; font-size:1.05rem; }
-    .cal-grup { margin:14px 0 6px; font-size:.9rem; font-weight:700; color:var(--muted); }
-    .cal-grup.intarziat { color:var(--err); }
     .cal-rand { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; margin:0 0 6px; background:var(--card); border:1.5px solid var(--line); border-radius:12px; }
     .cal-rand.intarziat { border-color:var(--err); }
     .cal-rand input[type="checkbox"] { flex:none; width:24px; min-height:0; height:24px; margin:2px 0 0; padding:0; }
@@ -2014,10 +2016,17 @@
       <button id="inapoi-calendar" class="back" type="button">← Înapoi</button>
       <h1 class="hello">Calendarul meu</h1>
       <p class="who">Mementouri și taskuri doar ale tale; nimeni altcineva nu le vede.</p>
-      <div class="tabs" role="tablist" id="tab-calendar">
-        <button type="button" role="tab" data-v="luna" aria-selected="true">Calendar</button>
-        <button type="button" role="tab" data-v="taskuri" aria-selected="false">Taskuri de făcut</button>
-      </div>
+      <details id="calendar-ghid" class="cal-ghid" open>
+        <summary>Cum folosești calendarul</summary>
+        <ol>
+          <li>Apasă pe o zi din calendar; dedesubt vezi ce ai notat pe ea.</li>
+          <li>Apasă „Adaugă pe această zi”, scrie titlul și, dacă vrei, ora și o notă.</li>
+          <li><b>Memento</b> este ceva de ținut minte. <b>Task</b> este ceva de făcut: îl bifezi când e gata, iar dacă ziua a trecut și nu e bifat, apare cu roșu.</li>
+          <li>La „Notificare pe telefon” alegi când vrei să fii anunțat (la oră, cu 15 minute, cu o oră sau cu o zi înainte). Notificările pe telefon le activezi o singură dată, la „Notificări de dimineață” de pe pagina principală.</li>
+          <li>Apasă pe un element ca să-l modifici sau să-l ștergi. Punctele de pe zile arată: turcoaz memento, portocaliu task, roșu task întârziat.</li>
+          <li>Totul este doar al tău; nimeni altcineva nu vede ce notezi aici.</li>
+        </ol>
+      </details>
       <div id="calendar-msg" class="panel-msg" role="alert"></div>
       <div id="calendar-corp"></div>
     </main>
@@ -9226,7 +9235,7 @@
     const calAzi = () => calIso(new Date());
     const calMare = (t) => t.charAt(0).toUpperCase() + t.slice(1);
     const calZiuaScrisa = (s) => calMare(CAL_ZILE[calDinIso(s).getDay()]) + ", " + fmtData(s);
-    let calStare = { luna: null, sel: "", fila: "luna", elemente: [], taskuri: [], zonaForm: null, zonaLista: null };
+    let calStare = { luna: null, sel: "", elemente: [], zonaForm: null };
     const mesajCal = (text, ok) => { $("calendar-msg").textContent = text || ""; $("calendar-msg").className = "panel-msg" + (ok ? " ok" : ""); };
 
     async function calIncarcaLuna() {
@@ -9237,31 +9246,21 @@
       if (error) { mesajCal("Calendarul nu a putut fi încărcat. Încearcă din nou."); return false; }
       calStare.elemente = data || []; calStare.start = start; return true;
     }
-    async function calIncarcaTaskuri() {
-      const { data, error } = await db.rpc("calendar_taskuri_deschise");
-      if (error) { mesajCal("Taskurile nu au putut fi încărcate. Încearcă din nou."); return false; }
-      calStare.taskuri = data || []; return true;
-    }
     async function calActualizeaza() {
       mesajCal("");
-      const ok = calStare.fila === "luna" ? await calIncarcaLuna() : await calIncarcaTaskuri();
-      if (ok) calDeseneaza();
+      if (await calIncarcaLuna()) calDeseneaza();
     }
     async function deschideCalendar() {
       memoreazaVedere("calendar");
       document.querySelector("#acasa > main.wrap").classList.add("hidden");
       $("calendar").classList.remove("hidden");
       const a = new Date();
-      calStare.luna = new Date(a.getFullYear(), a.getMonth(), 1); calStare.sel = calAzi(); calStare.fila = "luna";
-      $("tab-calendar").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === "luna" ? "true" : "false"));
+      calStare.luna = new Date(a.getFullYear(), a.getMonth(), 1); calStare.sel = calAzi();
+      const g = $("calendar-ghid");
+      try { g.open = localStorage.getItem("calendar-ghid") !== "inchis"; } catch (e) { g.open = true; }
       await calActualizeaza();
     }
-    $("tab-calendar").addEventListener("click", (ev) => {
-      const b = ev.target.closest("button[data-v]"); if (!b || b.dataset.v === calStare.fila) return;
-      calStare.fila = b.dataset.v;
-      $("tab-calendar").querySelectorAll("button").forEach((x) => x.setAttribute("aria-selected", x.dataset.v === calStare.fila ? "true" : "false"));
-      calActualizeaza();
-    });
+    $("calendar-ghid").addEventListener("toggle", () => { try { localStorage.setItem("calendar-ghid", $("calendar-ghid").open ? "deschis" : "inchis"); } catch (e) { /* fără memorare */ } });
 
     // Un rând: element de calendar (memento sau task), cu bifă doar pentru taskuri
     function calRand(e, cuData) {
@@ -9300,7 +9299,7 @@
     function calDeseneaza() {
       const corp = $("calendar-corp"); corp.replaceChildren();
       calStare.zonaForm = el("div"); corp.appendChild(calStare.zonaForm);
-      if (calStare.fila === "luna") calDeseneazaLuna(corp); else calDeseneazaTaskuri(corp);
+      calDeseneazaLuna(corp);
     }
 
     function calDeseneazaLuna(corp) {
@@ -9355,20 +9354,6 @@
       const adauga = el("button", "", "＋ Adaugă pe această zi"); adauga.type = "button";
       adauga.addEventListener("click", () => calFormular(null, calStare.sel));
       corp.appendChild(adauga);
-    }
-
-    function calDeseneazaTaskuri(corp) {
-      const azi = calAzi(), t = calStare.taskuri;
-      const adauga = el("button", "", "＋ Task nou"); adauga.type = "button"; adauga.style.marginTop = "0";
-      adauga.addEventListener("click", () => calFormular(null, azi, "task"));
-      corp.appendChild(adauga);
-      if (!t.length) { corp.appendChild(el("p", "cal-gol", "Nu ai taskuri de făcut. ")); return; }
-      const grupuri = [["Întârziate", (e) => e.data < azi, "intarziat"], ["Azi", (e) => e.data === azi, ""], ["Mai târziu", (e) => e.data > azi, ""]];
-      grupuri.forEach(([nume, pot, cls]) => {
-        const l = t.filter(pot); if (!l.length) return;
-        corp.appendChild(el("div", "cal-grup " + cls, nume + " (" + l.length + ")"));
-        l.forEach((e) => corp.appendChild(calRand(e, true)));
-      });
     }
 
     // Formular de adăugare / modificare
@@ -9436,7 +9421,7 @@
         });
         bs.disabled = false;
         if (error) { mesaj.textContent = "Nu s-a putut salva. Verifică datele și încearcă din nou."; return; }
-        if (calStare.fila === "luna") { const d = calDinIso(data.value); calStare.luna = new Date(d.getFullYear(), d.getMonth(), 1); calStare.sel = data.value; }
+        { const d = calDinIso(data.value); calStare.luna = new Date(d.getFullYear(), d.getMonth(), 1); calStare.sel = data.value; }
         calActualizeaza();
       });
       zona.replaceChildren(f);
