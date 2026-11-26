@@ -1,7 +1,7 @@
 // Calendarul meu: mementouri și taskuri private, cu anunț pe telefon la ora aleasă.
-import { db, h, umple, azi as aziIso, iso, dinIso, fmtData, LUNI, ZILE, cap1 } from "../core.js?v=20261125b";
-import { capPagina, svgIcon, fereastra, inchideFereastra, confirma, camp, mesaj, arataMesaj } from "../ui.js?v=20261125b";
-import { notifTelSuportat, abonareCurenta } from "../notif-tel.js?v=20261125b";
+import { db, h, umple, azi as aziIso, iso, dinIso, fmtData, LUNI, ZILE, cap1 } from "../core.js?v=20261125c";
+import { capPagina, svgIcon, fereastra, inchideFereastra, confirma, camp, mesaj, arataMesaj } from "../ui.js?v=20261125c";
+import { notifTelSuportat, abonareCurenta } from "../notif-tel.js?v=20261125c";
 
 const LIT = ["L", "M", "M", "J", "V", "S", "D"];
 const ANUNT = { 0: "la ora stabilită", 15: "cu 15 minute înainte", 60: "cu o oră înainte", 1440: "cu o zi înainte" };

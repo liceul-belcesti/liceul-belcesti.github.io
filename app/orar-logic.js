@@ -1,6 +1,6 @@
 // Logica orarului propriu: ce se întâmplă într-o zi (ore, zile libere, vacanțe, practică, suplinire, serviciu).
 // Folosită de pagina Acasă și, mai târziu, de modulul „Orarul meu”.
-import { db, iso, dinIso } from "./core.js?v=20261125b";
+import { db, iso, dinIso } from "./core.js?v=20261125c";
 
 export const ZL7 = ["Luni", "Marți", "Miercuri", "Joi", "Vineri", "Sâmbătă", "Duminică"];
 export const ziSapt = (d) => (d.getDay() + 6) % 7; // 0 = luni … 6 = duminică
@@ -74,5 +74,15 @@ export function rezumatZi(date, dataZi, plan, acum) {
   const svR = info.suspendat ? [] : (sv || []).filter((x) => x.zi === w + 1);
   const cur = active.find((r) => mN >= stOra(r.ora) && mN < stOra(r.ora) + 50);
   const urm = cur ? null : active.find((r) => stOra(r.ora) > mN);
-  return { info, lista, active, prac, cur, urm, mN, svP: svPauze(svR), svS: svSchimburi(svR) };
+  return { id, ore, info, lista, active, prac, cur, urm, mN, svR, svP: svPauze(svR), svS: svSchimburi(svR) };
 }
+
+// ---------- Ajutoare pentru modulul „Orarul meu” ----------
+export const adauga = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+export const luniDe = (d) => adauga(d, -ziSapt(d));
+export const luSapt = (d) => (ziSapt(d) > 4 ? adauga(d, 7 - ziSapt(d)) : luniDe(d)); // în weekend se arată săptămâna următoare
+export const oraS = (n) => n + (n === 1 ? " oră" : " ore");
+export const durata = (m) => { const o = Math.floor(m / 60), r = m % 60; return o ? o + (o === 1 ? " oră" : " ore") + (r ? " și " + r + " min" : "") : r + " min"; };
+export const intervalPauza = (k) => hm(stPauza(k)) + "–" + hm(stPauza(k) + 10);
+export const textSv = (g) => "Serviciu pe școală" + (g.locuri.length ? " · " + g.locuri.join(", ") : "") + (g.note.length ? " (" + g.note.join("; ") + ")" : "");
+export { anPentru, svPauze, svSchimburi, locSv };

@@ -1,6 +1,6 @@
 // Ecranele de intrare: autentificare, creare cont, completarea datelor, parola uitată, parola nouă.
-import { db, h, $ } from "./core.js?v=20261125b";
-import { camp, arataMesaj, mesaj } from "./ui.js?v=20261125b";
+import { db, h, $ } from "./core.js?v=20261125c";
+import { camp, arataMesaj, mesaj } from "./ui.js?v=20261125c";
 
 export const MESAJ_ASTEPTARE = "Contul tău a fost creat și așteaptă aprobarea administratorului. Vei putea intra după aprobare.";
 export const MESAJ_FARA_ACCES = "Contul tău nu are acces la platformă. Contactează administratorul.";

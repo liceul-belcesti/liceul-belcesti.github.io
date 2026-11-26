@@ -1,5 +1,5 @@
 // Notificări pe telefon: orarul zilei și serviciul pe școală, la 7:00 (și anunțurile din calendar). Aceeași logică ca în versiunea veche.
-import { db, h } from "./core.js?v=20261125b";
+import { db, h } from "./core.js?v=20261125c";
 
 export const notifTelSuportat = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 export const eIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);

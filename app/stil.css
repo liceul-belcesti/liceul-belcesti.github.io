@@ -267,3 +267,102 @@ a { color:var(--accent-text); }
 .nt-opt input { width:22px; height:22px; margin-top:1px; flex:none; accent-color:var(--accent); }
 .card.nt-card { padding:14px 20px; }
 @media (prefers-color-scheme: dark) { :root:not([data-tema="luminos"]) .cal-zi[aria-pressed="true"] { background:var(--accent); color:#0b0b0c; border-color:var(--accent); } }
+
+/* ---------- Orarul meu ---------- */
+.om-grila { display:grid; gap:16px; grid-template-columns:minmax(0,1fr); align-items:start; }
+@media (min-width:1100px) { .om-grila { grid-template-columns:minmax(0,1fr) 340px; gap:22px; } }
+.om-lat { display:flex; flex-direction:column; gap:12px; }
+.om-lat .card + .card { margin-top:0; }
+.om-tipar { position:relative; }
+.tipar-bara { position:relative; }
+.tipar-meniu { position:absolute; z-index:30; right:0; top:calc(100% + 6px); min-width:260px; padding:6px; background:var(--card); border-radius:16px; box-shadow:var(--shadow); }
+.tipar-meniu[hidden] { display:none; }
+.tipar-meniu button { display:block; width:100%; text-align:left; min-height:44px; padding:0 14px; border:0; border-radius:10px; background:transparent; font-weight:600; }
+.tipar-meniu button:hover { background:var(--bg); }
+.om-sus { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 14px; }
+.om-comut { display:inline-grid; width:auto; box-shadow:var(--card-sh); background:var(--card); }
+.om-comut button { padding:0 14px; }
+.om-comut button[aria-pressed="true"] { background:var(--negru); color:#fff; box-shadow:none; }
+:root[data-tema="intunecat"] .om-comut button[aria-pressed="true"] { background:var(--accent); color:#0b0b0c; }
+.btn.neutru.mic { background:var(--card); border:0; box-shadow:var(--card-sh); }
+.om-nav { display:flex; align-items:center; gap:6px; margin-left:auto; }
+.om-nav .buton-icon { width:42px; height:42px; min-height:42px; }
+.om-nav input[type="date"] { min-height:42px; padding:0 10px; border:0; border-radius:23px; background:var(--card); box-shadow:var(--card-sh); font-weight:700; color:var(--text); }
+.om-hero { cursor:default; }
+.om-hero.sus .mare.text { font-size:1.9rem; }
+.om-meta-h { margin-top:6px; font-size:.95rem; font-weight:700; color:var(--hero-muted); }
+.om-bar { height:7px; border-radius:4px; background:rgba(255,255,255,.25); margin-top:16px; overflow:hidden; }
+.om-bar i { display:block; height:100%; border-radius:inherit; background:#fff; transition:width .6s ease; }
+.om-mic { margin-top:6px; font-size:.85rem; font-weight:600; color:var(--hero-muted); }
+.om-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.om-chips span { padding:5px 12px; border-radius:14px; background:rgba(255,255,255,.16); font-size:.82rem; font-weight:700; }
+.om-hero .sv { position:static !important; margin-top:14px; }
+.om-avize { display:grid; gap:8px; margin:12px 0 0; }
+.om-aviz { display:flex; flex-direction:column; gap:1px; padding:12px 16px; border-radius:18px; background:var(--card); box-shadow:var(--card-sh); font-size:.9rem; }
+.om-aviz b { color:var(--warn-text); }
+.om-aviz span { color:var(--muted); }
+.om-aviz.t-practica b { color:var(--accent-text); }
+.om-zile { display:flex; gap:8px; overflow-x:auto; padding:14px 2px 8px; scrollbar-width:none; }
+.om-zile::-webkit-scrollbar { display:none; }
+.om-zi { flex:1 0 auto; min-width:78px; margin:0; padding:10px 12px; border:0; border-radius:20px; background:var(--card); box-shadow:var(--card-sh); color:var(--text); display:flex; flex-direction:column; align-items:center; gap:4px; font-weight:700; font-size:.86rem; }
+.om-zi .nr { font-size:1.15rem; font-weight:800; }
+.om-zi[aria-pressed="true"] { background:var(--negru); color:#fff; }
+:root[data-tema="intunecat"] .om-zi[aria-pressed="true"] { background:var(--accent); color:#0b0b0c; }
+.om-zi.azi b::after { content:""; display:inline-block; width:7px; height:7px; margin-left:6px; border-radius:50%; background:var(--warn); vertical-align:middle; }
+.om-zi.sus { opacity:.7; }
+.om-pct { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; max-width:60px; min-height:7px; }
+.om-pct i { width:7px; height:7px; border-radius:50%; background:var(--accent); }
+.om-pct i.x { background:var(--muted); }
+.om-zi[aria-pressed="true"] .om-pct i { background:#7ff0ee; }
+.om-tl { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+.om-ora { display:grid; grid-template-columns:56px minmax(0,1fr); gap:12px; align-items:start; }
+.om-t { text-align:right; padding-top:14px; font-variant-numeric:tabular-nums; }
+.om-t b { display:block; font-size:1rem; }
+.om-t span { font-size:.75rem; color:var(--muted); }
+.om-card { min-width:0; padding:12px 16px; border-radius:20px; background:var(--card); box-shadow:var(--card-sh); }
+.om-card .rd { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.om-clasa { display:inline-block; min-width:5.2rem; padding:2px 10px; border-radius:10px; background:var(--accent-soft); color:var(--accent-text); text-align:center; font-weight:800; font-size:1.02rem; }
+.om-clasa.mic { min-width:3.8rem; font-size:.86rem; padding:1px 8px; }
+.om-disc { font-weight:600; overflow-wrap:anywhere; }
+.om-meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:6px; font-size:.8rem; color:var(--muted); }
+.om-tag { display:inline-block; padding:1px 8px; border-radius:8px; background:var(--warn); color:var(--on-warn); font-size:.7rem; font-weight:800; letter-spacing:.04em; }
+.om-nota { color:var(--warn-text); font-weight:700; }
+.om-ora.acum .om-card { background:var(--hero-bg); color:#fff; box-shadow:0 12px 28px rgba(5,78,82,.3); }
+.om-ora.acum .om-clasa { background:rgba(255,255,255,.2); color:#fff; }
+.om-ora.acum .om-meta { color:var(--hero-muted); }
+.om-ora.trecut .om-card { opacity:.62; }
+.om-ora.lapr .om-card { background:transparent; box-shadow:none; border:1.5px dashed var(--warn); }
+.om-ora.serv .om-card { background:transparent; box-shadow:none; border:1.5px dashed var(--line); }
+.om-ora.serv .om-card .rd svg { flex:none; color:var(--warn-text); }
+.om-ora.serv.acum .om-card { background:var(--hero-bg); border-color:transparent; }
+.om-ora.serv.schimb { grid-template-columns:minmax(0,1fr); }
+.om-ora.serv.schimb .om-t { display:none; }
+.om-fereastra { margin-left:68px; padding:11px 16px; border-radius:18px; background:var(--warn-soft); color:var(--warn-text); display:flex; gap:10px; justify-content:space-between; align-items:center; }
+.om-fereastra span { font-weight:700; }
+.om-gol { padding:24px 12px; text-align:center; color:var(--muted); }
+.om-mic2 { margin:16px 0 0; font-size:.82rem; color:var(--muted); }
+.om-sapt-cap { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; margin:0 0 12px; align-items:baseline; }
+.om-sapt-cap span { color:var(--muted); font-size:.9rem; }
+.om-zc { margin:0 0 12px; padding:16px 18px 10px; border-radius:24px; background:var(--card); box-shadow:var(--card-sh); }
+.om-zc.azi { box-shadow:0 0 0 2px var(--accent), var(--card-sh); }
+.om-zc.sus { background:color-mix(in srgb, var(--muted) 8%, var(--card)); }
+.om-zc-cap { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; }
+.om-zc-t { display:flex; align-items:baseline; gap:10px; }
+.om-zc-t b { font-size:1.05rem; }
+.om-zc-t span, .om-zc-n { color:var(--muted); font-size:.88rem; font-weight:600; }
+.om-zc-r { display:flex; align-items:center; gap:8px; }
+.om-zc .om-avize { margin:6px 0 8px; }
+.om-sr { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line-soft); }
+.om-sr .t { flex:0 0 46px; font-variant-numeric:tabular-nums; font-weight:700; font-size:.88rem; color:var(--muted); }
+.om-sr .om-disc { font-size:.9rem; }
+.om-sr.sv .om-disc { color:var(--muted); }
+.om-sr.lapr { opacity:.65; }
+.om-sr.lapr .om-clasa { border:1px dashed var(--warn); background:transparent; color:var(--warn-text); }
+.om-vezi { margin-top:4px; }
+.om-sv-card .om-sv-rand { display:flex; flex-wrap:wrap; gap:2px 12px; padding:8px 10px; margin:0 -10px; border-radius:12px; align-items:baseline; }
+.om-sv-card .om-sv-rand.azi { background:var(--accent-soft); }
+.om-sv-card .zi { font-weight:800; min-width:5.5rem; }
+.om-sv-card .tx { flex:1; min-width:0; color:var(--muted); font-size:.92rem; }
+.om-sv-card .om-sv-rand.azi .tx { color:var(--text); }
+.om-chip-rand { display:flex; flex-wrap:wrap; gap:6px; }
+@media (prefers-color-scheme: dark) { :root:not([data-tema="luminos"]) .om-comut button[aria-pressed="true"], :root:not([data-tema="luminos"]) .om-zi[aria-pressed="true"] { background:var(--accent); color:#0b0b0c; } }
